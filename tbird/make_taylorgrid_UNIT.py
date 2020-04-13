@@ -12,9 +12,7 @@ import matplotlib.pyplot as plt
 
 #time.sleep(4)
 
-basedir = '/Volumes/Work/UQ/DESI/cBIRD/'
-OUTPATH = os.path.join(basedir, "UNIT_output_files/grid_outputs/")
-outpk = os.path.join(basedir, "UNIT_output_files/Pk/")
+outpk = "/Volumes/Work/UQ/DESI/cBIRD/UNIT_output_files/Pk/"
 
 nrun = int(sys.argv[1])
 runs = int(sys.argv[2])
