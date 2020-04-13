@@ -1459,7 +1459,7 @@ class Projection(object):
     - k-binning or interpolation over the data k-array
     - Fiber collision corrections
     """
-    def __init__(self, kout, Om_AP, z_AP, nbinsmu=200, 
+    def __init__(self, kout, Om_AP, z_AP, DA=None, H=None, nbinsmu=200, 
         window_fourier_name=None, path_to_window=None, window_configspace_file=None, 
         binning=False, fibcol=False, co=common):
 
@@ -1469,8 +1469,14 @@ class Projection(object):
         self.Om = Om_AP
         self.z = z_AP
 
-        self.DA = DA(self.Om, self.z)
-        self.H = Hubble(self.Om, self.z)
+        if DA is None:
+            self.DA = DA(self.Om, self.z)
+        else:
+            self.DA = DA
+        if H is None:
+            self.H = Hubble(self.Om, self.z)
+        else:
+            self.H = H
 
         self.muacc = np.linspace(0., 1., nbinsmu)
         self.kgrid, self.mugrid = np.meshgrid(self.co.k, self.muacc, indexing='ij')
