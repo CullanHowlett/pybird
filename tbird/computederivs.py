@@ -43,74 +43,74 @@ def get_pder_lin(pi, dx, filename):
     lenpar = len(Grid.valueref)
     idx = Grid.center
     
-    p0 = pi[idx, idx, idx, idx, idx, :, :, :]
+    p0 = pi[idx, idx, idx, idx, :, :, :]
     t1 = time.time()
     print("Done p0 in %s sec" % str(t1 - t0))
 
-    dpdx = np.array([findiff.FinDiff((i, dx[i], 1), acc=4)(pi)[idx, idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    dpdx = np.array([findiff.FinDiff((i, dx[i], 1), acc=4)(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
     t0 = time.time()
     print("Done dpdx in %s sec" % str(t0 - t1))
 
     # Second derivatives
-    d2pdx2 = np.array([findiff.FinDiff((i, dx[i], 2), acc=2)(pi)[idx, idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    d2pdx2 = np.array([findiff.FinDiff((i, dx[i], 2), acc=2)(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
     t1 = time.time()
     print("Done d2pdx2 in %s sec" % str(t1 - t0))
     
-    d2pdxdy = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), acc=2)(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d2pdxdy = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), acc=2)(pi)[idx, idx, idx, idx, :, :, :]]
                         for (i, j) in combinations(range(lenpar), 2)])
     t0 = time.time()
     print("Done d2pdxdy in %s sec" % str(t0 - t1))
     
     # Third derivatives: we only need it for A_s, so I do this by hand
-    d3pdx3 = np.array([findiff.FinDiff((i, dx[i], 3))(pi)[idx, idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    d3pdx3 = np.array([findiff.FinDiff((i, dx[i], 3))(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
     t1 = time.time()
     print("Done d3pdx3 in %s sec" % str(t1 - t0))
     
-    d3pdx2dy = np.array([[i, j, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d3pdx2dy = np.array([[i, j, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j) in combinations(range(lenpar), 2)])
     t0 = time.time()
     print("Done d3pdx2dy in %s sec" % str(t0 - t1))
     
-    d3pdxdy2 = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d3pdxdy2 = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j) in combinations(range(lenpar), 2)])
     t1 = time.time()
     print("Done d3pdxdy2 in %s sec" % str(t1 - t0))
     
-    d3pdxdydz = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d3pdxdydz = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j, k) in combinations(range(lenpar), 3)])
     t0 = time.time()
     print("Done d3pdxdydz in %s sec" % str(t0 - t1))
 
-    d4pdx4 = np.array([findiff.FinDiff((i, dx[i], 4))(pi)[idx, idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    d4pdx4 = np.array([findiff.FinDiff((i, dx[i], 4))(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
     t1 = time.time()
     print("Done d4pdx4 in %s sec" % str(t1 - t0))
 
-    d4pdx3dy = np.array([[i, j, findiff.FinDiff((i, dx[i], 3), (j, dx[j], 1))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d4pdx3dy = np.array([[i, j, findiff.FinDiff((i, dx[i], 3), (j, dx[j], 1))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j) in combinations(range(lenpar), 2)])
     t0 = time.time()
     print("Done d4pdx3dy in %s sec" % str(t0 - t1))
 
-    d4pdxdy3 = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 3))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d4pdxdy3 = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 3))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j) in combinations(range(lenpar), 2)])
     t1 = time.time()
     print("Done d4pdxdy3 in %s sec" % str(t1 - t0))
 
-    d4pdx2dydz = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d4pdx2dydz = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j, k) in combinations(range(lenpar), 3)])
     t0 = time.time()
     print("Done d4pdx2dydz in %s sec" % str(t0 - t1))
 
-    d4pdxdy2dz = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2), (k, dx[k], 1))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d4pdxdy2dz = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2), (k, dx[k], 1))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j, k) in combinations(range(lenpar), 3)])
     t1 = time.time()
     print("Done d4pdxdy2dz in %s sec" % str(t1 - t0))
 
-    d4pdxdydz2 = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 2))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d4pdxdydz2 = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 2))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j, k) in combinations(range(lenpar), 3)])
     t0 = time.time()
     print("Done d4pdxdydz2 in %s sec" % str(t0 - t1))
 
-    d4pdxdydzdzm = np.array([[i, j, k, m, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1), (m, dx[m], 1))(pi)[idx, idx, idx, idx, idx, :, :, :]]
+    d4pdxdydzdzm = np.array([[i, j, k, m, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1), (m, dx[m], 1))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j, k, m) in combinations(range(lenpar), 4)])
     t1 = time.time()
     print("Done d4pdxdydzdm in %s sec" % str(t1 - t0))
@@ -129,25 +129,25 @@ def get_pder_loop1(pi, dx, filename):
     idx = Grid.center
     t1 = time.time()
     
-    p0 = pi[idx, idx, idx, idx, idx, idx, :, :, :]
+    p0 = pi[idx, idx, idx, idx, :, :, :]
     print("Done p0 in %s sec" % str(t1 - t0))
 
-    dpdx = np.array([findiff.FinDiff((i, dx[i], 1), acc=4)(pi)[idx, idx, idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    dpdx = np.array([findiff.FinDiff((i, dx[i], 1), acc=4)(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
     t0 = time.time()
     print("Done dpdx in %s sec" % str(t1 - t0))
 
     # Second derivatives
-    d2pdx2 = np.array([findiff.FinDiff((i, dx[i], 2), acc=2)(pi)[idx, idx, idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    d2pdx2 = np.array([findiff.FinDiff((i, dx[i], 2), acc=2)(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
     t1 = time.time()
     print("Done d2pdx2 in %s sec" % str(t1 - t0))
     
-    d2pdxdy = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), acc=2)(pi)[idx, idx, idx, idx, idx, idx, :, :, :]]
+    d2pdxdy = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), acc=2)(pi)[idx, idx, idx, idx, :, :, :]]
                         for (i, j) in combinations(range(lenpar), 2)])
     t0 = time.time()
     print("Done d2pdxdy in %s sec" % str(t1 - t0))
     
     # Third derivatives: we only need it for A_s, so I do this by hand
-    d3pdx3 = np.array([findiff.FinDiff((i, dx[i], 3))(pi)[idx, idx, idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    d3pdx3 = np.array([findiff.FinDiff((i, dx[i], 3))(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
     t1 = time.time()
     print("Done d3pdx3 in %s sec" % str(t1 - t0))
     allder = (p0, dpdx, d2pdx2, d2pdxdy, d3pdx3)
@@ -163,7 +163,7 @@ def get_pder_loop2a(pi, dx, filename):
     lenpar = len(Grid.valueref)
     idx = Grid.center
     t1 = time.time()
-    d3pdx2dy = np.array([[i, j, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1))(pi)[idx, idx, idx, idx, idx, idx, :, :, :]]
+    d3pdx2dy = np.array([[i, j, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j) in combinations(range(lenpar), 2)])
     t0 = time.time()
     print("Done d3pdx2dy in %s sec" % str(t1 - t0))
@@ -176,7 +176,7 @@ def get_pder_loop2b(pi, dx, filename):
     lenpar = len(Grid.valueref)
     idx = Grid.center
     t0 = time.time()
-    d3pdxdy2 = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2))(pi)[idx, idx, idx, idx, idx, idx, :, :, :]]
+    d3pdxdy2 = np.array([[i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j) in combinations(range(lenpar), 2)])
     t1 = time.time()
     print("Done d3pdxdy2 in %s sec" % str(t1 - t0))
@@ -194,7 +194,7 @@ def get_pder_loop3(pi, dx, filename):
     lenpar = len(Grid.valueref)
     idx = Grid.center
     t1 = time.time()
-    d3pdxdydz = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, idx, idx, :, :, :]]
+    d3pdxdydz = np.array([[i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, :, :, :]]
                           for (i, j, k) in combinations(range(lenpar), 3)])
     t0 = time.time()
     print("Done d3pdxdydz in %s sec" % str(t1 - t0))
