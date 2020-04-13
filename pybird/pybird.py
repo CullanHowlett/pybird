@@ -762,8 +762,12 @@ class Bird(object):
                 shotnoise = self.Ploopl[l, n, 0]
                 self.Ploopl[l, n] -= shotnoise
 
-    def formatTaylor(self):
+    def formatTaylor(self, kdata=None):
         """ An auxiliary to pipe PyBird with TBird: puts Bird(object) power spectrum multipole terms into the right shape for TBird """
+        if kdata is None:
+            allk = np.concatenate([self.co.k, self.co.k]).reshape(-1, 1)
+        else:
+            allk = np.concatenate([kdata, kdata]).reshape(-1, 1)
         allk = np.concatenate([self.co.k, self.co.k]).reshape(-1, 1)
         Plin = np.flip(np.einsum('n,lnk->lnk', np.array([1., 2. * self.f, self.f**2]), self.P11l), axis=1)
         Plin = np.concatenate(np.einsum('lnk->lkn', Plin), axis=0)
