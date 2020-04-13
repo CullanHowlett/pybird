@@ -58,10 +58,10 @@ for i in range(nruns):
     if not checkloop:
         print("Problem in loop PS: ", i, i * lenbatch, Ploop[0, 0, -1])
 
-np.save(os.path.join(pathgrid, "Tablecoord_%s_%s.npy" % (gridname)), Grid.truegrid)
+np.save(os.path.join(pathgrid, "Tablecoord_%s.npy" % (gridname)), Grid.truegrid)
 g1 = np.concatenate(gridlin)
-np.save(os.path.join(pathgrid, "TablePlin_%s_%s.npy" % (gridname)), g1)
+np.save(os.path.join(pathgrid, "TablePlin_%s.npy" % (gridname)), g1)
 g2 = np.concatenate(gridloop)
-np.save(os.path.join(pathgrid, "TablePloop_%s_%s.npy" % (gridname)), g2)
+np.save(os.path.join(pathgrid, "TablePloop_%s.npy" % (gridname)), g2)
 
 
