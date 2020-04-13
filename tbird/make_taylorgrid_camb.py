@@ -39,7 +39,7 @@ parameters = copy.deepcopy(Grid.parref)
 truetheta = Grid.valueref
 for k, var in enumerate(freepar):
     parameters[var] = truetheta[k]
-kin, Plin, z, Omega_m = Grid.CompPterms(parameters)
+kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
 
 # Read in the window function files
 kmin, kmax, nkout, nkth = 0.0, 0.4, 40, 400
@@ -63,15 +63,14 @@ WM_mat_SGC = W_mat_SGC @ df.to_numpy().astype(np.float32)
 Omega_m_fid = 0.307115       # Fiducial Omega_m value used to compute the clustering measurements. Not necessarily the same as the value used for the Grid centre.
 kin = np.linspace(kmin, kmax, nkth, endpoint=False) + 0.5 * (kmax - kmin) / nkth
 kout = np.linspace(kmin, kmax, nkout, endpoint=False) + 0.5 * (kmax - kmin) / nkout
-projection_NGC = pybird.Projection(kout, Omega_m_fid, z, window_fourier_name=None, co=common)
-projection_SGC = pybird.Projection(kout, Omega_m_fid, z, window_fourier_name=None, co=common)
+projection_NGC = pybird.Projection(kout, Omega_m_fid, z, DA=Da, H=Hz, window_fourier_name=None, co=common)
+projection_SGC = pybird.Projection(kout, Omega_m_fid, z, DA=Da, H=Hz, window_fourier_name=None, co=common)
 projection_NGC.p = kin
 projection_SGC.p = kin
 WM_NGC_reshape = WM_mat_NGC.reshape(5,nkout,3,nkth)
 WM_SGC_reshape = WM_mat_SGC.reshape(5,nkout,3,nkth)
 projection_NGC.Waldk = np.transpose(WM_NGC_reshape[[0,2],:,:2,:], axes=(0,2,1,3))
 projection_SGC.Waldk = np.transpose(WM_SGC_reshape[[0,2],:,:2,:], axes=(0,2,1,3))
-print(np.shape(projection_SGC.Waldk))
 
 allPlin_NGC = []
 allPloop_NGC = []
@@ -83,18 +82,7 @@ for i, theta in enumerate(arrayred):
     idx = i
     print ("i on tot", i, sizearray)
 
-    # Get linear power spectrum from Class
-    # TBD: Update this to use Classy (python-Class), which will also allow for a self-consistent
-    # calculation of Omega_m, Da and H. This is already the case in the monte-python likelihood
-    parameters["PathToOutput"] = os.path.join(OUTPATH, 'output_%s_%s' % (str(nrun), str(i)))
-    for k, var in enumerate(freepar):
-        parameters[var] = truetheta[k]
-    kin, Plin, z, Omega_m = Grid.CompPterms(parameters)
-
-    # Warning: Assumes LCDM
-    Da = pybird.DA(Omega_m, z)
-    Hz = pybird.Hubble(Omega_m, z)
-    fN = pybird.fN(Omega_m, z)
+    kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
 
     # Get non-linear power spectrum from pybird
     bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=z, which='all', co=common)
