@@ -42,7 +42,7 @@ kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
 kmin, kmax, nkout, nkth = 0.0, 0.4, 40, 40
 kin = np.linspace(kmin, kmax, nkth, endpoint=False) + 0.5 * (kmax - kmin) / nkth
 kout = np.linspace(kmin, kmax, nkout, endpoint=False) + 0.5 * (kmax - kmin) / nkout
-projection = pybird.Projection(kout, Omega_m_fid, z, window_fourier_name=None, co=common)
+projection = pybird.Projection(kout, Omega_m_fid, z, DA=Da, H=Hz, window_fourier_name=None, co=common)
 projection.p = kin
 projection.Waldk = np.eye(2*len(kin))
 
