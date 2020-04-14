@@ -56,6 +56,8 @@ for i, theta in enumerate(arrayred):
     idx = i
     print ("i on tot", i, sizearray)
 
+    for k, var in enumerate(freepar):
+        parameters[var] = truetheta[k]
     kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
 
     # Get non-linear power spectrum from pybird
