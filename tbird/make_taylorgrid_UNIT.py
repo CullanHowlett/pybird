@@ -37,6 +37,15 @@ for k, var in enumerate(freepar):
     parameters[var] = truetheta[k]
 kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
 
+# Now window at the moment for the UNIT sims, so we'll create an identity matrix for this. I'm also
+# assuming that the fiducial cosmology used to make the measurements is the same as Grid centre
+kmin, kmax, nkout, nkth = 0.0, 0.4, 40, 40
+kin = np.linspace(kmin, kmax, nkth, endpoint=False) + 0.5 * (kmax - kmin) / nkth
+kout = np.linspace(kmin, kmax, nkout, endpoint=False) + 0.5 * (kmax - kmin) / nkout
+projection = pybird.Projection(kout, Omega_m_fid, z, window_fourier_name=None, co=common)
+projection.p = kin
+projection.Waldk = np.eye(2*len(kin))
+
 allPlin = []
 allPloop = []
 for i, theta in enumerate(arrayred):
@@ -52,6 +61,9 @@ for i, theta in enumerate(arrayred):
     nonlinear.PsCf(bird)
     bird.setPsCfl()
     resum.Ps(bird)
+
+    projection.AP(bird)
+    projection.Window(bird)
     
     Plin, Ploop = bird.formatTaylor()
     idxcol = np.full([Plin.shape[0], 1], idx)
