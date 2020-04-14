@@ -9,7 +9,7 @@ import camb
 configfile = "/Volumes/Work/UQ/DESI/cBIRD/input_files/tbird_UNIT.ini"
 gridname = "camb-z0p9873-A_s-h-omega_cdm-omega_b"
 freepar = ["ln10^{10}A_s", "h", "omega_cdm", "omega_b"]
-dx = np.array([0.1, 0.015, 0.005, 0.0009])
+dx = np.array([0.1, 0.015, 0.005, 0.001])
 order = 4  # For the moment I keep this same for everything.
 center = order + 1 # Here we use a smaller grid, then padded with zeros
 

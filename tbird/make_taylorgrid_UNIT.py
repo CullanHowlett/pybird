@@ -39,12 +39,14 @@ kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
 
 # Now window at the moment for the UNIT sims, so we'll create an identity matrix for this. I'm also
 # assuming that the fiducial cosmology used to make the measurements is the same as Grid centre
-kmin, kmax, nkout, nkth = 0.0, 0.4, 40, 40
-kin = np.linspace(kmin, kmax, nkth, endpoint=False) + 0.5 * (kmax - kmin) / nkth
+kmin, kmax, nkout = 0.0, 0.4, 40
 kout = np.linspace(kmin, kmax, nkout, endpoint=False) + 0.5 * (kmax - kmin) / nkout
 projection = pybird.Projection(kout, Omega_m, z, DA=Da, H=Hz, window_fourier_name=None, co=common)
-projection.p = kin
-projection.Waldk = np.eye(2*len(kin))
+projection.p = kout
+window = np.zeros((2,2,nkout,nkout))
+window[0,0,:,:] = np.eye(nkout)
+window[1,1,:,:] = np.eye(nkout)
+projection.Waldk = window
 
 allPlin = []
 allPloop = []
@@ -65,11 +67,11 @@ for i, theta in enumerate(arrayred):
     projection.AP(bird)
     projection.Window(bird)
     
-    Plin, Ploop = bird.formatTaylor()
+    Plin, Ploop = bird.formatTaylor(kdata = kout)
     idxcol = np.full([Plin.shape[0], 1], idx)
     allPlin.append(np.hstack([Plin, idxcol]))
     allPloop.append(np.hstack([Ploop, idxcol]))
-    if (i == 0) or ((i+1) % 100 == 0):
+    if (i == 0) or ((i+1) % 10 == 0):
         print("theta check: ", arrayred[idx], theta, truetheta)
     np.save(os.path.join(outpk, "Plin_run%s.npy" % (str(nrun))), np.array(allPlin))
     np.save(os.path.join(outpk, "Ploop_run%s.npy" % (str(nrun))), np.array(allPloop))
