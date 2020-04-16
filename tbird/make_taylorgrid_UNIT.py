@@ -40,7 +40,8 @@ kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
 # Now window at the moment for the UNIT sims, so we'll create an identity matrix for this. I'm also
 # assuming that the fiducial cosmology used to make the measurements is the same as Grid centre
 kmin, kmax, nkout = 0.0, 1.0, 1000
-kout = np.linspace(kmin, kmax, nkout, endpoint=False) + 0.5 * (kmax - kmin) / nkout
+#kout = np.linspace(kmin, kmax, nkout, endpoint=False) + 0.5 * (kmax - kmin) / nkout
+kout = np.logspace(-4.0, 0.0, 1000)
 projection = pybird.Projection(kout, Omega_m, z, DA=Da, H=Hz, window_fourier_name=None, co=common)
 projection.p = kout
 window = np.zeros((2,2,nkout,nkout))
