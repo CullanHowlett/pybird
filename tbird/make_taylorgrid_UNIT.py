@@ -26,7 +26,7 @@ sizearray = len(arrayred)
 freepar = Grid.freepar
 
 ### To create outside the grid
-common = pybird.Common(Nl=2, kmax=0.4, optiresum=True)
+common = pybird.Common(Nl=2, kmax=1.0, optiresum=True)
 nonlinear = pybird.NonLinear(load=False, save=False, co=common)
 resum = pybird.Resum(LambdaIR=0.1, co=common)
 
