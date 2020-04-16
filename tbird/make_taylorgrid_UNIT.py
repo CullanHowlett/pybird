@@ -76,5 +76,5 @@ for i, theta in enumerate(arrayred):
     allPloop.append(np.hstack([Ploop, idxcol]))
     if (i == 0) or ((i+1) % 10 == 0):
         print("theta check: ", arrayred[idx], theta, truetheta)
-    np.save(os.path.join(outpk, "Plin_run%s.npy" % (str(nrun))), np.array(allPlin))
-    np.save(os.path.join(outpk, "Ploop_run%s.npy" % (str(nrun))), np.array(allPloop))
+    np.save(os.path.join(outpk, "Plin_run%s_log.npy" % (str(nrun))), np.array(allPlin))
+    np.save(os.path.join(outpk, "Ploop_run%s_log.npy" % (str(nrun))), np.array(allPloop))
