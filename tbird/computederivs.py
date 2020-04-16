@@ -20,13 +20,13 @@ def get_grids(mydir, name=gridname, nmult=2, nout=2):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     # Power spectra needs to be reshaped.
-    crd = np.load(os.path.join(mydir, "Tablecoord_%s.npy" % name))  # Don't need this for uniform grid
+    crd = np.load(os.path.join(mydir, "Tablecoord_%s_log.npy" % name))  # Don't need this for uniform grid
     shapecrd = crd.shape
     padshape = [(1,1)] * (len(shapecrd) - 1) + [(0, 0)] * 3
-    plin = np.load(os.path.join(mydir, "TablePlin_%s.npy" % name))
+    plin = np.load(os.path.join(mydir, "TablePlin_%s_log.npy" % name))
     plin = plin.reshape((*shapecrd[1:], nmult, plin.shape[-2] // nmult, plin.shape[-1]))  # This won't work with Python 2 :(
     plin = np.pad(plin, padshape, 'constant', constant_values=0)
-    ploop = np.load(os.path.join(mydir, "TablePloop_%s.npy" % name))
+    ploop = np.load(os.path.join(mydir, "TablePloop_%s_log.npy" % name))
     ploop = ploop.reshape((*shapecrd[1:], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))  # This won't work with Python 2 :(
     ploop = np.pad(ploop, padshape, 'constant', constant_values=0)
     # The output is not concatenated for multipoles since we remove the hexadecapole
@@ -261,6 +261,6 @@ if __name__ == "__main__":
     print("Got grids in %s seconds" % str(time.time() - t0))
     dx = Grid.delta
     print("Calculate derivatives of linear PS")
-    allderlin = get_pder_lin(plingrid, dx, os.path.join(griddir, "DerPlin_%s.npy" % gridname))
+    allderlin = get_pder_lin(plingrid, dx, os.path.join(griddir, "DerPlin_%s_log.npy" % gridname))
     print("Calculate derivatives of loop PS")
-    allderlin = get_pder_lin(ploopgrid, dx, os.path.join(griddir, "DerPloop_%s.npy" % gridname))
+    allderlin = get_pder_lin(ploopgrid, dx, os.path.join(griddir, "DerPloop_%s_log.npy" % gridname))

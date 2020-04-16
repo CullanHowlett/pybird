@@ -17,13 +17,13 @@ linfailed = []
 loopfailed = []
 for i in range(nruns):
     print(i)
-    checklin = os.path.isfile(os.path.join(pathpk, "Plin_run%d.npy" % (i)))
-    checkloop = os.path.isfile(os.path.join(pathpk, "Ploop_run%d.npy" % (i)))
+    checklin = os.path.isfile(os.path.join(pathpk, "Plin_run%d_log.npy" % (i)))
+    checkloop = os.path.isfile(os.path.join(pathpk, "Ploop_run%d_log.npy" % (i)))
     if not checklin:
         print("Failed linear run %d" % (i))
         linfailed.append((i))
     else:
-        Plin = np.load(os.path.join(pathpk, "Plin_run%d.npy" % (i)))
+        Plin = np.load(os.path.join(pathpk, "Plin_run%d_log.npy" % (i)))
         if (lenbatch != len(Plin)):
             print("Failed length linear run %d" % (i))
             linfailed.append((i))
@@ -31,7 +31,7 @@ for i in range(nruns):
         print("Failed loop run %d" % (i))
         loopfailed.append((i))
     else:
-        Ploop = np.load(os.path.join(pathpk, "Ploop_run%d.npy" % (i)))
+        Ploop = np.load(os.path.join(pathpk, "Ploop_run%d_log.npy" % (i)))
         if (lenbatch != len(Ploop)):
             print("Failed length loop run %d" % (i))
             loopfailed.append((i))
@@ -47,8 +47,8 @@ gridlin = []
 gridloop = []
 for i in range(nruns):
     print("Run ", i)
-    Plin = np.load(os.path.join(pathpk, "Plin_run%d.npy" % (i)))
-    Ploop = np.load(os.path.join(pathpk, "Ploop_run%d.npy" % (i)))
+    Plin = np.load(os.path.join(pathpk, "Plin_run%d_log.npy" % (i)))
+    Ploop = np.load(os.path.join(pathpk, "Ploop_run%d_log.npy" % (i)))
     gridlin.append(Plin[:, :, :-1])
     gridloop.append(Ploop[:, :, :-1])
     checklin = (lenbatch == len(Plin))
@@ -58,10 +58,10 @@ for i in range(nruns):
     if not checkloop:
         print("Problem in loop PS: ", i, i * lenbatch, Ploop[0, 0, -1])
 
-np.save(os.path.join(pathgrid, "Tablecoord_%s.npy" % (gridname)), Grid.truegrid)
+np.save(os.path.join(pathgrid, "Tablecoord_%s_log.npy" % (gridname)), Grid.truegrid)
 g1 = np.concatenate(gridlin)
-np.save(os.path.join(pathgrid, "TablePlin_%s.npy" % (gridname)), g1)
+np.save(os.path.join(pathgrid, "TablePlin_%s_log.npy" % (gridname)), g1)
 g2 = np.concatenate(gridloop)
-np.save(os.path.join(pathgrid, "TablePloop_%s.npy" % (gridname)), g2)
+np.save(os.path.join(pathgrid, "TablePloop_%s_log.npy" % (gridname)), g2)
 
 
