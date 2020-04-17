@@ -26,9 +26,9 @@ sizearray = len(arrayred)
 freepar = Grid.freepar
 
 ### To create outside the grid
-common = pybird.Common(Nl=2, kmax=1.0, optiresum=True)
+common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)
 nonlinear = pybird.NonLinear(load=False, save=False, co=common)
-resum = pybird.Resum(LambdaIR=0.1, co=common)
+resum = pybird.Resum(co=common)
 
 # Get some cosmological values at the central point
 parameters = copy.deepcopy(Grid.parref)
@@ -39,9 +39,7 @@ kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
 
 # Now window at the moment for the UNIT sims, so we'll create an identity matrix for this. I'm also
 # assuming that the fiducial cosmology used to make the measurements is the same as Grid centre
-kmin, kmax, nkout = 0.0, 1.0, 1000
-#kout = np.linspace(kmin, kmax, nkout, endpoint=False) + 0.5 * (kmax - kmin) / nkout
-kout = np.logspace(-4.0, 0.0, 1000)
+kout = common.k
 projection = pybird.Projection(kout, Omega_m, z, DA=Da, H=Hz, window_fourier_name=None, co=common)
 projection.p = kout
 window = np.zeros((2,2,nkout,nkout))
@@ -65,7 +63,8 @@ for i, theta in enumerate(arrayred):
     bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=z, which='all', co=common)
     nonlinear.PsCf(bird)
     bird.setPsCfl()
-    resum.Ps(bird)
+    #resum.Ps(bird)
+    bird.subtractShotNoise()
 
     projection.AP(bird)
     projection.Window(bird)
@@ -76,5 +75,5 @@ for i, theta in enumerate(arrayred):
     allPloop.append(np.hstack([Ploop, idxcol]))
     if (i == 0) or ((i+1) % 10 == 0):
         print("theta check: ", arrayred[idx], theta, truetheta)
-    np.save(os.path.join(outpk, "Plin_run%s_log.npy" % (str(nrun))), np.array(allPlin))
-    np.save(os.path.join(outpk, "Ploop_run%s_log.npy" % (str(nrun))), np.array(allPloop))
+    np.save(os.path.join(outpk, "Plin_run%s_noresum.npy" % (str(nrun))), np.array(allPlin))
+    np.save(os.path.join(outpk, "Ploop_run%s_noresum.npy" % (str(nrun))), np.array(allPloop))

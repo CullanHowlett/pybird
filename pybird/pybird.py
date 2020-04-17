@@ -461,7 +461,7 @@ class Common(object):
         The maximum multipole to calculate (default 2)
     """
 
-    def __init__(self, Nl=2, kmin=0.001, kmax=0.3, optiresum=False):
+    def __init__(self, Nl=2, kmin=0.001, kmax=None, optiresum=False):
         self.optiresum = optiresum
 
         self.Nl = Nl
@@ -470,7 +470,10 @@ class Common(object):
         self.N22 = 28  # number of 22-loops
         self.N13 = 10  # number of 13-loops
         self.Nloop = 12  # number of bias-independent loops
-        self.k = kbird  # np.arange(0.001, 0.3, 0.001)#kbird #np.arange(kmin, kmax, 0.01)
+        if kmax is None:
+            self.k = kbird
+        else:
+            self.k = np.arange(kmin, kmax, 0.01)
         self.Nk = self.k.shape[0]
         if self.optiresum is True:
             self.s = np.arange(70., 200., 2.5)
