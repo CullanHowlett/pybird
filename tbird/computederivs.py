@@ -262,5 +262,5 @@ if __name__ == "__main__":
     dx = Grid.delta
     print("Calculate derivatives of linear PS")
     allderlin = get_pder_lin(plingrid, dx, os.path.join(griddir, "DerPlin_%s_log.npy" % gridname))
-    #print("Calculate derivatives of loop PS")
-    #allderlin = get_pder_lin(ploopgrid, dx, os.path.join(griddir, "DerPloop_%s_log.npy" % gridname))
+    print("Calculate derivatives of loop PS")
+    allderlin = get_pder_lin(ploopgrid, dx, os.path.join(griddir, "DerPloop_%s_log.npy" % gridname))
