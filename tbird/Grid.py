@@ -9,14 +9,14 @@ import camb
 configfile = "/Volumes/Work/UQ/DESI/cBIRD/input_files/tbird_UNIT.ini"
 gridname = "camb-z0p9873-A_s-h-omega_cdm-omega_b"
 freepar = ["ln10^{10}A_s", "h", "omega_cdm", "omega_b"]
-dx = np.array([0.1, 0.015, 0.005, 0.001])
+dx = np.array([0.1, 0.015, 0.005, 0.001])     # This is the percentage deviation!
 order = 4  # For the moment I keep this same for everything.
 center = order + 1 # Here we use a smaller grid, then padded with zeros
 
 parref = cfg.ConfigObj(configfile)
 redshift = float(parref["z_pk"])
 valueref = np.array([float(parref[k]) for k in freepar])
-delta = dx * valueref
+delta = dx
 squarecrd = [np.arange(-order, order + 1) for l in freepar]  # list -i_n, ..., +i_n where to evaluate each freepar
 truecrd = [valueref[l] + delta[l] * np.arange(-order, order + 1) for l in range(len(freepar))]  # list -i_n, ..., +i_n where to evaluate each freepar
 squaregrid = np.array(np.meshgrid(*squarecrd, indexing='ij'))
