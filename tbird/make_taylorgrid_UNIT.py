@@ -57,11 +57,10 @@ if __name__ == "__main__":
         kin, Plin, Da, Hz, fN = run_camb(parameters)
 
         # Get non-linear power spectrum from pybird
-        bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=z, which="all", co=common)
+        bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
         nonlinear.PsCf(bird)
         bird.setPsCfl()
-        # resum.Ps(bird)
-        bird.subtractShotNoise()
+        resum.Ps(bird)
 
         projection.AP(bird)
         projection.Window(bird)
@@ -72,5 +71,5 @@ if __name__ == "__main__":
         allPloop.append(np.hstack([Ploop, idxcol]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
-        np.save(os.path.join(outpk, "Plin_run%s_noresum.npy" % (str(job_no))), np.array(allPlin))
-        np.save(os.path.join(outpk, "Ploop_run%s_noresum.npy" % (str(job_no))), np.array(allPloop))
+        np.save(os.path.join(pardict["outpk"], "Plin_run%s.npy" % (str(job_no))), np.array(allPlin))
+        np.save(os.path.join(pardict["outpk"], "Ploop_run%s.npy" % (str(job_no))), np.array(allPloop))
