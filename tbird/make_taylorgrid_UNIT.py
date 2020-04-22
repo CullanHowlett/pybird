@@ -1,79 +1,76 @@
 import numpy as np
-import scipy as sp
 import os
 import sys
-sys.path.append('../pybird/')
-import Grid
-import pybird
 import copy
-import time
-import pandas as pd
-import matplotlib.pyplot as plt
+from configobj import ConfigObj
 
-#time.sleep(4)
+sys.path.append("../")
+from pybird import pybird
+from tbird.Grid import grid_properties, run_camb
 
-outpk = "/Volumes/Work/UQ/DESI/cBIRD/UNIT_output_files/Pk/"
+if __name__ == "__main__":
 
-nrun = int(sys.argv[1])
-runs = int(sys.argv[2])
-lenrun = int(len(Grid.flattenedgrid) / runs)
-start = nrun * lenrun
-final = min((nrun+1) * lenrun, len(Grid.flattenedgrid))
-arrayred = Grid.flattenedgrid[start:final]
-print(nrun, start, final)
-sizearray = len(arrayred)
+    # Read in the config file, job number and total number of jobs
+    configfile = sys.argv[1]
+    job_no = int(sys.argv[2])
+    njobs = int(sys.argv[3])
+    pardict = ConfigObj(configfile)
 
-freepar = Grid.freepar
+    # Compute some stuff for the grid based on the config file
+    valueref, delta, flattenedgrid, _ = grid_properties(pardict)
+    lenrun = int(len(flattenedgrid) / njobs)
+    start = job_no * lenrun
+    final = min((job_no + 1) * lenrun, len(flattenedgrid))
+    arrayred = flattenedgrid[start:final]
+    print(job_no, start, final)
 
-### To create outside the grid
-common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)
-nonlinear = pybird.NonLinear(load=False, save=False, co=common)
-resum = pybird.Resum(co=common)
+    # Set up pybird
+    common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)
+    nonlinear = pybird.NonLinear(load=False, save=False, co=common)
+    resum = pybird.Resum(co=common)
 
-# Get some cosmological values at the central point
-parameters = copy.deepcopy(Grid.parref)
-truetheta = Grid.valueref
-for k, var in enumerate(freepar):
-    parameters[var] = truetheta[k]
-kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
+    # Get some cosmological values at the grid centre
+    kin, Plin, Da, Hz, fN = run_camb(pardict)
 
-# Now window at the moment for the UNIT sims, so we'll create an identity matrix for this. I'm also
-# assuming that the fiducial cosmology used to make the measurements is the same as Grid centre
-kout, nkout = common.k, len(common.k)
-projection = pybird.Projection(kout, Omega_m, z, DA=Da, H=Hz, window_fourier_name=None, co=common)
-projection.p = kout
-window = np.zeros((2,2,nkout,nkout))
-window[0,0,:,:] = np.eye(nkout)
-window[1,1,:,:] = np.eye(nkout)
-projection.Waldk = window
+    # Set upu the window function and projection effects. No window at the moment for the UNIT sims,
+    # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
+    # used to make the measurements is the same as Grid centre
+    kout, nkout = common.k, len(common.k)
+    projection = pybird.Projection(kout, DA=Da, H=Hz, window_fourier_name=None, co=common)
+    projection.p = kout
+    window = np.zeros((2, 2, nkout, nkout))
+    window[0, 0, :, :] = np.eye(nkout)
+    window[1, 1, :, :] = np.eye(nkout)
+    projection.Waldk = window
 
-allPlin = []
-allPloop = []
-for i, theta in enumerate(arrayred):
-    parameters = copy.deepcopy(Grid.parref)
-    truetheta = Grid.valueref + theta * Grid.delta
-    idx = i
-    print ("i on tot", i, sizearray)
+    # Now loop over all grid cells and compute the EFT model
+    allPlin = []
+    allPloop = []
+    for i, theta in enumerate(arrayred):
+        parameters = copy.deepcopy(pardict)
+        truetheta = valueref + theta * delta
+        idx = i
+        print("i on tot", i, len(arrayred))
 
-    for k, var in enumerate(freepar):
-        parameters[var] = truetheta[k]
-    kin, Plin, z, Omega_m, Da, Hz, fN = Grid.CompPterms_camb(parameters)
+        for k, var in enumerate(pardict["freepar"]):
+            parameters[var] = truetheta[k]
+        kin, Plin, Da, Hz, fN = run_camb(parameters)
 
-    # Get non-linear power spectrum from pybird
-    bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=z, which='all', co=common)
-    nonlinear.PsCf(bird)
-    bird.setPsCfl()
-    #resum.Ps(bird)
-    bird.subtractShotNoise()
+        # Get non-linear power spectrum from pybird
+        bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=z, which="all", co=common)
+        nonlinear.PsCf(bird)
+        bird.setPsCfl()
+        # resum.Ps(bird)
+        bird.subtractShotNoise()
 
-    projection.AP(bird)
-    projection.Window(bird)
-    
-    Plin, Ploop = bird.formatTaylor(kdata = kout)
-    idxcol = np.full([Plin.shape[0], 1], idx)
-    allPlin.append(np.hstack([Plin, idxcol]))
-    allPloop.append(np.hstack([Ploop, idxcol]))
-    if (i == 0) or ((i+1) % 10 == 0):
-        print("theta check: ", arrayred[idx], theta, truetheta)
-    np.save(os.path.join(outpk, "Plin_run%s_noresum.npy" % (str(nrun))), np.array(allPlin))
-    np.save(os.path.join(outpk, "Ploop_run%s_noresum.npy" % (str(nrun))), np.array(allPloop))
+        projection.AP(bird)
+        projection.Window(bird)
+
+        Plin, Ploop = bird.formatTaylor(kdata=kout)
+        idxcol = np.full([Plin.shape[0], 1], idx)
+        allPlin.append(np.hstack([Plin, idxcol]))
+        allPloop.append(np.hstack([Ploop, idxcol]))
+        if (i == 0) or ((i + 1) % 10 == 0):
+            print("theta check: ", arrayred[idx], theta, truetheta)
+        np.save(os.path.join(outpk, "Plin_run%s_noresum.npy" % (str(job_no))), np.array(allPlin))
+        np.save(os.path.join(outpk, "Ploop_run%s_noresum.npy" % (str(job_no))), np.array(allPloop))
