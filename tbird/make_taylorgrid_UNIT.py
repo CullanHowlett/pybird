@@ -22,7 +22,6 @@ if __name__ == "__main__":
     start = job_no * lenrun
     final = min((job_no + 1) * lenrun, len(flattenedgrid))
     arrayred = flattenedgrid[start:final]
-    print(job_no, start, final)
 
     # Set up pybird
     common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)

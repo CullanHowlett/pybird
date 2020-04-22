@@ -24,13 +24,11 @@ def grid_properties(pardict):
         A list containing 1D numpy arrays for the values of the cosmological parameters along each grid axis
     """
 
+    order = float(pardict["order"])
     valueref = np.array([float(pardict[k]) for k in pardict["freepar"]])
-    delta = pardict["dx"] * valueref
+    delta = np.array(pardict["dx"], dtype=np.float) * valueref
     squarecrd = [np.arange(-order, order + 1) for l in pardict["freepar"]]
-    truecrd = [
-        valueref[l] + delta[l] * np.arange(-pardict["order"], pardict["order"] + 1)
-        for l in range(len(pardict["freepar"]))
-    ]
+    truecrd = [valueref[l] + delta[l] * np.arange(-order, order + 1) for l in range(len(pardict["freepar"]))]
     squaregrid = np.array(np.meshgrid(*squarecrd, indexing="ij"))
     flattenedgrid = squaregrid.reshape([len(pardict["freepar"]), -1]).T
 
@@ -60,6 +58,7 @@ def run_camb(pardict):
     """
 
     parlinear = copy.deepcopy(pardict)
+    print(parlinear.keys())
 
     # Set the CAMB parameters
     pars = camb.CAMBparams()
@@ -70,7 +69,7 @@ def run_camb(pardict):
             print("Error: Neither ln10^{10}A_s nor A_s given in config file")
             exit()
     if "H0" not in parlinear.keys():
-        if float(parlinear["h"]) in parlinear.keys():
+        if "h" in parlinear.keys():
             parlinear["H0"] = 100.0 * float(parlinear["h"])
         else:
             print("Error: Neither H0 nor h given in config file")
@@ -101,8 +100,8 @@ def run_camb(pardict):
     )
 
     # Get some derived quantities
-    Da = results.angular_diameter_distance(z[-1]) * parlinear["H0"] / 299792.458
-    H = results.hubble_parameter(z[-1]) / parlinear["H0"]
+    Da = results.angular_diameter_distance(float(parlinear["z_pk"])) * float(parlinear["H0"]) / 299792.458
+    H = results.hubble_parameter(float(parlinear["z_pk"])) / float(parlinear["H0"])
     fN = (results.get_fsigma8() / results.get_sigma8())[0]
 
     return kin, Plin[-1], Da, H, fN
