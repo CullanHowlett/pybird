@@ -68,7 +68,6 @@ if __name__ == "__main__":
         Params = np.array([Da, Hz, fN, sigma8])
         Plin, Ploop = bird.formatTaylor(kdata=kout)
         idxcol = np.full([Plin.shape[0], 1], idx)
-        print(np.hstack([Params, [idx]]), np.hstack([Ploop, idxcol]))
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
         allParams.append(np.hstack([Params, [idx]]))
