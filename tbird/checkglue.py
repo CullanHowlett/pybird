@@ -17,13 +17,13 @@ if __name__ == "__main__":
     loopfailed = []
     for i in range(njobs):
         print(i)
-        checklin = os.path.isfile(os.path.join(pardict["outpk"], "Plin_run%d    .npy" % (i)))
-        checkloop = os.path.isfile(os.path.join(pardict["outpk"], "Ploop_run%d.npy" % (i)))
+        checklin = os.path.isfile(os.path.join(pardict["outpk"], "Plin_run%d.npy" % i))
+        checkloop = os.path.isfile(os.path.join(pardict["outpk"], "Ploop_run%d.npy" % i))
         if not checklin:
             print("Failed linear run %d" % i)
             linfailed.append(i)
         else:
-            Plin = np.load(os.path.join(pardict["outpk"], "Plin_run%d.npy" % (i)))
+            Plin = np.load(os.path.join(pardict["outpk"], "Plin_run%d.npy" % i))
             if lenbatch != len(Plin):
                 print("Failed length linear run %d" % (i))
                 linfailed.append((i))
@@ -31,7 +31,7 @@ if __name__ == "__main__":
             print("Failed loop run %d" % (i))
             loopfailed.append((i))
         else:
-            Ploop = np.load(os.path.join(pardict["outpk"], "Ploop_run%d.npy" % (i)))
+            Ploop = np.load(os.path.join(pardict["outpk"], "Ploop_run%d.npy" % i))
             if lenbatch != len(Ploop):
                 print("Failed length loop run %d" % (i))
                 loopfailed.append((i))
@@ -61,6 +61,7 @@ if __name__ == "__main__":
         if not checkloop:
             print("Problem in loop PS: ", i, i * lenbatch, Ploop[0, 0, -1])
 
+    print(np.shape(np.concatenate(gridlin)), np.shape(np.concatenate(gridloop)), np.shape(np.concatenate(gridparams)))
     np.save(os.path.join(pardict["outgrid"], "TablePlin_%s.npy" % pardict["gridname"]), np.concatenate(gridlin))
     np.save(os.path.join(pardict["outgrid"], "TablePloop_%s.npy" % pardict["gridname"]), np.concatenate(gridloop))
     np.save(os.path.join(pardict["outgrid"], "TableParams_%s.npy" % pardict["gridname"]), np.concatenate(gridparams))
