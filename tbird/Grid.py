@@ -1,6 +1,5 @@
 import numpy as np
 import copy
-import configobj as cfg
 import camb
 
 
