@@ -2,16 +2,17 @@ import os
 import sys
 import numpy as np
 import Grid
+
 # from findiff import FinDiff, coefficients, Coefficient
 
-basedir = '/Volumes/Work/UQ/DESI/cBIRD/output_files/'
+basedir = "/Volumes/Work/UQ/DESI/cBIRD/output_files/"
 pathpk = os.path.join(basedir, "Pk")
 pathgrid = os.path.join(basedir, "GridsEFT")
 gridname = Grid.gridname
 
 nruns = int(sys.argv[1])
 lenbatch = int(sys.argv[2])
-ntot = nruns*lenbatch
+ntot = nruns * lenbatch
 
 linfailed = []
 loopfailed = []
@@ -24,7 +25,7 @@ for i in range(nruns):
         linfailed.append((i))
     else:
         Plin = np.load(os.path.join(pathpk, "Plin_run%d_log.npy" % (i)))
-        if (lenbatch != len(Plin)):
+        if lenbatch != len(Plin):
             print("Failed length linear run %d" % (i))
             linfailed.append((i))
     if not checkloop:
@@ -32,7 +33,7 @@ for i in range(nruns):
         loopfailed.append((i))
     else:
         Ploop = np.load(os.path.join(pathpk, "Ploop_run%d_log.npy" % (i)))
-        if (lenbatch != len(Ploop)):
+        if lenbatch != len(Ploop):
             print("Failed length loop run %d" % (i))
             loopfailed.append((i))
 
@@ -51,8 +52,8 @@ for i in range(nruns):
     Ploop = np.load(os.path.join(pathpk, "Ploop_run%d_log.npy" % (i)))
     gridlin.append(Plin[:, :, :-1])
     gridloop.append(Ploop[:, :, :-1])
-    checklin = (lenbatch == len(Plin))
-    checkloop = (lenbatch == len(Ploop))
+    checklin = lenbatch == len(Plin)
+    checkloop = lenbatch == len(Ploop)
     if not checklin:
         print("Problem in linear PS: ", i, i * lenbatch, Plin[0, 0, -1])
     if not checkloop:
@@ -63,5 +64,3 @@ g1 = np.concatenate(gridlin)
 np.save(os.path.join(pathgrid, "TablePlin_%s_log.npy" % (gridname)), g1)
 g2 = np.concatenate(gridloop)
 np.save(os.path.join(pathgrid, "TablePloop_%s_log.npy" % (gridname)), g2)
-
-
