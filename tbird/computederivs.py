@@ -1,36 +1,40 @@
 import numpy as np
 import os
 import time
-import copy
 import sys
 from itertools import combinations
 import findiff
 from configobj import ConfigObj
+
+sys.path.append("../")
 from tbird.Grid import grid_properties
 
 
-def get_grids(parref, nmult=2, nout=2):
+def get_grids(parref, nmult=2, nout=2, pad=True):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]
     name = parref["gridname"]
 
     # Coordinates have shape (len(freepar), 2 * order_1 + 1, ..., 2 * order_n + 1)
-    shapecrd = np.concatenate([[len(parref["freepar"])], np.full(len(parref["freepar"]), 2 * parref["order"] + 1)])
-    padshape = [(1, 1)] * (len(shapecrd) - 1) + [(0, 0)] * 3
+    shapecrd = np.concatenate([[len(parref["freepar"])], np.full(len(parref["freepar"]), 2 * int(parref["order"]) + 1)])
+    padshape = [(1, 1)] * (len(shapecrd) - 1)
 
     # grids need to be reshaped and padded at both ends along the freepar directions
     params = np.load(os.path.join(outgrid, "TableParams_%s.npy" % name))
     params = params.reshape((*shapecrd[1:], params.shape[-1]))
-    params = np.pad(params, padshape, "constant", constant_values=0)
+    if pad:
+        params = np.pad(params, padshape + [(0, 0)], "constant", constant_values=0)
 
     plin = np.load(os.path.join(outgrid, "TablePlin_%s.npy" % name))
     plin = plin.reshape((*shapecrd[1:], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
-    plin = np.pad(plin, padshape, "constant", constant_values=0)
+    if pad:
+        plin = np.pad(plin, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     ploop = np.load(os.path.join(outgrid, "TablePloop_%s.npy" % name))
     ploop = ploop.reshape((*shapecrd[1:], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
-    ploop = np.pad(ploop, padshape, "constant", constant_values=0)
+    if pad:
+        ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
     return params, plin[..., :nout, :, :], ploop[..., :nout, :, :]
@@ -43,24 +47,24 @@ def get_pder_lin(parref, pi, dx, filename):
     # Findiff syntax is Findiff((axis, delta of uniform grid along the axis, order of derivative, accuracy))
     t0 = time.time()
     lenpar = len(parref["freepar"])
-    idx = float(parref["order"]) + 1
+    idx = int(parref["order"]) + 1
 
-    p0 = pi[idx, idx, idx, idx, :, :, :]
+    p0 = pi[idx, idx, idx, idx, ...]
     t1 = time.time()
     print("Done p0 in %s sec" % str(t1 - t0))
 
-    dpdx = np.array([findiff.FinDiff((i, dx[i], 1), acc=4)(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    dpdx = np.array([findiff.FinDiff((i, dx[i], 1), acc=4)(pi)[idx, idx, idx, idx, ...] for i in range(lenpar)])
     t0 = time.time()
     print("Done dpdx in %s sec" % str(t0 - t1))
 
     # Second derivatives
-    d2pdx2 = np.array([findiff.FinDiff((i, dx[i], 2), acc=2)(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    d2pdx2 = np.array([findiff.FinDiff((i, dx[i], 2), acc=2)(pi)[idx, idx, idx, idx, ...] for i in range(lenpar)])
     t1 = time.time()
     print("Done d2pdx2 in %s sec" % str(t1 - t0))
 
     d2pdxdy = np.array(
         [
-            [i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), acc=2)(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), acc=2)(pi)[idx, idx, idx, idx, ...]]
             for (i, j) in combinations(range(lenpar), 2)
         ]
     )
@@ -68,13 +72,13 @@ def get_pder_lin(parref, pi, dx, filename):
     print("Done d2pdxdy in %s sec" % str(t0 - t1))
 
     # Third derivatives: we only need it for A_s, so I do this by hand
-    d3pdx3 = np.array([findiff.FinDiff((i, dx[i], 3))(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    d3pdx3 = np.array([findiff.FinDiff((i, dx[i], 3))(pi)[idx, idx, idx, idx, ...] for i in range(lenpar)])
     t1 = time.time()
     print("Done d3pdx3 in %s sec" % str(t1 - t0))
 
     d3pdx2dy = np.array(
         [
-            [i, j, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1))(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1))(pi)[idx, idx, idx, idx, ...]]
             for (i, j) in combinations(range(lenpar), 2)
         ]
     )
@@ -83,7 +87,7 @@ def get_pder_lin(parref, pi, dx, filename):
 
     d3pdxdy2 = np.array(
         [
-            [i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2))(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2))(pi)[idx, idx, idx, idx, ...]]
             for (i, j) in combinations(range(lenpar), 2)
         ]
     )
@@ -92,20 +96,20 @@ def get_pder_lin(parref, pi, dx, filename):
 
     d3pdxdydz = np.array(
         [
-            [i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, ...]]
             for (i, j, k) in combinations(range(lenpar), 3)
         ]
     )
     t0 = time.time()
     print("Done d3pdxdydz in %s sec" % str(t0 - t1))
 
-    d4pdx4 = np.array([findiff.FinDiff((i, dx[i], 4))(pi)[idx, idx, idx, idx, :, :, :] for i in range(lenpar)])
+    d4pdx4 = np.array([findiff.FinDiff((i, dx[i], 4))(pi)[idx, idx, idx, idx, ...] for i in range(lenpar)])
     t1 = time.time()
     print("Done d4pdx4 in %s sec" % str(t1 - t0))
 
     d4pdx3dy = np.array(
         [
-            [i, j, findiff.FinDiff((i, dx[i], 3), (j, dx[j], 1))(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, findiff.FinDiff((i, dx[i], 3), (j, dx[j], 1))(pi)[idx, idx, idx, idx, ...]]
             for (i, j) in combinations(range(lenpar), 2)
         ]
     )
@@ -114,7 +118,7 @@ def get_pder_lin(parref, pi, dx, filename):
 
     d4pdxdy3 = np.array(
         [
-            [i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 3))(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 3))(pi)[idx, idx, idx, idx, ...]]
             for (i, j) in combinations(range(lenpar), 2)
         ]
     )
@@ -123,7 +127,7 @@ def get_pder_lin(parref, pi, dx, filename):
 
     d4pdx2dydz = np.array(
         [
-            [i, j, k, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, k, findiff.FinDiff((i, dx[i], 2), (j, dx[j], 1), (k, dx[k], 1))(pi)[idx, idx, idx, idx, ...]]
             for (i, j, k) in combinations(range(lenpar), 3)
         ]
     )
@@ -132,7 +136,7 @@ def get_pder_lin(parref, pi, dx, filename):
 
     d4pdxdy2dz = np.array(
         [
-            [i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2), (k, dx[k], 1))(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 2), (k, dx[k], 1))(pi)[idx, idx, idx, idx, ...]]
             for (i, j, k) in combinations(range(lenpar), 3)
         ]
     )
@@ -141,7 +145,7 @@ def get_pder_lin(parref, pi, dx, filename):
 
     d4pdxdydz2 = np.array(
         [
-            [i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 2))(pi)[idx, idx, idx, idx, :, :, :]]
+            [i, j, k, findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 2))(pi)[idx, idx, idx, idx, ...]]
             for (i, j, k) in combinations(range(lenpar), 3)
         ]
     )
@@ -156,7 +160,7 @@ def get_pder_lin(parref, pi, dx, filename):
                 k,
                 m,
                 findiff.FinDiff((i, dx[i], 1), (j, dx[j], 1), (k, dx[k], 1), (m, dx[m], 1))(pi)[
-                    idx, idx, idx, idx, :, :, :
+                    idx, idx, idx, idx, ...
                 ],
             ]
             for (i, j, k, m) in combinations(range(lenpar), 4)
@@ -200,7 +204,8 @@ if __name__ == "__main__":
     paramsgrid, plingrid, ploopgrid = get_grids(pardict)
     print("Got grids in %s seconds" % str(time.time() - t0))
     print("Calculate derivatives of params")
-    get_pder_lin(pardict, paramsgrid, delta, os.path.join(pardict["outgrid"], "DerPlin_%s.npy" % pardict["gridname"]))
+    get_pder_lin(pardict, paramsgrid, delta, os.path.join(pardict["outgrid"], "DerParams_%s.npy" % pardict["gridname"]))
+    exit()
     print("Calculate derivatives of linear PS")
     get_pder_lin(pardict, plingrid, delta, os.path.join(pardict["outgrid"], "DerPlin_%s.npy" % pardict["gridname"]))
     print("Calculate derivatives of loop PS")

@@ -51,7 +51,6 @@ if __name__ == "__main__":
         Params = np.load(os.path.join(pardict["outpk"], "Params_run%d.npy" % i))
         Plin = np.load(os.path.join(pardict["outpk"], "Plin_run%d.npy" % i))
         Ploop = np.load(os.path.join(pardict["outpk"], "Ploop_run%d.npy" % i))
-        print(Params)
         gridparams.append(Params[:, -1])
         gridlin.append(Plin[:, :, :-1])
         gridloop.append(Ploop[:, :, :-1])
@@ -62,7 +61,6 @@ if __name__ == "__main__":
         if not checkloop:
             print("Problem in loop PS: ", i, i * lenbatch, Ploop[0, 0, -1])
 
-    print(np.shape(np.concatenate(gridlin)), np.shape(np.concatenate(gridloop)), print(np.concatenate(gridparams)))
     np.save(os.path.join(pardict["outgrid"], "TablePlin_%s.npy" % pardict["gridname"]), np.concatenate(gridlin))
     np.save(os.path.join(pardict["outgrid"], "TablePloop_%s.npy" % pardict["gridname"]), np.concatenate(gridloop))
     np.save(os.path.join(pardict["outgrid"], "TableParams_%s.npy" % pardict["gridname"]), np.concatenate(gridparams))
