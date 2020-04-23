@@ -35,7 +35,7 @@ def grid_properties(pardict):
     return valueref, delta, flattenedgrid, truecrd
 
 
-def run_camb(pardict):
+def run_camb(pardict, background_only=False):
     """ Runs an instance of CAMB given the cosmological parameters in pardict
 
     Parameters
@@ -58,7 +58,6 @@ def run_camb(pardict):
     """
 
     parlinear = copy.deepcopy(pardict)
-    print(parlinear.keys())
 
     # Set the CAMB parameters
     pars = camb.CAMBparams()
@@ -92,16 +91,23 @@ def run_camb(pardict):
     pars.NonLinear = camb.model.NonLinear_none
 
     # Run CAMB
-    results = camb.get_results(pars)
+    if background_only:
+        results = camb.get_background(pars, no_thermo=True)
+    else:
+        results = camb.get_results(pars)
 
-    # Get the power spectrum
-    kin, _, Plin = results.get_matter_power_spectrum(
-        minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=2000
-    )
+        # Get the power spectrum
+        kin, _, Plin = results.get_matter_power_spectrum(
+            minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=2000
+        )
 
     # Get some derived quantities
     Da = results.angular_diameter_distance(float(parlinear["z_pk"])) * float(parlinear["H0"]) / 299792.458
     H = results.hubble_parameter(float(parlinear["z_pk"])) / float(parlinear["H0"])
-    fN = (results.get_fsigma8() / results.get_sigma8())[0]
+    fsigma8 = results.get_fsigma8()[0]
+    sigma8 = results.get_sigma8()[0]
 
-    return kin, Plin[-1], Da, H, fN
+    if background_only:
+        return Da, H
+    else:
+        return kin, Plin[-1], Da, H, fsigma8 / sigma8, sigma8

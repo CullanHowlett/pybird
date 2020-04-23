@@ -29,9 +29,9 @@ if __name__ == "__main__":
     resum = pybird.Resum(co=common)
 
     # Get some cosmological values at the grid centre
-    kin, Plin, Da, Hz, fN = run_camb(pardict)
+    kin, Plin, Da, Hz, fN, sigma8 = run_camb(pardict)
 
-    # Set upu the window function and projection effects. No window at the moment for the UNIT sims,
+    # Set up the window function and projection effects. No window at the moment for the UNIT sims,
     # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
     # used to make the measurements is the same as Grid centre
     kout, nkout = common.k, len(common.k)
@@ -45,6 +45,7 @@ if __name__ == "__main__":
     # Now loop over all grid cells and compute the EFT model
     allPlin = []
     allPloop = []
+    allParams = []
     for i, theta in enumerate(arrayred):
         parameters = copy.deepcopy(pardict)
         truetheta = valueref + theta * delta
@@ -53,7 +54,7 @@ if __name__ == "__main__":
 
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
-        kin, Plin, Da, Hz, fN = run_camb(parameters)
+        kin, Plin, Da, Hz, fN, sigma8 = run_camb(parameters)
 
         # Get non-linear power spectrum from pybird
         bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
@@ -64,11 +65,15 @@ if __name__ == "__main__":
         projection.AP(bird)
         projection.Window(bird)
 
+        Params = np.array([Da, Hz, fN, sigma8])
         Plin, Ploop = bird.formatTaylor(kdata=kout)
         idxcol = np.full([Plin.shape[0], 1], idx)
+        print(np.hstack([Params, [idx]]), np.hstack([Ploop, idxcol]))
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
+        allParams.append(np.hstack([Params, [idx]]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
         np.save(os.path.join(pardict["outpk"], "Plin_run%s.npy" % (str(job_no))), np.array(allPlin))
         np.save(os.path.join(pardict["outpk"], "Ploop_run%s.npy" % (str(job_no))), np.array(allPloop))
+        np.save(os.path.join(pardict["outpk"], "Params_run%s.npy" % (str(job_no))), np.array(allParams))
