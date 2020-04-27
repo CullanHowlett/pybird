@@ -31,6 +31,35 @@ def grid_properties(pardict):
     squaregrid = np.array(np.meshgrid(*squarecrd, indexing="ij"))
     flattenedgrid = squaregrid.reshape([len(pardict["freepar"]), -1]).T
 
+
+def grid_properties_template(pardict, fN):
+    """ Computes some useful properties of the grid given the parameters read from the input file
+
+    Parameters
+    ----------
+    pardict: dict
+        A dictionary of parameters read from the config file
+
+    Returns
+    -------
+    valueref: np.array
+        An array of the central values of the grid
+    delta: np.array
+        An array containing the grid cell widths
+    flattenedgrid: np.array
+        The number of grid cells from the center for each coordinate, flattened
+    truecrd: list of np.array
+        A list containing 1D numpy arrays for the values of the cosmological parameters along each grid axis
+    """
+
+    order = float(pardict["template_order"])
+    valueref = np.array([1.0, 1.0, fN])
+    delta = np.array(pardict["template_dx"], dtype=np.float) * valueref
+    squarecrd = [np.arange(-order, order + 1) for l in range(3)]
+    truecrd = [valueref[l] + delta[l] * np.arange(-order, order + 1) for l in range(3)]
+    squaregrid = np.array(np.meshgrid(*squarecrd, indexing="ij"))
+    flattenedgrid = squaregrid.reshape([3, -1]).T
+
     return valueref, delta, flattenedgrid, truecrd
 
 

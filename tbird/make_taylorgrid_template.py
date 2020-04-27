@@ -6,7 +6,7 @@ from configobj import ConfigObj
 
 sys.path.append("../")
 from pybird import pybird
-from tbird.Grid import grid_properties, run_camb
+from tbird.Grid import grid_properties_template, run_camb
 
 if __name__ == "__main__":
 
@@ -16,45 +16,57 @@ if __name__ == "__main__":
     njobs = int(sys.argv[3])
     pardict = ConfigObj(configfile)
 
-    # Compute the values of the growth rate that this job will do
-    fvals = np.linspace(float(pardict["growth_min"]), float(pardict["growth_max"]), int(pardict["ngrowth"]))
-    nvals = int(len(fvals) / njobs)
-    startval = int(job_no * nvals)
-    endval = int((job_no + 1) * nvals)
+    # Get some cosmological values at the grid centre
+    kin, Pin, Da_fid, Hz_fid, fN, sigma8 = run_camb(pardict)
 
-    # Set up the model
+    # Compute the values of the growth rate that this job will do
+    valueref, delta, flattenedgrid, _ = grid_properties_template(pardict, fN)
+    lenrun = int(len(flattenedgrid) / njobs)
+    start = job_no * lenrun
+    final = min((job_no + 1) * lenrun, len(flattenedgrid))
+    arrayred = flattenedgrid[start:final]
+    print(start, final, arrayred)
+
+    # Set up pybird
     common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)
     nonlinear = pybird.NonLinear(load=False, save=False, co=common)
     resum = pybird.Resum(co=common)
 
-    # Get some cosmological values at the grid centre
-    kin, Plin, Da, Hz, fN, sigma8 = run_camb(pardict)
-
-    # Generate the model components
-    bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
-    nonlinear.PsCf(bird)
-    bird.setPsCfl()
+    # Set up the window function and projection effects. No window at the moment for the UNIT sims,
+    # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
+    # used to make the measurements is the same as Grid centre
+    kout, nkout = common.k, len(common.k)
+    projection = pybird.Projection(kout, DA=Da_fid, H=Hz_fid, window_fourier_name=None, co=common)
+    projection.p = kout
+    window = np.zeros((2, 2, nkout, nkout))
+    window[0, 0, :, :] = np.eye(nkout)
+    window[1, 1, :, :] = np.eye(nkout)
+    projection.Waldk = window
 
     # Now loop over all grid cells and compute the EFT model for different values of the growth rate
     allPlin = []
     allPloop = []
-    allParams = []
-    for i in range(startval, endval):
-        idx = i - startval
-        print("i on tot", i, nvals)
+    for i, theta in enumerate(arrayred):
+        truetheta = valueref + theta * delta
+        idx = i
+        print("i on tot", i, len(arrayred))
 
-        raven = copy.deepcopy(bird)
-        raven.f = fvals[i]
+        Da = Da_fid * truetheta[0]
+        Hz = Hz_fid / truetheta[1]
 
-        # Compute all the components and resummation
-        raven.reducePsCfl()
-        resum.Ps(raven)
+        bird = pybird.Bird(kin, Pin, truetheta[2], DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
+        nonlinear.PsCf(bird)
+        bird.setPsCfl()
+        resum.Ps(bird)
 
-        Plin, Ploop = raven.formatTaylor()
+        projection.AP(bird)
+        projection.Window(bird)
+
+        Plin, Ploop = bird.formatTaylor()
         idxcol = np.full([Plin.shape[0], 1], idx)
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
-        if (i == 0) or (i % 10 == 0):
-            print("theta check: ", i - startval, i, raven.f)
+        if (i == 0) or ((i + 1) % 10 == 0):
+            print("theta check: ", arrayred[idx], theta, truetheta)
         np.save(os.path.join(pardict["outpk"], "Plin_template_run%s.npy" % (str(job_no))), np.array(allPlin))
         np.save(os.path.join(pardict["outpk"], "Ploop_template_run%s.npy" % (str(job_no))), np.array(allPloop))

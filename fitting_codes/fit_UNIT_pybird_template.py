@@ -50,13 +50,13 @@ def read_pk(inputfile, kmin, kmax, step_size):
     return k_rebinned[mask], pk0_rebinned[mask], pk2_rebinned[mask]
 
 
-def lnpost(params, pardict, print_flag, bird, DA_fid, H_fid):
+def lnpost(params, pardict, print_flag, plot_flag, bird, DA_fid, H_fid):
 
     # This returns the posterior distribution which is given by the log prior plus the log likelihood
     prior = lnprior(params, pardict)
     if not np.isfinite(prior):
         return -np.inf
-    like = lnlike(params, pardict, print_flag, bird, DA_fid, H_fid)
+    like = lnlike(params, pardict, print_flag, plot_flag, bird, DA_fid, H_fid)
     return prior + like
 
 
@@ -82,8 +82,8 @@ def lnprior(params, pardict):
         return -np.inf
 
     # Flat prior for f
-    if 0.0 < fval < 2.0:
-        fval = 1.0 / 2.0
+    if float(pardict["growth_min"]) < fval < float(pardict["growth_max"]):
+        fval_prior = 1.0 / 1.6
     else:
         return -np.inf
 
@@ -131,7 +131,7 @@ def lnprior(params, pardict):
         return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
 
 
-def lnlike(params, pardict, print_flag, bird, DA_fid, H_fid):
+def lnlike(params, pardict, print_flag, plot_flag, bird, DA_fid, H_fid):
 
     if pardict["do_marg"]:
         alpha_perp, alpha_par, fval, b1, c2, c4 = params
@@ -139,19 +139,8 @@ def lnlike(params, pardict, print_flag, bird, DA_fid, H_fid):
         alpha_perp, alpha_par, fval, b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params
 
     # Modify the bird by the input values
-    Plin = np.swapaxes(lininterp([fval])[0], axis1=1, axis2=2)
-    Ploop = np.swapaxes(loopinterp([fval])[0], axis1=1, axis2=2)
-
-    kfull = Plin[:, 0, :]
-    bird.P11l = Plin[:, 1:, :]
-    bird.Ploopl = Ploop[:, 1:13, :]
-    bird.Pctl = Ploop[:, 13:, :]
-    bird.DA = DA_fid * alpha_perp
-    bird.H = H_fid / alpha_par
-
-    # Apply the AP shift caused by the two alpha parameters
-    projection.AP(bird)
-    # projection.Window(bird)
+    Plin = np.swapaxes(lininterp([alpha_perp, alpha_par, fval])[0], axis1=1, axis2=2)
+    Ploop = np.swapaxes(loopinterp([alpha_perp, alpha_par, fval])[0], axis1=1, axis2=2)
 
     if pardict["do_marg"]:
         bs = np.array([b1, (c2 + c4) / np.sqrt(2.0), 0.0, (c2 - c4) / np.sqrt(2.0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
@@ -359,8 +348,8 @@ if __name__ == "__main__":
     # Code to generate a power spectrum template at fixed cosmology using pybird, then fit the AP parameters and fsigma8
     # First read in the config file
     configfile = sys.argv[1]
-    print_flag = sys.argv[2]
-    plot_flag = sys.argv[2]
+    print_flag = int(sys.argv[2])
+    plot_flag = int(sys.argv[3])
     pardict = ConfigObj(configfile)
 
     shot_noise = 309.210197  # Taken from the header of the data power spectrum file.
@@ -522,8 +511,8 @@ if __name__ == "__main__":
     # Optimize to set up the first point for the chain (for emcee we need to give each walker a random value about this point so we just sample the prior)
     do_marg = pardict["do_marg"]
     pardict["do_marg"] = 0
-    start = np.array([1.0, 1.0, fN, 1.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    nll = lambda *args: -lnpost(*args)
+    start = np.array([1.0, 1.0, fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    """nll = lambda *args: -lnpost(*args)
     result = sp.optimize.basinhopping(
         nll,
         start,
@@ -538,8 +527,7 @@ if __name__ == "__main__":
         },
     )
     print("#-------------- Best-fit----------------")
-    print(result)
-    exit()
+    print(result)"""
     result = {"x": start}
     pardict["do_marg"] = do_marg
 
@@ -570,7 +558,7 @@ if __name__ == "__main__":
         ]
 
     # RELEASE THE CHAIN!!!
-    sampler = emcee.EnsembleSampler(nwalkers, nparams, lnpost, args=[pardict, print_flag, bird, Da, Hz])
+    sampler = emcee.EnsembleSampler(nwalkers, nparams, lnpost, args=[pardict, print_flag, plot_flag, bird, Da, Hz])
     pos, prob, state = sampler.run_mcmc(begin, 1)
     sampler.reset()
 
