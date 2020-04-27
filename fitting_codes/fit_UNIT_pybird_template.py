@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 
 sys.path.append("../")
 from pybird import pybird
-from tbird.Grid import grid_properties, run_camb
+from tbird.Grid import run_camb
+from tbird.computederivs import get_template_grids
 
 
 def read_pk(inputfile, kmin, kmax, step_size):
@@ -138,51 +139,36 @@ def lnlike(params, pardict, print_flag, bird, DA_fid, H_fid):
         alpha_perp, alpha_par, fval, b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params
 
     # Modify the bird by the input values
-    bird.f = fval
+    Plin = np.swapaxes(lininterp([fval])[0], axis1=1, axis2=2)
+    Ploop = np.swapaxes(loopinterp([fval])[0], axis1=1, axis2=2)
+
+    kfull = Plin[:, 0, :]
+    bird.P11l = Plin[:, 1:, :]
+    bird.Ploopl = Ploop[:, 1:13, :]
+    bird.Pctl = Ploop[:, 13:, :]
     bird.DA = DA_fid * alpha_perp
     bird.H = H_fid / alpha_par
 
-    # Compute all the components and resummation
-    bird.reducePsCfl()
-    resum.Ps(bird)
-
     # Apply the AP shift caused by the two alpha parameters
     projection.AP(bird)
-    projection.Window(bird)
+    # projection.Window(bird)
 
     if pardict["do_marg"]:
-        bs = np.array([b1, (c2 + c4) / np.sqrt(2.0), 0.0, (c2 - c4) / np.sqrt(2.0), 0.0, 0.0, 0.0])
+        bs = np.array([b1, (c2 + c4) / np.sqrt(2.0), 0.0, (c2 - c4) / np.sqrt(2.0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         if pardict["do_corr"]:
-            bird.setreduceCflb(bs)
-            P_model = np.concatenate(bird.fullCf)
             Pi = get_Xi_for_marg(bird, b1)
         else:
-            bird.setreducePslb(bs)
-            P_model = np.concatenate([splev(x_data, splrep(bird.co.k, bird.fullPs[i])) for i in range(bird.co.Nl)])
             Pi = get_Pi_for_marg(bird, b1, shot_noise)
     else:
-        bs = np.array(
-            [
-                b1,
-                (c2 + c4) / np.sqrt(2.0),
-                b3,
-                (c2 - c4) / np.sqrt(2.0),
-                cct / k_nl ** 2,
-                cr1 / k_m ** 2,
-                cr2 / k_m ** 2,
-            ]
-        )
-        if pardict["do_corr"]:
-            bird.setreduceCflb(bs)
-            P_model = np.concatenate(bird.fullCf)
-        else:
-            bird.setreducePslb(bs)
-            P_model = np.concatenate([splev(x_data, splrep(bird.co.k, bird.fullPs[i])) for i in range(bird.co.Nl)])
-            P_model[: len(x_data)] += ce1 + cemono * x_data ** 2 / k_m ** 2
-            P_model[len(x_data) :] += cequad * x_data ** 2 / k_m ** 2
+        bs = np.array([b1, (c2 + c4) / np.sqrt(2.0), b3, (c2 - c4) / np.sqrt(2.0), cct, cr1, cr2, ce1, cemono, cequad])
+
+    if pardict["do_corr"]:
+        P_model = computePS(bs, bird)
+    else:
+        P_model = computePS(bs, bird)
 
     # Plotting. Only really for debugging, remove for production runs
-    if pardict["do_plot"]:
+    if plot_flag:
         if pardict["do_corr"]:
             plt10 = plt.errorbar(
                 x_data,
@@ -252,9 +238,37 @@ def lnlike(params, pardict, print_flag, bird, DA_fid, H_fid):
     return -0.5 * chi_squared
 
 
+def computePS(cvals, bird):
+    plin0, plin2 = bird.P11l
+    ploop0, ploop2 = bird.Ploopl
+    pct0, pct2 = bird.Pctl
+    b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
+
+    # the columns of the Ploop data files.
+    cloop = np.array([1, b1, b2, b3, b4, b1 * b1, b1 * b2, b1 * b3, b1 * b4, b2 * b2, b2 * b4, b4 * b4])
+    cct = np.array(
+        [
+            b1 * cct / k_nl ** 2,
+            b1 * cr1 / k_m ** 2,
+            b1 * cr2 / k_m ** 2,
+            cct / k_nl ** 2,
+            cr1 / k_m ** 2,
+            cr2 / k_m ** 2,
+        ]
+    )
+
+    P0 = np.dot(cloop, ploop0) + np.dot(cct, pct0) + plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
+    P2 = np.dot(cloop, ploop2) + np.dot(cct, pct2) + plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
+
+    P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(bird.co.k, P0)) + ce1 + cemono * x_data ** 2 / k_m ** 2
+    P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(bird.co.k, P2)) + cequad * x_data ** 2 / k_m ** 2
+
+    return np.concatenate([P0, P2])
+
+
 def get_Pi_for_marg(bird, b1, shot_noise):
 
-    ploop0, ploop2 = bird.Ploopl[:, :18, :]
+    ploop0, ploop2 = bird.Ploopl
 
     Onel0 = np.array([np.ones(len(x_data)), np.zeros(len(x_data))])  # shot-noise mono
     kl0 = np.array([x_data, np.zeros(len(x_data))])  # k^2 mono
@@ -304,7 +318,7 @@ def get_Pi_for_marg(bird, b1, shot_noise):
 
 def get_Xi_for_marg(bird, b1):
 
-    Cloop0, Cloop2 = bird.Cloopl[:, :18, :]
+    Cloop0, Cloop2 = bird.Cloopl
 
     Cb3 = np.array(
         [
@@ -346,11 +360,11 @@ if __name__ == "__main__":
     # First read in the config file
     configfile = sys.argv[1]
     print_flag = sys.argv[2]
+    plot_flag = sys.argv[2]
     pardict = ConfigObj(configfile)
 
     shot_noise = 309.210197  # Taken from the header of the data power spectrum file.
 
-    pardict["do_plot"] = int(pardict["do_plot"])
     pardict["do_corr"] = int(pardict["do_corr"])
     pardict["do_marg"] = int(pardict["do_marg"])
     pardict["taylor_order"] = int(pardict["taylor_order"])
@@ -423,14 +437,12 @@ if __name__ == "__main__":
     window[1, 1, :, :] = np.eye(nkout)
     projection.Waldk = window
 
-    # Generate the model components
+    # Load in the model components
+    truecrd = np.linspace(float(pardict["growth_min"]), float(pardict["growth_max"]), int(pardict["ngrowth"]))
     bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
-    nonlinear.PsCf(bird)
-    bird.setPsCfl()
-
-    # nonlinear.PsCf() has computed all the different model components. We then
-    # need to modify the f and bias parameters inside the likelihood, use pybird to add everything together
-    # then perform the resummation and apply the projection effects.
+    lintab, looptab = get_template_grids(pardict, nmult=2, nout=2)
+    lininterp = sp.interpolate.interp1d(truecrd, lintab, axis=0)
+    loopinterp = sp.interpolate.interp1d(truecrd, looptab, axis=0)
 
     # Some constants for the EFT model
     k_m, k_nl = 0.7, 0.7
@@ -438,7 +450,7 @@ if __name__ == "__main__":
     priormat = np.diagflat(1.0 / eft_priors ** 2)
 
     # Plotting (for checking/debugging, should turn off for production runs)
-    if pardict["do_plot"]:
+    if plot_flag:
         if pardict["do_corr"]:
             plt.errorbar(
                 x_data,
@@ -510,7 +522,7 @@ if __name__ == "__main__":
     # Optimize to set up the first point for the chain (for emcee we need to give each walker a random value about this point so we just sample the prior)
     do_marg = pardict["do_marg"]
     pardict["do_marg"] = 0
-    start = np.array([1.0, 1.0, fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    start = np.array([1.0, 1.0, fN, 1.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     nll = lambda *args: -lnpost(*args)
     result = sp.optimize.basinhopping(
         nll,

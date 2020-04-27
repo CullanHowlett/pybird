@@ -10,7 +10,22 @@ sys.path.append("../")
 from tbird.Grid import grid_properties
 
 
-def get_grids(parref, nmult=2, nout=2, pad=True):
+def get_template_grids(parref, nmult=2, nout=2):
+    # order_i is the number of points away from the origin for parameter i
+    # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
+    outgrid = parref["outgrid"]
+    name = parref["gridname"]
+
+    plin = np.load(os.path.join(outgrid, "TablePlin_template_%s.npy" % name))
+    plin = plin.reshape((plin.shape[0], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
+    ploop = np.load(os.path.join(outgrid, "TablePloop_template_%s.npy" % name))
+    ploop = ploop.reshape((ploop.shape[0], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
+
+    # The output is not concatenated for multipoles
+    return plin[..., :nout, :, :], ploop[..., :nout, :, :]
+
+
+def get_grids(parref, nmult=2, nout=2, pad=True, read_params=True):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]

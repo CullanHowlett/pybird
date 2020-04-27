@@ -849,7 +849,6 @@ class Bird(object):
             allk = np.concatenate([self.co.k, self.co.k]).reshape(-1, 1)
         else:
             allk = np.concatenate([kdata, kdata]).reshape(-1, 1)
-        allk = np.concatenate([self.co.k, self.co.k]).reshape(-1, 1)
         Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), self.P11l), axis=1)
         Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
         Plin = np.hstack((allk, Plin))

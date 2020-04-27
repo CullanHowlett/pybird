@@ -43,17 +43,18 @@ if __name__ == "__main__":
         idx = i - startval
         print("i on tot", i, nvals)
 
-        bird.f = fvals[i]
+        raven = copy.deepcopy(bird)
+        raven.f = fvals[i]
 
         # Compute all the components and resummation
-        bird.reducePsCfl()
-        resum.Ps(bird)
+        raven.reducePsCfl()
+        resum.Ps(raven)
 
-        Plin, Ploop = bird.formatTaylor()
+        Plin, Ploop = raven.formatTaylor()
         idxcol = np.full([Plin.shape[0], 1], idx)
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
         if (i == 0) or (i % 10 == 0):
-            print("theta check: ", i - startval, i, bird.f)
+            print("theta check: ", i - startval, i, raven.f)
         np.save(os.path.join(pardict["outpk"], "Plin_template_run%s.npy" % (str(job_no))), np.array(allPlin))
         np.save(os.path.join(pardict["outpk"], "Ploop_template_run%s.npy" % (str(job_no))), np.array(allPloop))
