@@ -10,22 +10,32 @@ sys.path.append("../")
 from tbird.Grid import grid_properties
 
 
-def get_template_grids(parref, nmult=2, nout=2):
+def get_template_grids(parref, nmult=2, nout=2, pad=True):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]
     name = parref["gridname"]
 
+    # Coordinates have shape (3, 2 * order_1 + 1, ..., 2 * order_n + 1)
+    shapecrd = np.concatenate([[3], np.full(3, 2 * int(parref["order"]) + 1)])
+    padshape = [(1, 1)] * (len(shapecrd) - 1)
+
+    # grids need to be reshaped and padded at both ends along the freepar directions
     plin = np.load(os.path.join(outgrid, "TablePlin_template_%s.npy" % name))
-    plin = plin.reshape((plin.shape[0], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
+    plin = plin.reshape((*shapecrd[1:], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
+    if pad:
+        plin = np.pad(plin, padshape + [(0, 0)] * 3, "constant", constant_values=0)
+
     ploop = np.load(os.path.join(outgrid, "TablePloop_template_%s.npy" % name))
-    ploop = ploop.reshape((ploop.shape[0], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
+    ploop = ploop.reshape((*shapecrd[1:], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
+    if pad:
+        ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
     return plin[..., :nout, :, :], ploop[..., :nout, :, :]
 
 
-def get_grids(parref, nmult=2, nout=2, pad=True, read_params=True):
+def get_grids(parref, nmult=2, nout=2, pad=True):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]
@@ -203,6 +213,44 @@ def get_pder_lin(parref, pi, dx, filename):
     )
     np.save(filename, allder)
     return allder
+
+
+def get_PSTaylor(dtheta, derivatives, taylor_order):
+    # Shape of dtheta: number of free parameters
+    # Shape of derivatives: tuple up to third derivative where each element has shape (num free par, multipoles, lenk, columns)
+    t1 = np.einsum("p,pmkb->mkb", dtheta, derivatives[1])
+    t2diag = np.einsum("p,pmkb->mkb", dtheta ** 2, derivatives[2])
+    t2nondiag = np.sum([dtheta[d[0]] * dtheta[d[1]] * d[2] for d in derivatives[3]], axis=0)
+    t3diag = np.einsum("p,pmkb->mkb", dtheta ** 3, derivatives[4])
+    t3semidiagx = np.sum([dtheta[d[0]] ** 2 * dtheta[d[1]] * d[2] for d in derivatives[5]], axis=0)
+    t3semidiagy = np.sum([dtheta[d[0]] * dtheta[d[1]] ** 2 * d[2] for d in derivatives[6]], axis=0)
+    t3nondiag = np.sum([dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]] * d[3] for d in derivatives[7]], axis=0)
+    t4diag = np.einsum("p,pmkb->mkb", dtheta ** 4, derivatives[8])
+    t4semidiagx = np.sum([dtheta[d[0]] ** 3 * dtheta[d[1]] * d[2] for d in derivatives[9]], axis=0)
+    t4semidiagy = np.sum([dtheta[d[0]] * dtheta[d[1]] ** 3 * d[2] for d in derivatives[10]], axis=0)
+    t4semidiagx2 = np.sum([dtheta[d[0]] ** 2 * dtheta[d[1]] * dtheta[d[2]] * d[3] for d in derivatives[11]], axis=0)
+    t4semidiagy2 = np.sum([dtheta[d[0]] * dtheta[d[1]] ** 2 * dtheta[d[2]] * d[3] for d in derivatives[12]], axis=0)
+    t4semidiagz2 = np.sum([dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]] ** 2 * d[3] for d in derivatives[13]], axis=0)
+    t4nondiag = np.sum(
+        [dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]] * dtheta[d[3]] * d[4] for d in derivatives[14]], axis=0
+    )
+    allPS = derivatives[0] + t1
+    if taylor_order > 1:
+        allPS += 0.5 * t2diag + t2nondiag
+        if taylor_order > 2:
+            allPS += t3diag / 6.0 + t3semidiagx / 2.0 + t3semidiagy / 2.0 + t3nondiag
+            if taylor_order > 3:
+                allPS += (
+                    t4diag / 24.0
+                    + t4semidiagx / 6.0
+                    + t4semidiagy / 6.0
+                    + t4semidiagx2 / 2.0
+                    + t4semidiagy2 / 2.0
+                    + t4semidiagz2 / 2.0
+                    + t4nondiag
+                )
+
+    return allPS
 
 
 if __name__ == "__main__":

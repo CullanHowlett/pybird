@@ -31,6 +31,8 @@ def grid_properties(pardict):
     squaregrid = np.array(np.meshgrid(*squarecrd, indexing="ij"))
     flattenedgrid = squaregrid.reshape([len(pardict["freepar"]), -1]).T
 
+    return valueref, delta, flattenedgrid, truecrd
+
 
 def grid_properties_template(pardict, fN):
     """ Computes some useful properties of the grid given the parameters read from the input file

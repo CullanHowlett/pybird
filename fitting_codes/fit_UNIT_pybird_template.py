@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 
 sys.path.append("../")
 from pybird import pybird
-from tbird.Grid import run_camb
+from tbird.Grid import grid_properties_template, run_camb
 from tbird.computederivs import get_template_grids
+from tbird.computederivs import get_PSTaylor
 
 
 def read_pk(inputfile, kmin, kmax, step_size):
@@ -35,7 +36,8 @@ def read_pk(inputfile, kmin, kmax, step_size):
         if add:
             to_add = step_size - add
             k = np.concatenate((k, [k[-1]] * to_add))
-            pk = np.concatenate((pk, [pk[-1]] * to_add))
+            dataframe["pk0"].values = np.concatenate((dataframe["pk0"].values, [dataframe["pk0"].values[-1]] * to_add))
+            dataframe["pk2"].values = np.concatenate((dataframe["pk2"].values, [dataframe["pk2"].values[-1]] * to_add))
             weight = np.concatenate((weight, [0] * to_add))
         k = k.reshape((-1, step_size))
         pk0 = (dataframe["pk0"].values).reshape((-1, step_size))
@@ -138,23 +140,31 @@ def lnlike(params, pardict, print_flag, plot_flag, bird, DA_fid, H_fid):
     else:
         alpha_perp, alpha_par, fval, b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params
 
-    # Modify the bird by the input values
-    Plin = np.swapaxes(lininterp([alpha_perp, alpha_par, fval])[0], axis1=1, axis2=2)
-    Ploop = np.swapaxes(loopinterp([alpha_perp, alpha_par, fval])[0], axis1=1, axis2=2)
+    # Get the bird model
+    if pardict["taylor_order"]:
+        dtheta = [alpha_perp, alpha_par, fval] - valueref
+        Plin = get_PSTaylor(dtheta, linder)
+        Ploop = get_PSTaylor(dtheta, loopder)
+    else:
+        Plin = lininterp([alpha_perp, alpha_par, fval])[0]
+        Ploop = loopinterp([alpha_perp, alpha_par, fval])[0]
+    kfull = Plin[0, :, 0]
+    Plin = np.swapaxes(Plin, axis1=1, axis2=2)[:, 1:, :]
+    Ploop = np.swapaxes(Ploop, axis1=1, axis2=2)[:, 1:, :]
 
     if pardict["do_marg"]:
         bs = np.array([b1, (c2 + c4) / np.sqrt(2.0), 0.0, (c2 - c4) / np.sqrt(2.0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         if pardict["do_corr"]:
             Pi = get_Xi_for_marg(bird, b1)
         else:
-            Pi = get_Pi_for_marg(bird, b1, shot_noise)
+            Pi = get_Pi_for_marg(bird, b1, shot_noise, kfull)
     else:
         bs = np.array([b1, (c2 + c4) / np.sqrt(2.0), b3, (c2 - c4) / np.sqrt(2.0), cct, cr1, cr2, ce1, cemono, cequad])
 
     if pardict["do_corr"]:
-        P_model = computePS(bs, bird)
+        P_model = computePS(bs, Plin, Ploop, kfull)
     else:
-        P_model = computePS(bs, bird)
+        P_model = computePS(bs, Plin, Ploop, kfull)
 
     # Plotting. Only really for debugging, remove for production runs
     if plot_flag:
@@ -227,16 +237,26 @@ def lnlike(params, pardict, print_flag, plot_flag, bird, DA_fid, H_fid):
     return -0.5 * chi_squared
 
 
-def computePS(cvals, bird):
-    plin0, plin2 = bird.P11l
-    ploop0, ploop2 = bird.Ploopl
-    pct0, pct2 = bird.Pctl
+def computePS(cvals, plin, ploop, kvals):
+    plin0, plin2 = plin
+    ploop0, ploop2 = ploop
     b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
 
     # the columns of the Ploop data files.
-    cloop = np.array([1, b1, b2, b3, b4, b1 * b1, b1 * b2, b1 * b3, b1 * b4, b2 * b2, b2 * b4, b4 * b4])
-    cct = np.array(
+    cvals = np.array(
         [
+            1,
+            b1,
+            b2,
+            b3,
+            b4,
+            b1 * b1,
+            b1 * b2,
+            b1 * b3,
+            b1 * b4,
+            b2 * b2,
+            b2 * b4,
+            b4 * b4,
             b1 * cct / k_nl ** 2,
             b1 * cr1 / k_m ** 2,
             b1 * cr2 / k_m ** 2,
@@ -246,18 +266,18 @@ def computePS(cvals, bird):
         ]
     )
 
-    P0 = np.dot(cloop, ploop0) + np.dot(cct, pct0) + plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
-    P2 = np.dot(cloop, ploop2) + np.dot(cct, pct2) + plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
+    P0 = np.dot(cvals, ploop0) + plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
+    P2 = np.dot(cvals, ploop2) + plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
 
-    P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(bird.co.k, P0)) + ce1 + cemono * x_data ** 2 / k_m ** 2
-    P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(bird.co.k, P2)) + cequad * x_data ** 2 / k_m ** 2
+    P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(kvals, P0)) + ce1 + cemono * x_data ** 2 / k_m ** 2
+    P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(kvals, P2)) + cequad * x_data ** 2 / k_m ** 2
 
     return np.concatenate([P0, P2])
 
 
-def get_Pi_for_marg(bird, b1, shot_noise):
+def get_Pi_for_marg(ploop, b1, shot_noise, kvals):
 
-    ploop0, ploop2 = bird.Ploopl
+    ploop0, ploop2 = ploop
 
     Onel0 = np.array([np.ones(len(x_data)), np.zeros(len(x_data))])  # shot-noise mono
     kl0 = np.array([x_data, np.zeros(len(x_data))])  # k^2 mono
@@ -407,31 +427,20 @@ if __name__ == "__main__":
     chi2data = np.dot(fit_data, np.dot(cov_inv, fit_data))
     invcovdata = np.dot(fit_data, cov_inv)
 
-    # Set up the model
-    common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)
-    nonlinear = pybird.NonLinear(load=False, save=False, co=common)
-    resum = pybird.Resum(co=common)
-
     # Get some cosmological values at the grid centre
     kin, Plin, Da, Hz, fN, sigma8 = run_camb(pardict)
-
-    # Set up the window function and projection effects. No window at the moment for the UNIT sims,
-    # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
-    # used to make the measurements is the same as Grid centre
-    kout, nkout = common.k, len(common.k)
-    projection = pybird.Projection(kout, DA=Da, H=Hz, window_fourier_name=None, co=common)
-    projection.p = kout
-    window = np.zeros((2, 2, nkout, nkout))
-    window[0, 0, :, :] = np.eye(nkout)
-    window[1, 1, :, :] = np.eye(nkout)
-    projection.Waldk = window
+    valueref, delta, flattenedgrid, truecrd = grid_properties_template(pardict, fN)
 
     # Load in the model components
-    truecrd = np.linspace(float(pardict["growth_min"]), float(pardict["growth_max"]), int(pardict["ngrowth"]))
-    bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
-    lintab, looptab = get_template_grids(pardict, nmult=2, nout=2)
-    lininterp = sp.interpolate.interp1d(truecrd, lintab, axis=0)
-    loopinterp = sp.interpolate.interp1d(truecrd, looptab, axis=0)
+    if pardict["taylor_order"]:
+        linder = np.load(os.path.join(pardict["outgrid"], "DerPlin_%s.npy" % pardict["gridname"]), allow_pickle=True)
+        loopder = np.load(os.path.join(pardict["outgrid"], "DerPloop_%s.npy" % pardict["gridname"]), allow_pickle=True)
+        kin = linder[0][0, :, 0]
+    else:
+        lintab, looptab = get_template_grids(pardict, nmult=2, nout=2)
+        lininterp = sp.interpolate.RegularGridInterpolator(truecrd, lintab)
+        loopinterp = sp.interpolate.RegularGridInterpolator(truecrd, looptab)
+        kin = lintab[..., 0, :, 0]
 
     # Some constants for the EFT model
     k_m, k_nl = 0.7, 0.7
@@ -512,7 +521,7 @@ if __name__ == "__main__":
     do_marg = pardict["do_marg"]
     pardict["do_marg"] = 0
     start = np.array([1.0, 1.0, fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-    """nll = lambda *args: -lnpost(*args)
+    nll = lambda *args: -lnpost(*args)
     result = sp.optimize.basinhopping(
         nll,
         start,
@@ -527,7 +536,7 @@ if __name__ == "__main__":
         },
     )
     print("#-------------- Best-fit----------------")
-    print(result)"""
+    print(result)
     result = {"x": start}
     pardict["do_marg"] = do_marg
 

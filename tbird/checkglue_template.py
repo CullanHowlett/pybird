@@ -10,7 +10,7 @@ if __name__ == "__main__":
     njobs = int(sys.argv[2])
     pardict = ConfigObj(configfile)
 
-    ntot = int(pardict["ngrowth"])
+    ntot = (2 * float(pardict["template_order"]) + 1) ** 3
     lenbatch = ntot / njobs
 
     linfailed = []
