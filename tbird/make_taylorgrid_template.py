@@ -17,12 +17,10 @@ if __name__ == "__main__":
     pardict = ConfigObj(configfile)
 
     # Compute the values of the growth rate that this job will do
-    nvals = np.ceil(int(pardict["ngrowth"]) / njobs)
+    fvals = np.linspace(float(pardict["growth_min"]), float(pardict["growth_max"]), int(pardict["ngrowth"]))
+    nvals = int(len(fvals) / njobs)
     startval = int(job_no * nvals)
     endval = int((job_no + 1) * nvals)
-    if endval > int(pardict["ngrowth"]):
-        endval = int(pardict["ngrowth"])
-    deltaf = (float(pardict["growth_max"]) - float(pardict["growth_min"])) / int(pardict["ngrowth"])
 
     # Set up the model
     common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)
@@ -42,11 +40,10 @@ if __name__ == "__main__":
     allPloop = []
     allParams = []
     for i in range(startval, endval):
-        fval = i * deltaf + float(pardict["growth_min"])
         idx = i - startval
         print("i on tot", i, nvals)
 
-        bird.f = fval
+        bird.f = fvals[i]
 
         # Compute all the components and resummation
         bird.reducePsCfl()
@@ -57,6 +54,6 @@ if __name__ == "__main__":
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
         if (i == 0) or (i % 10 == 0):
-            print("theta check: ", i - startval, i, fval)
+            print("theta check: ", i - startval, i, bird.f)
         np.save(os.path.join(pardict["outpk"], "Plin_template_run%s.npy" % (str(job_no))), np.array(allPlin))
         np.save(os.path.join(pardict["outpk"], "Ploop_template_run%s.npy" % (str(job_no))), np.array(allPloop))
