@@ -17,7 +17,7 @@ def get_template_grids(parref, nmult=2, nout=2, pad=True):
     name = parref["gridname"]
 
     # Coordinates have shape (3, 2 * order_1 + 1, ..., 2 * order_n + 1)
-    shapecrd = np.concatenate([[3], np.full(3, 2 * int(parref["order"]) + 1)])
+    shapecrd = np.concatenate([[3], np.full(3, 2 * int(parref["template_order"]) + 1)])
     padshape = [(1, 1)] * (len(shapecrd) - 1)
 
     # grids need to be reshaped and padded at both ends along the freepar directions
@@ -32,7 +32,7 @@ def get_template_grids(parref, nmult=2, nout=2, pad=True):
         ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
-    return plin[..., :nout, :, :], ploop[..., :nout, :, :]
+    return plin[(0,) * 3, 0, :, 0], plin[..., :nout, :, :], ploop[..., :nout, :, :]
 
 
 def get_grids(parref, nmult=2, nout=2, pad=True):
@@ -62,7 +62,7 @@ def get_grids(parref, nmult=2, nout=2, pad=True):
         ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
-    return params, plin[..., :nout, :, :], ploop[..., :nout, :, :]
+    return params, plin[(0,) * len(parref["freepar"]), 0, :, 0], plin[..., :nout, :, :], ploop[..., :nout, :, :]
 
 
 def get_pder_lin(parref, pi, dx, filename):
@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
     print("Let's start!")
     t0 = time.time()
-    paramsgrid, plingrid, ploopgrid = get_grids(pardict)
+    paramsgrid, kgrid, plingrid, ploopgrid = get_grids(pardict)
     print("Got grids in %s seconds" % str(time.time() - t0))
     print("Calculate derivatives of params")
     get_pder_lin(pardict, paramsgrid, delta, os.path.join(pardict["outgrid"], "DerParams_%s.npy" % pardict["gridname"]))
