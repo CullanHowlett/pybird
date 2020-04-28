@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 sys.path.append("../")
-from tbird.Grid import grid_properties_template, run_camb
+from tbird.Grid import grid_properties, grid_properties_template, run_camb
 from tbird.computederivs import get_grids, get_template_grids, get_PSTaylor
 
 # Wrapper around the pybird data and model evaluation
@@ -27,8 +27,11 @@ class BirdModel:
         self.priormat = np.diagflat(1.0 / self.eft_priors ** 2)
 
         # Get some values at the grid centre
-        _, _, self.Da, self.Hz, self.fN, self.sigma8 = run_camb(pardict)
-        self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
+        if self.template:
+            _, _, self.Da, self.Hz, self.fN, self.sigma8 = run_camb(pardict)
+            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
+        else:
+            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
 
         self.kin, self.linmod, self.loopmod = self.load_model()
 
@@ -59,9 +62,10 @@ class BirdModel:
             if self.template:
                 kin, lintab, looptab = get_template_grids(self.pardict, nmult=2, nout=2, pad=False)
             else:
-                kin, lintab, looptab = get_grids(self.pardict, nmult=2, nout=2, pad=False)
+                paramstab, kin, lintab, looptab = get_grids(self.pardict, nmult=2, nout=2, pad=False)
             linmod = sp.interpolate.RegularGridInterpolator(self.truecrd, lintab)
             loopmod = sp.interpolate.RegularGridInterpolator(self.truecrd, looptab)
+            print(np.shape(kin))
 
         return kin, linmod, loopmod
 
@@ -462,6 +466,7 @@ def format_pardict(pardict):
     pardict["taylor_order"] = int(pardict["taylor_order"])
     pardict["xfit_min"] = float(pardict["xfit_min"])
     pardict["xfit_max"] = float(pardict["xfit_max"])
+    pardict["order"] = int(pardict["order"])
     pardict["template_order"] = int(pardict["template_order"])
 
     return pardict

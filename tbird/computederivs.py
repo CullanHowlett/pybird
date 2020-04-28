@@ -32,7 +32,7 @@ def get_template_grids(parref, nmult=2, nout=2, pad=True):
         ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
-    return plin[(0,) * 3, 0, :, 0], plin[..., :nout, :, :], ploop[..., :nout, :, :]
+    return plin[..., 0, :, 0][(0,) * 3], plin[..., :nout, :, :], ploop[..., :nout, :, :]
 
 
 def get_grids(parref, nmult=2, nout=2, pad=True):
@@ -62,7 +62,7 @@ def get_grids(parref, nmult=2, nout=2, pad=True):
         ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
-    return params, plin[(0,) * len(parref["freepar"]), 0, :, 0], plin[..., :nout, :, :], ploop[..., :nout, :, :]
+    return params, plin[..., 0, :, 0][(0,) * len(parref["freepar"])], plin[..., :nout, :, :], ploop[..., :nout, :, :]
 
 
 def get_pder_lin(parref, pi, dx, filename):
@@ -268,7 +268,6 @@ if __name__ == "__main__":
     print("Got grids in %s seconds" % str(time.time() - t0))
     print("Calculate derivatives of params")
     get_pder_lin(pardict, paramsgrid, delta, os.path.join(pardict["outgrid"], "DerParams_%s.npy" % pardict["gridname"]))
-    exit()
     print("Calculate derivatives of linear PS")
     get_pder_lin(pardict, plingrid, delta, os.path.join(pardict["outgrid"], "DerPlin_%s.npy" % pardict["gridname"]))
     print("Calculate derivatives of loop PS")

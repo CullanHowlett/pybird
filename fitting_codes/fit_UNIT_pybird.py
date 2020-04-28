@@ -97,8 +97,8 @@ def lnprior(params, birdmodel):
         b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[3:]
 
     ln10As, h, Omega_m = params[:3]
-    fbc = float(birdmodel.pardict["omega_b"]) / float(birdmodel.pardict["omega_b"])
-    omega_cdm = Omega_m / (1.0 + fbc) ** h ** 2
+    fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
+    omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
     omega_b = Omega_m * h ** 2 - omega_cdm
 
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
@@ -154,8 +154,8 @@ def lnlike(params, birdmodel, fittingdata, plt):
 
     # Get the bird model
     ln10As, h, Omega_m = params[:3]
-    fbc = float(birdmodel.pardict["omega_b"]) / float(birdmodel.pardict["omega_b"])
-    omega_cdm = Omega_m / (1.0 + fbc) ** h ** 2
+    fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
+    omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
     omega_b = Omega_m * h ** 2 - omega_cdm
 
     Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
@@ -196,9 +196,9 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     # Does an optimization
-    omstart = (pardict["omega_b"] + pardict["omega_b"]) / pardict["h"] ** 2
+    omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
     start = np.array(
-        [pardict["ln10^{10}A_s"], pardict["h"], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,]
+        [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,]
     )
     result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
