@@ -7,7 +7,7 @@ import findiff
 from configobj import ConfigObj
 
 sys.path.append("../")
-from tbird.Grid import grid_properties
+from tbird.Grid import run_camb, grid_properties, grid_properties_template
 
 
 def get_template_grids(parref, nmult=2, nout=2, pad=True):
@@ -257,18 +257,43 @@ if __name__ == "__main__":
 
     # Read in the config file and total number of jobs
     configfile = sys.argv[1]
+    template = int(sys.argv[2])
     pardict = ConfigObj(configfile)
 
     # Get the grid properties
-    valueref, delta, flattenedgrid, truecrd = grid_properties(pardict)
+    if template:
+        _, _, Da, Hz, fN, sigma8 = run_camb(pardict)
+        valueref, delta, flattenedgrid, truecrd = grid_properties_template(pardict, fN)
 
-    print("Let's start!")
-    t0 = time.time()
-    paramsgrid, kgrid, plingrid, ploopgrid = get_grids(pardict)
-    print("Got grids in %s seconds" % str(time.time() - t0))
-    print("Calculate derivatives of params")
-    get_pder_lin(pardict, paramsgrid, delta, os.path.join(pardict["outgrid"], "DerParams_%s.npy" % pardict["gridname"]))
-    print("Calculate derivatives of linear PS")
-    get_pder_lin(pardict, plingrid, delta, os.path.join(pardict["outgrid"], "DerPlin_%s.npy" % pardict["gridname"]))
-    print("Calculate derivatives of loop PS")
-    get_pder_lin(pardict, ploopgrid, delta, os.path.join(pardict["outgrid"], "DerPloop_%s.npy" % pardict["gridname"]))
+        print("Let's start!")
+        t0 = time.time()
+        kgrid, plingrid, ploopgrid = get_template_grids(pardict)
+        print("Got grids in %s seconds" % str(time.time() - t0))
+        print("Calculate derivatives of linear PS")
+        get_pder_lin(
+            pardict, plingrid, delta, os.path.join(pardict["outgrid"], "DerPlin_template_%s.npy" % pardict["gridname"])
+        )
+        print("Calculate derivatives of loop PS")
+        get_pder_lin(
+            pardict,
+            ploopgrid,
+            delta,
+            os.path.join(pardict["outgrid"], "DerPloop_template_%s.npy" % pardict["gridname"]),
+        )
+    else:
+        valueref, delta, flattenedgrid, truecrd = grid_properties(pardict)
+
+        print("Let's start!")
+        t0 = time.time()
+        paramsgrid, kgrid, plingrid, ploopgrid = get_grids(pardict)
+        print("Got grids in %s seconds" % str(time.time() - t0))
+        print("Calculate derivatives of params")
+        get_pder_lin(
+            pardict, paramsgrid, delta, os.path.join(pardict["outgrid"], "DerParams_%s.npy" % pardict["gridname"])
+        )
+        print("Calculate derivatives of linear PS")
+        get_pder_lin(pardict, plingrid, delta, os.path.join(pardict["outgrid"], "DerPlin_%s.npy" % pardict["gridname"]))
+        print("Calculate derivatives of loop PS")
+        get_pder_lin(
+            pardict, ploopgrid, delta, os.path.join(pardict["outgrid"], "DerPloop_%s.npy" % pardict["gridname"])
+        )
