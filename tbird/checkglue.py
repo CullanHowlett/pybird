@@ -51,7 +51,7 @@ if __name__ == "__main__":
         Params = np.load(os.path.join(pardict["outpk"], "Params_run%d.npy" % i))
         Plin = np.load(os.path.join(pardict["outpk"], "Plin_run%d.npy" % i))
         Ploop = np.load(os.path.join(pardict["outpk"], "Ploop_run%d.npy" % i))
-        gridparams.append(Params[:, -1])
+        gridparams.append(Params[:, :-1])
         gridlin.append(Plin[:, :, :-1])
         gridloop.append(Ploop[:, :, :-1])
         checklin = lenbatch == len(Plin)
