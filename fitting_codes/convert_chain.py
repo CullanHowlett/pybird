@@ -99,7 +99,7 @@ def read_chain(chainfile, burnlimitlow=1000, burnlimitup=None):
 if __name__ == "__main__":
 
     # Reads in a chain containing cosmological parameters output from a fitting routine, and
-    # converts the points to Da(z), H(z) and f(z)*sigma8(z)
+    # converts the points to alpha_perp, alpha_par and f(z)*sigma8(z)
 
     # First, read in the config file used for the fit
     configfile = sys.argv[1]

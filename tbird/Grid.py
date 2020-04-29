@@ -136,8 +136,9 @@ def run_camb(pardict, background_only=False):
     H = results.hubble_parameter(float(parlinear["z_pk"])) / float(parlinear["H0"])
     fsigma8 = results.get_fsigma8()[0]
     sigma8 = results.get_sigma8()[0]
+    sigma12 = results.get_sigmaR(12.0, hubble_units=False)[0]
 
     if background_only:
         return Da, H
     else:
-        return kin, Plin[-1], Da, H, fsigma8 / sigma8, sigma8
+        return kin, Plin[-1], Da, H, fsigma8 / sigma8, sigma8, sigma12

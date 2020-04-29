@@ -65,7 +65,6 @@ class BirdModel:
                 paramstab, kin, lintab, looptab = get_grids(self.pardict, nmult=2, nout=2, pad=False)
             linmod = sp.interpolate.RegularGridInterpolator(self.truecrd, lintab)
             loopmod = sp.interpolate.RegularGridInterpolator(self.truecrd, looptab)
-            print(np.shape(kin))
 
         return kin, linmod, loopmod
 
@@ -87,8 +86,6 @@ class BirdModel:
         plin0, plin2 = plin
         ploop0, ploop2 = ploop
         b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
-        if self.pardict["do_marg"]:
-            b3, cct, cr1, cr2, ce1, cemono, cequad = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
         # the columns of the Ploop data files.
         cvals = np.array(

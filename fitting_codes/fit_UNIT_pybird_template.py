@@ -13,7 +13,7 @@ from fitting_codes.fitting_utils import (
 )
 
 
-def do_emcee(func, start, birdmodel, fittingdata):
+def do_emcee(func, start, birdmodel, fittingdata, plt):
 
     import emcee
 
@@ -43,19 +43,36 @@ def do_emcee(func, start, birdmodel, fittingdata):
         ]
 
     # RELEASE THE CHAIN!!!
-    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, 0])
+    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, plt])
     pos, prob, state = sampler.run_mcmc(begin, 1)
     sampler.reset()
 
+    if pardict["do_marg"]:
+        marg_str = "marg"
+    else:
+        marg_str = "all"
+    taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     if birdmodel.pardict["do_corr"]:
         chainfile = str(
-            "%s_xi_%2d_%3d_template.dat"
-            % (birdmodel.pardict["fitfile"], birdmodel.pardict["xfit_min"], birdmodel.pardict["xfit_max"])
+            "%s_xi_%2d_%3d_%s_template_%s.dat"
+            % (
+                birdmodel.pardict["fitfile"],
+                birdmodel.pardict["xfit_min"],
+                birdmodel.pardict["xfit_max"],
+                taylor_strs[pardict["taylor_order"]],
+                marg_str,
+            )
         )
     else:
         chainfile = str(
-            "%s_pk_%3.2lf_%3.2lf_template.dat"
-            % (birdmodel.pardict["fitfile"], birdmodel.pardict["xfit_min"], birdmodel.pardict["xfit_max"])
+            "%s_pk_%3.2lf_%3.2lf_%s_template_%s.dat"
+            % (
+                birdmodel.pardict["fitfile"],
+                birdmodel.pardict["xfit_min"],
+                birdmodel.pardict["xfit_max"],
+                taylor_strs[pardict["taylor_order"]],
+                marg_str,
+            )
         )
     f = open(chainfile, "w")
 
@@ -145,17 +162,22 @@ def lnprior(params, birdmodel):
 
 def lnlike(params, birdmodel, fittingdata, plt):
 
+    if birdmodel.pardict["do_marg"]:
+        bs = [params[-3], params[-2], 0.0, params[-1], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    else:
+        bs = params[-10:]
+
     # Get the bird model
     Plin, Ploop = birdmodel.compute_pk(params[:3])
-    P_model = birdmodel.compute_model(params[3:], Plin, Ploop, fittingdata.data["x_data"])
-    Pi = birdmodel.get_Pi_for_marg(params[3:], params[3], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
+    P_model = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
+    Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
+
+    chi_squared = birdmodel.compute_chi2(P_model, Pi, fittingdata.data)
 
     if plt is not None:
         update_plot(pardict, fittingdata, P_model, plt)
-
-    chi_squared = birdmodel.compute_chi2(P_model, Pi, fittingdata.data)
-    if np.random.rand() < 0.1:
-        print(params, chi_squared)
+        if np.random.rand() < 0.1:
+            print(params, chi_squared)
 
     return -0.5 * chi_squared
 
@@ -184,9 +206,9 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     # Does an optimization
-    start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    # start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-    # do_emcee(lnpost, start, birdmodel, fittingdata)
+    start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
