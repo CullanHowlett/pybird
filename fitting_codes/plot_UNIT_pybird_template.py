@@ -1,89 +1,71 @@
-import numpy as np
 import sys
-import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from configobj import ConfigObj
 from chainconsumer import ChainConsumer
 
 sys.path.append("../")
 from tbird.Grid import run_camb
-
-
-def read_chain(chainfile, burnlimitlow=1000, burnlimitup=20000):
-
-    # Read in the samples
-    walkers = []
-    samples = []
-    like = []
-    infile = open(chainfile, "r")
-    for line in infile:
-        ln = line.split()
-        samples.append(list(map(float, ln[1:-1])))
-        walkers.append(int(ln[0]))
-        like.append(float(ln[-1]))
-    infile.close()
-
-    like = np.array(like)
-    walkers = np.array(walkers)
-    samples = np.array(samples)
-    nwalkers = max(walkers)
-
-    bestid = np.argmax(like[: np.amax(walkers) * burnlimitup])
-
-    burntin = []
-    burntlike = []
-    weightsarray = []
-    nburntin = 0
-
-    for i in range(nwalkers + 1):
-        ind = np.where(walkers == i)[0]
-        if len(ind) == 0:
-            continue
-        x = [j for j in range(len(ind))]
-        ind2 = np.where(np.logical_and(np.asarray(x) >= burnlimitlow, np.asarray(x) <= burnlimitup))[0]
-        for k in range(len(ind2 + 1)):
-            burntin.append(samples[ind[ind2[k]]])
-            burntlike.append(like[ind[ind2[k]]])
-        nburntin += len(ind2)
-    burntin = np.array(burntin)
-    burntlike = np.array(burntlike)
-
-    return burntin, samples[bestid], burntlike
+from fitting_codes.fitting_utils import read_chain
 
 
 if __name__ == "__main__":
 
     # First read in the config file and compute Da_fid, Hz_fid and sigma8_fid
     configfile = sys.argv[1]
+    do_sigma12 = int(sys.argv[2])
     pardict = ConfigObj(configfile)
-    kin, Plin, Da_fid, Hz_fid, fN, sigma8_fid = run_camb(pardict)
-    Da_fid *= 2997.92458 / float(pardict["h"])
-    Hz_fid *= 100.0 * float(pardict["h"])
+    _, _, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
 
     # Set the chainfiles and names for each chain
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_ 0.30_template.dat"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_marg_converted.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_fixedh_marg_converted.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_template_marg.dat",
     ]
-    names = [r"$\mathrm{Template, Grid}$"]
-    paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
+    preprocessed = [True, True, False]
+    names = [r"$\mathrm{Varying\,h}$", r"$\mathrm{Fixed\,h}$", r"$\mathrm{Template}$"]
+    if do_sigma12:
+        truths = [1.0, 1.0, fN_fid * sigma12_fid]
+        paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{12}$", r"$b_{1}\sigma_{12}$"]
+    else:
+        truths = [1.0, 1.0, fN_fid * sigma8_fid]
+        paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
 
     # Output name for the figure
     figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_ 0.30_template.pdf"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_template.pdf"
     ]
 
     c = ChainConsumer()
 
     bestfits = []
-    for chaini, chainfile in enumerate(chainfiles):
+    for chaini, (chainfile, processed) in enumerate(zip(chainfiles, preprocessed)):
 
-        burntin, bestfit, like = read_chain(chainfile, burnlimitup=20000)
-        # burntin[:, 0] *= Da_fid
-        # burntin[:, 1] = Hz_fid / burntin[:, 1]
-        burntin[:, 2] *= sigma8_fid
-        burntin[:, 3] *= sigma8_fid
-        c.add_chain(burntin[:, :4], parameters=paramnames, name=names[chaini], posterior=like, plot_point=True)
+        print(chainfile, processed)
+        if processed:
+            burntin = np.array(pd.read_csv(chainfile, delim_whitespace=True, header=None))
+            like = burntin[:, -1]
+            bestfit = burntin[np.argmax(burntin[:, -1]), :-1]
+            if do_sigma12:
+                c.add_chain(
+                    burntin[:, [0, 1, 3, 5]], parameters=paramnames, name=names[chaini], posterior=like, plot_point=True
+                )
+            else:
+                c.add_chain(
+                    burntin[:, [0, 1, 2, 4]], parameters=paramnames, name=names[chaini], posterior=like, plot_point=True
+                )
+        else:
+            burntin, bestfit, like = read_chain(chainfile, burnlimitup=20000)
+            if do_sigma12:
+                bestfit[2:4] *= sigma12_fid
+                burntin[:, 2:4] *= sigma12_fid
+            else:
+                bestfit[2:4] *= sigma8_fid
+                burntin[:, 2:4] *= sigma8_fid
+            c.add_chain(burntin[:, :4], parameters=paramnames, name=names[chaini], posterior=like, plot_point=True)
         bestfits.append(bestfit)
 
-    print(bestfits[0])
-    fig = c.plotter.plot(figsize="column", filename=figfile, truth=[1.0, 1.0, fN * sigma8_fid])
+    print(bestfits)
+    fig = c.plotter.plot(figsize="column", filename=figfile, truth=truths)
     print(c.analysis.get_summary())

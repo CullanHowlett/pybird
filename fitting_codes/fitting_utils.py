@@ -28,18 +28,19 @@ class BirdModel:
 
         # Get some values at the grid centre
         if self.template:
-            _, _, self.Da, self.Hz, self.fN, self.sigma8 = run_camb(pardict)
+            _, _, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(pardict)
             self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
         else:
             self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
 
-        self.kin, self.linmod, self.loopmod = self.load_model()
+        self.kin, self.paramsmod, self.linmod, self.loopmod = self.load_model()
 
     def load_model(self):
 
         # Load in the model components
         if self.pardict["taylor_order"]:
             if self.template:
+                paramsmod = None
                 linmod = np.load(
                     os.path.join(self.pardict["outgrid"], "DerPlin_template_%s.npy" % self.pardict["gridname"]),
                     allow_pickle=True,
@@ -49,6 +50,10 @@ class BirdModel:
                     allow_pickle=True,
                 )
             else:
+                paramsmod = np.load(
+                    os.path.join(self.pardict["outgrid"], "DerParams_%s.npy" % self.pardict["gridname"]),
+                    allow_pickle=True,
+                )
                 linmod = np.load(
                     os.path.join(self.pardict["outgrid"], "DerPlin_%s.npy" % self.pardict["gridname"]),
                     allow_pickle=True,
@@ -61,18 +66,30 @@ class BirdModel:
         else:
             if self.template:
                 kin, lintab, looptab = get_template_grids(self.pardict, nmult=2, nout=2, pad=False)
+                paramsmod = None
             else:
                 paramstab, kin, lintab, looptab = get_grids(self.pardict, nmult=2, nout=2, pad=False)
+                paramsmod = sp.interpolate.RegularGridInterpolator(self.truecrd, paramstab)
             linmod = sp.interpolate.RegularGridInterpolator(self.truecrd, lintab)
             loopmod = sp.interpolate.RegularGridInterpolator(self.truecrd, looptab)
 
-        return kin, linmod, loopmod
+        return kin, paramsmod, linmod, loopmod
+
+    def compute_params(self, coords):
+
+        if self.pardict["taylor_order"]:
+            Params = get_PSTaylor(coords, self.paramsmod, self.pardict["taylor_order"])
+        else:
+            Params = self.paramsmod(coords)[0]
+
+        return Params
 
     def compute_pk(self, coords):
 
         if self.pardict["taylor_order"]:
-            Plin = get_PSTaylor(coords, self.linmod, self.pardict["taylor_order"])
-            Ploop = get_PSTaylor(coords, self.loopmod, self.pardict["taylor_order"])
+            dtheta = np.array(coords) - self.valueref
+            Plin = get_PSTaylor(dtheta, self.linmod, self.pardict["taylor_order"])
+            Ploop = get_PSTaylor(dtheta, self.loopmod, self.pardict["taylor_order"])
         else:
             Plin = self.linmod(coords)[0]
             Ploop = self.loopmod(coords)[0]
@@ -490,3 +507,50 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
     print(result)
 
     return result
+
+
+def read_chain(chainfile, burnlimitlow=1000, burnlimitup=None):
+
+    # Read in the samples
+    walkers = []
+    samples = []
+    like = []
+    infile = open(chainfile, "r")
+    for line in infile:
+        ln = line.split()
+        samples.append(list(map(float, ln[1:-1])))
+        walkers.append(int(ln[0]))
+        like.append(float(ln[-1]))
+    infile.close()
+
+    like = np.array(like)
+    walkers = np.array(walkers)
+    samples = np.array(samples)
+    nwalkers = max(walkers)
+
+    if burnlimitup is None:
+        bestid = np.argmax(like)
+    else:
+        bestid = np.argmax(like[: np.amax(walkers) * burnlimitup])
+
+    burntin = []
+    burntlike = []
+    nburntin = 0
+
+    for i in range(nwalkers + 1):
+        ind = np.where(walkers == i)[0]
+        if len(ind) == 0:
+            continue
+        x = [j for j in range(len(ind))]
+        if burnlimitup is None:
+            ind2 = np.where(np.asarray(x) >= burnlimitlow)[0]
+        else:
+            ind2 = np.where(np.logical_and(np.asarray(x) >= burnlimitlow, np.asarray(x) <= burnlimitup))[0]
+        for k in range(len(ind2 + 1)):
+            burntin.append(samples[ind[ind2[k]]])
+            burntlike.append(like[ind[ind2[k]]])
+        nburntin += len(ind2)
+    burntin = np.array(burntin)
+    burntlike = np.array(burntlike)
+
+    return burntin, samples[bestid], burntlike
