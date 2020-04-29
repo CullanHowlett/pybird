@@ -22,7 +22,6 @@ if __name__ == "__main__":
     start = job_no * lenrun
     final = min((job_no + 1) * lenrun, len(flattenedgrid))
     arrayred = flattenedgrid[start:final]
-    print(start, final, arrayred)
 
     # Set up pybird
     common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)
@@ -30,8 +29,7 @@ if __name__ == "__main__":
     resum = pybird.Resum(co=common)
 
     # Get some cosmological values at the grid centre
-    kin, Plin, Da, Hz, fN, sigma8, sigma12 = run_camb(pardict)
-    print(sigma8, sigma12)
+    kin, Plin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
 
     # Set up the window function and projection effects. No window at the moment for the UNIT sims,
     # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
@@ -56,8 +54,7 @@ if __name__ == "__main__":
 
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
-        kin, Plin, Da, Hz, fN, sigma8, sigma12 = run_camb(parameters)
-        print(sigma8, sigma12)
+        kin, Plin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
 
         # Get non-linear power spectrum from pybird
         # bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
@@ -68,7 +65,7 @@ if __name__ == "__main__":
         # projection.AP(bird)
         # projection.Window(bird)
 
-        Params = np.array([Da, Hz, fN, sigma8, sigma12])
+        Params = np.array([Da, Hz, fN, sigma8, sigma12, r_d])
         # Plin, Ploop = bird.formatTaylor(kdata=kout)
         # idxcol = np.full([Plin.shape[0], 1], idx)
         # allPlin.append(np.hstack([Plin, idxcol]))

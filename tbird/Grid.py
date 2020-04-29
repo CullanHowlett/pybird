@@ -137,8 +137,9 @@ def run_camb(pardict, background_only=False):
     fsigma8 = results.get_fsigma8()[0]
     sigma8 = results.get_sigma8()[0]
     sigma12 = results.get_sigmaR(12.0, hubble_units=False)[0]
+    r_d = results.get_derived_params()["rdrag"]
 
     if background_only:
         return Da, H
     else:
-        return kin, Plin[-1], Da, H, fsigma8 / sigma8, sigma8, sigma12
+        return kin, Plin[-1], Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
