@@ -172,7 +172,11 @@ class BirdModel:
 
         if self.pardict["do_marg"]:
 
-            Covbi = np.dot(Pi, np.dot(data["cov_inv"], Pi.T)) + self.priormat
+            Covbi = np.dot(Pi, np.dot(data["cov_inv"], Pi.T))
+            if self.pardict["do_corr"]:
+                Covbi += self.priormat[:4, :4]
+            else:
+                Covbi += self.priormat
             Cinvbi = np.linalg.inv(Covbi)
             vectorbi = np.dot(P_model, np.dot(data["cov_inv"], Pi.T)) - np.dot(data["invcovdata"], Pi.T)
             chi2nomar = (
@@ -200,10 +204,6 @@ class BirdModel:
         if self.pardict["do_marg"]:
 
             ploop0, ploop2 = ploop
-
-            Onel0 = np.array([np.ones(len(x_data)), np.zeros(len(x_data))])  # shot-noise mono
-            kl0 = np.array([x_data, np.zeros(len(x_data))])  # k^2 mono
-            kl2 = np.array([np.zeros(len(x_data)), x_data])  # k^2 quad
 
             Pb3 = np.array(
                 [
@@ -243,6 +243,10 @@ class BirdModel:
 
             else:
 
+                Onel0 = np.array([np.ones(len(x_data)), np.zeros(len(x_data))])  # shot-noise mono
+                kl0 = np.array([x_data, np.zeros(len(x_data))])  # k^2 mono
+                kl2 = np.array([np.zeros(len(x_data)), x_data])  # k^2 quad
+
                 Pi = np.array(
                     [
                         Pb3,  # *b3
@@ -255,7 +259,7 @@ class BirdModel:
                     ]
                 )
 
-                Pi = Pi.reshape((Pi.shape[0], -1))
+            Pi = Pi.reshape((Pi.shape[0], -1))
 
         else:
 
@@ -576,7 +580,7 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
     return result
 
 
-def read_chain(chainfile, burnlimitlow=1000, burnlimitup=None):
+def read_chain(chainfile, burnlimitlow=5000, burnlimitup=None):
 
     # Read in the samples
     walkers = []

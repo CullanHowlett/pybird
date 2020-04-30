@@ -846,9 +846,9 @@ class Bird(object):
     def formatTaylorPs(self, kdata=None):
         """ An auxiliary to pipe PyBird with TBird: puts Bird(object) power spectrum multipole terms into the right shape for TBird """
         if kdata is None:
-            allk = np.concatenate([self.co.k, self.co.k]).reshape(-1, 1)
+            allk = np.concatenate([self.co.k for i in range(self.co.Nl)]).reshape(-1, 1)
         else:
-            allk = np.concatenate([kdata, kdata]).reshape(-1, 1)
+            allk = np.concatenate([[kdata for i in range(self.co.Nl)]]).reshape(-1, 1)
         Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), self.P11l), axis=1)
         Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
         Plin = np.hstack((allk, Plin))
@@ -861,9 +861,9 @@ class Bird(object):
     def formatTaylorCf(self, sdata=None):
         """ An auxiliary to pipe PyBird with TBird: puts Bird(object) power spectrum multipole terms into the right shape for TBird """
         if sdata is None:
-            allk = np.concatenate([self.co.s, self.co.s]).reshape(-1, 1)
+            allk = np.concatenate([self.co.s for i in range(self.co.Nl)]).reshape(-1, 1)
         else:
-            allk = np.concatenate([sdata, sdata]).reshape(-1, 1)
+            allk = np.concatenate([sdata for i in range(self.co.Nl)]).reshape(-1, 1)
         Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), self.C11l), axis=1)
         Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
         Plin = np.hstack((allk, Plin))

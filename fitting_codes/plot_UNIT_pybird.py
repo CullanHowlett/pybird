@@ -17,23 +17,32 @@ if __name__ == "__main__":
     _, _, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
 
     # Set the chainfiles and names for each chain
+    # chainfiles = [
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_all.dat",
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_marg.dat",
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_varyh_marg.dat",
+    # ]
+    # figfile = [
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_varyh.pdf"
+    # ]
+    # fixed_hs = [False, False, False]
+    # names = [r"$\mathrm{Grid;\,No\,Marg}$", r"$\mathrm{Grid;\,Marg}$", r"$\mathrm{3^{rd}\,Order;\,Marg}$"]
+
     chainfiles = [
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_all.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_marg.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_varyh_marg.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_20_200_3order_varyh_all.dat",
     ]
-    fixed_hs = [False, False, False]
-    names = [r"$\mathrm{Grid;\,No\,Marg}$", r"$\mathrm{Grid;\,Marg}$", r"$\mathrm{3^{rd}\,Order;\,Marg}$"]
+    figfile = ["/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_varyh.pdf"]
+    fixed_hs = [False, False]
+    names = [r"$P(k)$", r"$\xi(s)$"]
+
     truths = {
-        r"$A_{s}\times 10^{9}$": np.exp(float(pardict["ln10^{10}A_s"])) / 1.0e10,
+        r"$A_{s}\times 10^{9}$": np.exp(float(pardict["ln10^{10}A_s"])) / 1.0e1,
         r"$h$": float(pardict["h"]),
         r"$\Omega_{m}$": (float(pardict["omega_cdm"]) + float(pardict["omega_b"])) / float(pardict["h"]) ** 2,
     }
 
     # Output name for the figure
-    figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_varyh.pdf"
-    ]
 
     c = ChainConsumer()
 
