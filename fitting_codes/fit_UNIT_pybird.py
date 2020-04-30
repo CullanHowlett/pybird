@@ -54,7 +54,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
             ]
     else:
         begin = [
-            [(0.02 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)
+            [(0.1 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)
         ]
 
     # RELEASE THE CHAIN!!!
@@ -189,7 +189,7 @@ def lnprior(params, birdmodel, fixed_h):
 
         else:
 
-            # Gaussian prior for ce1 of width 1 centred on 0
+            # Gaussian prior for ce1 of width 2 centred on 0
             ce1_prior = -0.5 * 0.25 * ce1 ** 2
 
             # Gaussian prior for cemono of width 2 centred on 0
@@ -214,16 +214,22 @@ def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
         if birdmodel.pardict["do_corr"]:
             b2 = (params[-6] + params[-4]) / np.sqrt(2.0)
             b4 = (params[-6] - params[-4]) / np.sqrt(2.0)
-            params[-6] = b2
-            params[-4] = b4
-            bs = params[-7:]
+            bs = [params[-7], b2, params[-5], b4, params[-3], params[-2], params[-1]]
         else:
             b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
             b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
-            params[-9] = b2
-            params[-7] = b4
-            params[-3:-1] *= fittingdata.data["shot_noise"]
-            bs = params[-10:]
+            bs = [
+                params[-10],
+                b2,
+                params[-8],
+                b4,
+                params[-6],
+                params[-5],
+                params[-4],
+                params[-3] * fittingdata.data["shot_noise"],
+                params[-2] * fittingdata.data["shot_noise"],
+                params[-1] * fittingdata.data["shot_noise"],
+            ]
 
     # Get the bird model
     if fixed_h:

@@ -127,7 +127,10 @@ class BirdModel:
 
         plin0, plin2 = plin
         ploop0, ploop2 = ploop
-        b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
+        if self.pardict["do_corr"]:
+            b1, b2, b3, b4, cct, cr1, cr2 = cvals
+        else:
+            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
 
         # the columns of the Ploop data files.
         cvals = np.array(
@@ -259,6 +262,45 @@ class BirdModel:
             Pi = None
 
         return Pi
+
+    def get_components(self, coords, cvals, shotnoise=None):
+
+        plin, ploop = self.compute_pk(coords)
+
+        plin0, plin2 = plin
+        ploop0, ploop2 = ploop
+        if self.pardict["do_corr"]:
+            b1, b2, b3, b4, cct, cr1, cr2 = cvals
+        else:
+            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
+
+        # the columns of the Ploop data files.
+        cloop = np.array([1, b1, b2, b3, b4, b1 * b1, b1 * b2, b1 * b3, b1 * b4, b2 * b2, b2 * b4, b4 * b4])
+        cvalsct = np.array(
+            [
+                b1 * cct / self.k_nl ** 2,
+                b1 * cr1 / self.k_m ** 2,
+                b1 * cr2 / self.k_m ** 2,
+                cct / self.k_nl ** 2,
+                cr1 / self.k_m ** 2,
+                cr2 / self.k_m ** 2,
+            ]
+        )
+
+        P0lin = plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
+        P2lin = plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
+        P0loop = np.dot(cloop, ploop0[:12, :])
+        P2loop = np.dot(cloop, ploop2[:12, :])
+        P0ct = np.dot(cvalsct, ploop0[12:, :])
+        P2ct = np.dot(cvalsct, ploop2[12:, :])
+
+        if self.pardict["do_corr"]:
+            P0st, P2st = None, None
+        else:
+            P0st = ce1 * shotnoise + cemono * shotnoise * self.kin ** 2 / self.k_m ** 2
+            P2st = cequad * shotnoise * self.kin ** 2 / self.k_m ** 2
+
+        return [P0lin, P2lin], [P0loop, P2loop], [P0ct, P2ct], [P0st, P2st]
 
 
 # Holds all the data in a convenient dictionary
@@ -524,7 +566,7 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
         minimizer_kwargs={
             "args": (birdmodel, fittingdata, plt, 0),
             "method": "Nelder-Mead",
-            "tol": 1.0e-4,
+            "tol": 1.0e-3,
             "options": {"maxiter": 40000},
         },
     )
