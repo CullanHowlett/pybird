@@ -163,8 +163,14 @@ def lnprior(params, birdmodel):
 def lnlike(params, birdmodel, fittingdata, plt):
 
     if birdmodel.pardict["do_marg"]:
-        bs = [params[-3], params[-2], 0.0, params[-1], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
+        b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
+        bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     else:
+        b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
+        b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
+        params[-9] = b2
+        params[-7] = b4
         bs = params[-10:]
 
     # Get the bird model

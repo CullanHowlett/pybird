@@ -68,5 +68,5 @@ if __name__ == "__main__":
         allPloop.append(np.hstack([Ploop, idxcol]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
-        np.save(os.path.join(pardict["outpk"], "Plin_template_run%s.npy" % (str(job_no))), np.array(allPlin))
-        np.save(os.path.join(pardict["outpk"], "Ploop_template_run%s.npy" % (str(job_no))), np.array(allPloop))
+        np.save(os.path.join(pardict["outpk"], "Plin_run%s_template.npy" % (str(job_no))), np.array(allPlin))
+        np.save(os.path.join(pardict["outpk"], "Ploop_run%s_template.npy" % (str(job_no))), np.array(allPloop))

@@ -246,18 +246,18 @@ if __name__ == "__main__":
     # Does an optimization
     # omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
     # start = np.array(
-    #    [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,]
+    #    [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     # )
     # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    # omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
-    # start = np.array(
-    #    [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,]
-    # )
-    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
+    start = np.array(
+        [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    )
+    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
 
     # Does an MCMC with fixed h
-    omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
-    start = np.array([birdmodel.valueref[0], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,])
-    do_emcee(lnpost, start, birdmodel, fittingdata, plt, fixed_h=True)
+    # omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
+    # start = np.array([birdmodel.valueref[0], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    # do_emcee(lnpost, start, birdmodel, fittingdata, plt, fixed_h=True)

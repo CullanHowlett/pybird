@@ -24,7 +24,8 @@ if __name__ == "__main__":
     arrayred = flattenedgrid[start:final]
 
     # Set up pybird
-    common = pybird.Common(Nl=2, kmax=5.0, optiresum=False)
+    Nl = 2
+    common = pybird.Common(Nl=Nl, kmax=0.5, optiresum=False)
     nonlinear = pybird.NonLinear(load=False, save=False, co=common)
     resum = pybird.Resum(co=common)
 
@@ -34,17 +35,25 @@ if __name__ == "__main__":
     # Set up the window function and projection effects. No window at the moment for the UNIT sims,
     # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
     # used to make the measurements is the same as Grid centre
+    sout, nsout = np.linspace(1.0, 200.0, 200), 200
     kout, nkout = common.k, len(common.k)
-    projection = pybird.Projection(kout, DA=Da, H=Hz, window_fourier_name=None, co=common)
+    projection = pybird.Projection(kout, DA=Da, H=Hz, co=common)
     projection.p = kout
-    window = np.zeros((2, 2, nkout, nkout))
-    window[0, 0, :, :] = np.eye(nkout)
-    window[1, 1, :, :] = np.eye(nkout)
+    window = np.zeros((Nl, Nl, nkout, nkout))
+    for i in range(Nl):
+        window[i, i, :, :] = np.eye(nkout)
     projection.Waldk = window
+    projectioncf = pybird.Projection(sout, DA=Da, H=Hz, co=common, cf=True)
+    window = np.zeros((Nl, Nl, len(common.s)))
+    for i in range(Nl):
+        window[i, i, :] = np.ones(len(common.s))
+    projectioncf.Qal = window
 
     # Now loop over all grid cells and compute the EFT model
     allPlin = []
     allPloop = []
+    allClin = []
+    allCloop = []
     allParams = []
     for i, theta in enumerate(arrayred):
         parameters = copy.deepcopy(pardict)
@@ -60,19 +69,28 @@ if __name__ == "__main__":
         bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
         nonlinear.PsCf(bird)
         bird.setPsCfl()
-        resum.Ps(bird)
+        resum.PsCf(bird)
 
         projection.AP(bird)
+        projectioncf.AP(bird)
         projection.Window(bird)
+        projectioncf.Window(bird)
+        projectioncf.kdata(bird)
 
         Params = np.array([Da, Hz, fN, sigma8, sigma12, r_d])
-        Plin, Ploop = bird.formatTaylor(kdata=kout)
+        Plin, Ploop = bird.formatTaylorPs(kdata=kout)
+        Clin, Cloop = bird.formatTaylorCf(sdata=sout)
         idxcol = np.full([Plin.shape[0], 1], idx)
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
+        idxcol = np.full([Clin.shape[0], 1], idx)
+        allClin.append(np.hstack([Clin, idxcol]))
+        allCloop.append(np.hstack([Cloop, idxcol]))
         allParams.append(np.hstack([Params, [idx]]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
         np.save(os.path.join(pardict["outpk"], "Plin_run%s.npy" % (str(job_no))), np.array(allPlin))
         np.save(os.path.join(pardict["outpk"], "Ploop_run%s.npy" % (str(job_no))), np.array(allPloop))
+        np.save(os.path.join(pardict["outpk"], "Clin_run%s.npy" % (str(job_no))), np.array(allClin))
+        np.save(os.path.join(pardict["outpk"], "Cloop_run%s.npy" % (str(job_no))), np.array(allCloop))
         np.save(os.path.join(pardict["outpk"], "Params_run%s.npy" % (str(job_no))), np.array(allParams))

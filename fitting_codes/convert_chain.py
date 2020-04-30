@@ -92,6 +92,18 @@ if __name__ == "__main__":
         Da, Hz, f, sigma8, sigma12, r_d = birdmodel.compute_params([vals[0], h, omega_cdm, omega_b])
         alpha_perp = (Da / h) * (float(pardict["h"]) / Da_fid) * (r_d_fid / r_d)
         alpha_par = (float(pardict["h"]) * Hz_fid) / (h * Hz) * (r_d_fid / r_d)
-        chainvals.append((alpha_perp, alpha_par, f * sigma8, f * sigma12, b1 * sigma8, b1 * sigma12, loglike))
+        chainvals.append(
+            (
+                alpha_perp,
+                alpha_par,
+                2997.92458 * Da / h,
+                100.0 * h * Hz,
+                f * sigma8,
+                f * sigma12,
+                b1 * sigma8,
+                b1 * sigma12,
+                loglike,
+            )
+        )
 
     np.savetxt(newfile, np.array(chainvals))

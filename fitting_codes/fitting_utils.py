@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 sys.path.append("../")
 from tbird.Grid import grid_properties, grid_properties_template, run_camb
-from tbird.computederivs import get_grids, get_template_grids, get_PSTaylor
+from tbird.computederivs import get_grids, get_template_grids, get_PSTaylor, get_ParamsTaylor
 
 # Wrapper around the pybird data and model evaluation
 class BirdModel:
@@ -78,7 +78,8 @@ class BirdModel:
     def compute_params(self, coords):
 
         if self.pardict["taylor_order"]:
-            Params = get_PSTaylor(coords, self.paramsmod, self.pardict["taylor_order"])
+            dtheta = np.array(coords) - self.valueref
+            Params = get_ParamsTaylor(dtheta, self.paramsmod, self.pardict["taylor_order"])
         else:
             Params = self.paramsmod(coords)[0]
 

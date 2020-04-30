@@ -843,7 +843,7 @@ class Bird(object):
                     shotnoise = self.Ploopl[l, n, 0]
                     self.Ploopl[l, n] -= shotnoise
 
-    def formatTaylor(self, kdata=None):
+    def formatTaylorPs(self, kdata=None):
         """ An auxiliary to pipe PyBird with TBird: puts Bird(object) power spectrum multipole terms into the right shape for TBird """
         if kdata is None:
             allk = np.concatenate([self.co.k, self.co.k]).reshape(-1, 1)
@@ -854,6 +854,21 @@ class Bird(object):
         Plin = np.hstack((allk, Plin))
         Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Ploopl), axis=0)
         Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), self.Pctl)
+        Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
+        Ploop = np.hstack((allk, Ploop1, Ploop2))
+        return Plin, Ploop
+
+    def formatTaylorCf(self, sdata=None):
+        """ An auxiliary to pipe PyBird with TBird: puts Bird(object) power spectrum multipole terms into the right shape for TBird """
+        if sdata is None:
+            allk = np.concatenate([self.co.s, self.co.s]).reshape(-1, 1)
+        else:
+            allk = np.concatenate([sdata, sdata]).reshape(-1, 1)
+        Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), self.C11l), axis=1)
+        Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
+        Plin = np.hstack((allk, Plin))
+        Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Cloopl), axis=0)
+        Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), self.Cctl)
         Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
         Ploop = np.hstack((allk, Ploop1, Ploop2))
         return Plin, Ploop
@@ -2177,7 +2192,7 @@ class Projection(object):
                 * (2.0 * pi / kout)
                 * (2.0 * l + 1.0)
                 / 2.0
-                * special.legendre(l)(0)
+                * legendre(l)(0)
                 * (1.0 - (kout * Dfc) ** 2 / 8.0)
             )
         return dPunc
