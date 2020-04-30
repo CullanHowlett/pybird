@@ -20,7 +20,10 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
     # Set up the MCMC
     # How many free parameters and walkers (this is for emcee's method)
     if birdmodel.pardict["do_marg"]:
-        nparams = len(start) - 7
+        if birdmodel.pardict["do_corr"]:
+            nparams = len(start) - 4
+        else:
+            nparams = len(start) - 7
     else:
         nparams = len(start)
     nwalkers = nparams * 8
@@ -129,7 +132,10 @@ def lnprior(params, birdmodel, fixed_h):
     if birdmodel.pardict["do_marg"]:
         b1, c2, c4 = params[-3:]
     else:
-        b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[-10:]
+        if birdmodel.pardict["do_corr"]:
+            b1, c2, b3, c4, cct, cr1, cr2 = params[-7:]
+        else:
+            b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[-10:]
 
     if fixed_h:
         ln10As, Omega_m = params[:2]
@@ -177,24 +183,47 @@ def lnprior(params, birdmodel, fixed_h):
         # Gaussian prior for cr1 of width 4 centred on 0
         cr2_prior = -0.5 * 0.0625 * cr2 ** 2
 
-        # Gaussian prior for ce1 of width 1 centred on 0
-        ce1_prior = -0.5 * 0.25 * ce1 ** 2
+        if birdmodel.pardict["do_corr"]:
 
-        # Gaussian prior for cemono of width 2 centred on 0
-        cemono_prior = -0.5 * 0.25 * cemono ** 2
+            return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior
 
-        # Gaussian prior for cequad of width 2 centred on 0
-        cequad_prior = -0.5 * 0.25 * cequad ** 2
+        else:
 
-        return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
+            # Gaussian prior for ce1 of width 1 centred on 0
+            ce1_prior = -0.5 * 0.25 * ce1 ** 2
+
+            # Gaussian prior for cemono of width 2 centred on 0
+            cemono_prior = -0.5 * 0.25 * cemono ** 2
+
+            # Gaussian prior for cequad of width 2 centred on 0
+            cequad_prior = -0.5 * 0.25 * cequad ** 2
+
+            return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
 
 
 def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
 
     if birdmodel.pardict["do_marg"]:
-        bs = [params[-3], params[-2], 0.0, params[-1], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
+        b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
+        if birdmodel.pardict["do_corr"]:
+            bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0]
+        else:
+            bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     else:
-        bs = params[-10:]
+        if birdmodel.pardict["do_corr"]:
+            b2 = (params[-6] + params[-4]) / np.sqrt(2.0)
+            b4 = (params[-6] - params[-4]) / np.sqrt(2.0)
+            params[-6] = b2
+            params[-4] = b4
+            bs = params[-7:]
+        else:
+            b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
+            b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
+            params[-9] = b2
+            params[-7] = b4
+            params[-3:-1] *= fittingdata.data["shot_noise"]
+            bs = params[-10:]
 
     # Get the bird model
     if fixed_h:
@@ -243,21 +272,23 @@ if __name__ == "__main__":
     if plot_flag:
         plt = create_plot(pardict, fittingdata)
 
+    omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
+    if pardict["do_corr"]:
+        start = np.array([birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    else:
+        start = np.array(
+            [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        )
+
     # Does an optimization
-    # omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
-    # start = np.array(
-    #    [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    # )
     # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
-    start = np.array(
-        [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    )
     do_emcee(lnpost, start, birdmodel, fittingdata, plt)
 
     # Does an MCMC with fixed h
-    # omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
-    # start = np.array([birdmodel.valueref[0], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    # if pardict["do_corr"]:
+    #    start = np.array([birdmodel.valueref[0], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    # else:
+    #    start = np.array([birdmodel.valueref[0], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     # do_emcee(lnpost, start, birdmodel, fittingdata, plt, fixed_h=True)

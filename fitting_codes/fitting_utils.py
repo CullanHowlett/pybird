@@ -41,35 +41,59 @@ class BirdModel:
         if self.pardict["taylor_order"]:
             if self.template:
                 paramsmod = None
-                linmod = np.load(
-                    os.path.join(self.pardict["outgrid"], "DerPlin_template_%s.npy" % self.pardict["gridname"]),
-                    allow_pickle=True,
-                )
-                loopmod = np.load(
-                    os.path.join(self.pardict["outgrid"], "DerPloop_template_%s.npy" % self.pardict["gridname"]),
-                    allow_pickle=True,
-                )
+                if self.pardict["do_corr"]:
+                    linmod = np.load(
+                        os.path.join(self.pardict["outgrid"], "DerClin_template_%s.npy" % self.pardict["gridname"]),
+                        allow_pickle=True,
+                    )
+                    loopmod = np.load(
+                        os.path.join(self.pardict["outgrid"], "DerCloop_template_%s.npy" % self.pardict["gridname"]),
+                        allow_pickle=True,
+                    )
+                else:
+                    linmod = np.load(
+                        os.path.join(self.pardict["outgrid"], "DerPlin_template_%s.npy" % self.pardict["gridname"]),
+                        allow_pickle=True,
+                    )
+                    loopmod = np.load(
+                        os.path.join(self.pardict["outgrid"], "DerPloop_template_%s.npy" % self.pardict["gridname"]),
+                        allow_pickle=True,
+                    )
             else:
                 paramsmod = np.load(
                     os.path.join(self.pardict["outgrid"], "DerParams_%s.npy" % self.pardict["gridname"]),
                     allow_pickle=True,
                 )
-                linmod = np.load(
-                    os.path.join(self.pardict["outgrid"], "DerPlin_%s.npy" % self.pardict["gridname"]),
-                    allow_pickle=True,
-                )
-                loopmod = np.load(
-                    os.path.join(self.pardict["outgrid"], "DerPloop_%s.npy" % self.pardict["gridname"]),
-                    allow_pickle=True,
-                )
+                if self.pardict["do_corr"]:
+                    linmod = np.load(
+                        os.path.join(self.pardict["outgrid"], "DerClin_%s.npy" % self.pardict["gridname"]),
+                        allow_pickle=True,
+                    )
+                    loopmod = np.load(
+                        os.path.join(self.pardict["outgrid"], "DerCloop_%s.npy" % self.pardict["gridname"]),
+                        allow_pickle=True,
+                    )
+                else:
+                    linmod = np.load(
+                        os.path.join(self.pardict["outgrid"], "DerPlin_%s.npy" % self.pardict["gridname"]),
+                        allow_pickle=True,
+                    )
+                    loopmod = np.load(
+                        os.path.join(self.pardict["outgrid"], "DerPloop_%s.npy" % self.pardict["gridname"]),
+                        allow_pickle=True,
+                    )
             kin = linmod[0][0, :, 0]
         else:
             if self.template:
-                kin, lintab, looptab = get_template_grids(self.pardict, nmult=2, nout=2, pad=False)
+                lintab, looptab = get_template_grids(self.pardict, nmult=2, nout=2, pad=False)
                 paramsmod = None
+                kin = lintab[..., 0, :, 0][(0,) * 3]
             else:
-                paramstab, kin, lintab, looptab = get_grids(self.pardict, nmult=2, nout=2, pad=False)
+                paramstab, lintab, looptab = get_grids(
+                    self.pardict, nmult=2, nout=2, pad=False, cf=self.pardict["do_corr"]
+                )
                 paramsmod = sp.interpolate.RegularGridInterpolator(self.truecrd, paramstab)
+                kin = lintab[..., 0, :, 0][(0,) * len(self.pardict["freepar"])]
             linmod = sp.interpolate.RegularGridInterpolator(self.truecrd, lintab)
             loopmod = sp.interpolate.RegularGridInterpolator(self.truecrd, looptab)
 
@@ -132,12 +156,12 @@ class BirdModel:
         P0 = np.dot(cvals, ploop0) + plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
         P2 = np.dot(cvals, ploop2) + plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
 
-        P0 = (
-            sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P0))
-            + ce1
-            + cemono * x_data ** 2 / self.k_m ** 2
-        )
-        P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P2)) + cequad * x_data ** 2 / self.k_m ** 2
+        P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P0))
+        P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P2))
+
+        if not self.pardict["do_corr"]:
+            P0 += ce1 + cemono * x_data ** 2 / self.k_m ** 2
+            P2 += cequad * x_data ** 2 / self.k_m ** 2
 
         return np.concatenate([P0, P2])
 
@@ -498,7 +522,7 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
         niter=100,
         stepsize=0.1,
         minimizer_kwargs={
-            "args": (birdmodel, fittingdata, plt),
+            "args": (birdmodel, fittingdata, plt, 0),
             "method": "Nelder-Mead",
             "tol": 1.0e-4,
             "options": {"maxiter": 40000},

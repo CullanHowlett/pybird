@@ -10,7 +10,7 @@ sys.path.append("../")
 from tbird.Grid import run_camb, grid_properties, grid_properties_template
 
 
-def get_template_grids(parref, nmult=2, nout=2, pad=True):
+def get_template_grids(parref, nmult=2, nout=2, pad=True, cf=False):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]
@@ -21,21 +21,27 @@ def get_template_grids(parref, nmult=2, nout=2, pad=True):
     padshape = [(1, 1)] * (len(shapecrd) - 1)
 
     # grids need to be reshaped and padded at both ends along the freepar directions
-    plin = np.load(os.path.join(outgrid, "TablePlin_%s_template.npy" % name))
+    if cf:
+        plin = np.load(os.path.join(outgrid, "TableClin_%s_template.npy" % name))
+    else:
+        plin = np.load(os.path.join(outgrid, "TablePlin_%s_template.npy" % name))
     plin = plin.reshape((*shapecrd[1:], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
     if pad:
         plin = np.pad(plin, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
-    ploop = np.load(os.path.join(outgrid, "TablePloop_%s_template.npy" % name))
+    if cf:
+        ploop = np.load(os.path.join(outgrid, "TableCloop_%s_template.npy" % name))
+    else:
+        ploop = np.load(os.path.join(outgrid, "TablePloop_%s_template.npy" % name))
     ploop = ploop.reshape((*shapecrd[1:], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
     if pad:
         ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
-    return plin[..., 0, :, 0][(0,) * 3], plin[..., :nout, :, :], ploop[..., :nout, :, :]
+    return plin[..., :nout, :, :], ploop[..., :nout, :, :]
 
 
-def get_grids(parref, nmult=2, nout=2, pad=True):
+def get_grids(parref, nmult=2, nout=2, pad=True, cf=False):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]
@@ -51,18 +57,24 @@ def get_grids(parref, nmult=2, nout=2, pad=True):
     if pad:
         params = np.pad(params, padshape + [(0, 0)], "constant", constant_values=0)
 
-    plin = np.load(os.path.join(outgrid, "TablePlin_%s.npy" % name))
+    if cf:
+        plin = np.load(os.path.join(outgrid, "TableClin_%s.npy" % name))
+    else:
+        plin = np.load(os.path.join(outgrid, "TablePlin_%s.npy" % name))
     plin = plin.reshape((*shapecrd[1:], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
     if pad:
         plin = np.pad(plin, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
-    ploop = np.load(os.path.join(outgrid, "TablePloop_%s.npy" % name))
+    if cf:
+        ploop = np.load(os.path.join(outgrid, "TableCloop_%s.npy" % name))
+    else:
+        ploop = np.load(os.path.join(outgrid, "TablePloop_%s.npy" % name))
     ploop = ploop.reshape((*shapecrd[1:], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
     if pad:
         ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
-    return params, plin[..., 0, :, 0][(0,) * len(parref["freepar"])], plin[..., :nout, :, :], ploop[..., :nout, :, :]
+    return params, plin[..., :nout, :, :], ploop[..., :nout, :, :]
 
 
 def get_pder_lin(parref, pi, dx, filename):
@@ -305,7 +317,7 @@ if __name__ == "__main__":
 
         print("Let's start!")
         t0 = time.time()
-        kgrid, plingrid, ploopgrid = get_template_grids(pardict)
+        plingrid, ploopgrid = get_template_grids(pardict)
         print("Got grids in %s seconds" % str(time.time() - t0))
         print("Calculate derivatives of linear PS")
         get_pder_lin(
@@ -318,13 +330,28 @@ if __name__ == "__main__":
             delta,
             os.path.join(pardict["outgrid"], "DerPloop_%s_template.npy" % pardict["gridname"]),
         )
+
+        plingrid, ploopgrid = get_template_grids(pardict, cf=True)
+        print("Got grids in %s seconds" % str(time.time() - t0))
+        print("Calculate derivatives of linear CF")
+        get_pder_lin(
+            pardict, plingrid, delta, os.path.join(pardict["outgrid"], "DerClin_%s_template.npy" % pardict["gridname"])
+        )
+        print("Calculate derivatives of loop CF")
+        get_pder_lin(
+            pardict,
+            ploopgrid,
+            delta,
+            os.path.join(pardict["outgrid"], "DerCloop_%s_template.npy" % pardict["gridname"]),
+        )
+
     else:
         valueref, delta, flattenedgrid, truecrd = grid_properties(pardict)
 
         print("Let's start!")
         t0 = time.time()
-        paramsgrid, kgrid, plingrid, ploopgrid = get_grids(pardict)
-        print("Got grids in %s seconds" % str(time.time() - t0))
+        paramsgrid, plingrid, ploopgrid = get_grids(pardict)
+        print("Got PS grids in %s seconds" % str(time.time() - t0))
         print("Calculate derivatives of params")
         get_pder_lin(
             pardict, paramsgrid, delta, os.path.join(pardict["outgrid"], "DerParams_%s.npy" % pardict["gridname"])
@@ -334,4 +361,13 @@ if __name__ == "__main__":
         print("Calculate derivatives of loop PS")
         get_pder_lin(
             pardict, ploopgrid, delta, os.path.join(pardict["outgrid"], "DerPloop_%s.npy" % pardict["gridname"])
+        )
+
+        paramsgrid, clingrid, cloopgrid = get_grids(pardict, cf=True)
+        print("Got CF grids in %s seconds" % str(time.time() - t0))
+        print("Calculate derivatives of linear CF")
+        get_pder_lin(pardict, clingrid, delta, os.path.join(pardict["outgrid"], "DerClin_%s.npy" % pardict["gridname"]))
+        print("Calculate derivatives of loop CF")
+        get_pder_lin(
+            pardict, cloopgrid, delta, os.path.join(pardict["outgrid"], "DerCloop_%s.npy" % pardict["gridname"])
         )
