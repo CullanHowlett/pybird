@@ -62,39 +62,26 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
     pos, prob, state = sampler.run_mcmc(begin, 1)
     sampler.reset()
 
-    if fixed_h:
-        h_str = "fixedh"
-    else:
-        h_str = "varyh"
-    if pardict["do_marg"]:
-        marg_str = "marg"
-    else:
-        marg_str = "all"
+    h_str = "fixedh" if fixed_h else "varyh"
+    marg_str = "marg" if pardict["do_marg"] else "all"
+    hex_str = "hex" if pardict["do_hex"] else "no_hex"
+    dat_str = "xi" if pardict["do_corr"] else "pk"
+    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s_%s.dat" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s.dat"
+
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
-    if birdmodel.pardict["do_corr"]:
-        chainfile = str(
-            "%s_xi_%2d_%3d_%s_%s_%s.dat"
-            % (
-                birdmodel.pardict["fitfile"],
-                birdmodel.pardict["xfit_min"],
-                birdmodel.pardict["xfit_max"],
-                taylor_strs[pardict["taylor_order"]],
-                h_str,
-                marg_str,
-            )
+    chainfile = str(
+        fmt_str
+        % (
+            birdmodel.pardict["fitfile"],
+            dat_str,
+            birdmodel.pardict["xfit_min"],
+            birdmodel.pardict["xfit_max"],
+            taylor_strs[pardict["taylor_order"]],
+            h_str,
+            hex_str,
+            marg_str,
         )
-    else:
-        chainfile = str(
-            "%s_pk_%3.2lf_%3.2lf_%s_%s_%s.dat"
-            % (
-                birdmodel.pardict["fitfile"],
-                birdmodel.pardict["xfit_min"],
-                birdmodel.pardict["xfit_max"],
-                taylor_strs[pardict["taylor_order"]],
-                h_str,
-                marg_str,
-            )
-        )
+    )
     f = open(chainfile, "w")
 
     # Run and print out the chain for 20000 links

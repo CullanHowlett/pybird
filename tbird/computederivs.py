@@ -10,7 +10,7 @@ sys.path.append("../")
 from tbird.Grid import run_camb, grid_properties, grid_properties_template
 
 
-def get_template_grids(parref, nmult=2, nout=2, pad=True, cf=False):
+def get_template_grids(parref, nmult=3, nout=3, pad=True, cf=False):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]
@@ -41,7 +41,7 @@ def get_template_grids(parref, nmult=2, nout=2, pad=True, cf=False):
     return plin[..., :nout, :, :], ploop[..., :nout, :, :]
 
 
-def get_grids(parref, nmult=2, nout=2, pad=True, cf=False):
+def get_grids(parref, nmult=3, nout=3, pad=True, cf=False):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]

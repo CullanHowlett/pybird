@@ -28,7 +28,7 @@ if __name__ == "__main__":
             Plin = np.load(os.path.join(pardict["outpk"], "Plin_run%d.npy" % i))
             Clin = np.load(os.path.join(pardict["outpk"], "Clin_run%d.npy" % i))
             if lenbatch != len(Plin) and lenbatch != len(Clin):
-                print("Failed length linear run %d" % (i))
+                print("Failed length linear run %d" % i)
                 linfailed.append(i)
         if not checkloop and checkCfloop:
             print("Failed loop run %d" % i)
