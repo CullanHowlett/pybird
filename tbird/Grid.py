@@ -143,3 +143,16 @@ def run_camb(pardict, background_only=False):
         return Da, H
     else:
         return kin, Plin[-1], Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
+
+
+if __name__ == "__main__":
+
+    import sys
+    from configobj import ConfigObj
+
+    # Read in the config file, job number and total number of jobs
+    configfile = sys.argv[1]
+    pardict = ConfigObj(configfile)
+
+    # Get some cosmological values at the grid centre
+    kin, Plin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)

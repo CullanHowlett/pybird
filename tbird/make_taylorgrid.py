@@ -33,7 +33,7 @@ if __name__ == "__main__":
     resumcf = pybird.Resum(co=commoncf)
 
     # Get some cosmological values at the grid centre
-    kin, Plin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+    kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
 
     # Set up the window function and projection effects. No window at the moment for the UNIT sims,
     # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
@@ -62,17 +62,17 @@ if __name__ == "__main__":
 
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
-        kin, Plin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+        kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
 
         # Get non-linear power spectrum from pybird
-        bird = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
+        bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
         nonlinear.PsCf(bird)
         bird.setPsCfl()
         resum.PsCf(bird)
         projection.AP(bird)
         projection.Window(bird)
 
-        crow = pybird.Bird(kin, Plin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=commoncf)
+        crow = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=commoncf)
         nonlinearcf.PsCf(crow)
         crow.setPsCfl()
         resumcf.PsCf(crow)

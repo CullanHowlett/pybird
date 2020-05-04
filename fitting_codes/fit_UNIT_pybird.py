@@ -64,7 +64,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
 
     h_str = "fixedh" if fixed_h else "varyh"
     marg_str = "marg" if pardict["do_marg"] else "all"
-    hex_str = "hex" if pardict["do_hex"] else "no_hex"
+    hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
     fmt_str = "%s_%s_%2d_%3d_%s_%s_%s_%s.dat" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s.dat"
 

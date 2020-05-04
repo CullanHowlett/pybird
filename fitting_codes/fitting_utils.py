@@ -19,6 +19,7 @@ class BirdModel:
     def __init__(self, pardict, template=False):
 
         self.pardict = pardict
+        self.Nl = 3 if pardict["do_hex"] else 2
         self.template = template
 
         # Some constants for the EFT model
@@ -85,13 +86,11 @@ class BirdModel:
             kin = linmod[0][0, :, 0]
         else:
             if self.template:
-                lintab, looptab = get_template_grids(self.pardict, nmult=2, nout=2, pad=False)
+                lintab, looptab = get_template_grids(self.pardict, pad=False)
                 paramsmod = None
                 kin = lintab[..., 0, :, 0][(0,) * 3]
             else:
-                paramstab, lintab, looptab = get_grids(
-                    self.pardict, nmult=2, nout=2, pad=False, cf=self.pardict["do_corr"]
-                )
+                paramstab, lintab, looptab = get_grids(self.pardict, pad=False, cf=self.pardict["do_corr"])
                 paramsmod = sp.interpolate.RegularGridInterpolator(self.truecrd, paramstab)
                 kin = lintab[..., 0, :, 0][(0,) * len(self.pardict["freepar"])]
             linmod = sp.interpolate.RegularGridInterpolator(self.truecrd, lintab)
@@ -125,12 +124,8 @@ class BirdModel:
 
     def compute_model(self, cvals, plin, ploop, x_data):
 
-        if self.pardict["do_hex"]:
-            plin0, plin2 = plin
-            ploop0, ploop2 = ploop
-        else:
-            plin0, plin2, plin4 = plin
-            ploop0, ploop2, ploop4 = ploop
+        plin0, plin2, plin4 = plin
+        ploop0, ploop2, ploop4 = ploop
 
         if self.pardict["do_corr"]:
             b1, b2, b3, b4, cct, cr1, cr2 = cvals
@@ -205,7 +200,7 @@ class BirdModel:
 
             # Compute the chi_squared
             chi_squared = 0.0
-            for i in range(2 * len(data["x_data"])):
+            for i in range(self.Nl * len(data["x_data"])):
                 chi_squared += (P_model[i] - data["fit_data"][i]) * np.sum(
                     data["cov_inv"][i, 0:] * (P_model - data["fit_data"])
                 )
@@ -217,10 +212,7 @@ class BirdModel:
 
         if self.pardict["do_marg"]:
 
-            if self.pardict["do_hex"]:
-                ploop0, ploop2, ploop4 = ploop
-            else:
-                ploop0, ploop2 = ploop
+            ploop0, ploop2, ploop4 = ploop
 
             if self.pardict["do_hex"]:
 
@@ -450,8 +442,8 @@ class FittingData:
     def read_data(self, pardict):
 
         # Read in the data
+        print(pardict["datafile"])
         if pardict["do_corr"]:
-            print(pardict["datafile"])
             data = np.array(pd.read_csv(pardict["datafile"], delim_whitespace=True, header=None))
             x_data = data[:, 0]
             fitmask = (
@@ -473,17 +465,16 @@ class FittingData:
             nx = len(x_data)
             mask = fitmask[:, None]
             cov = np.empty((Nl * nx, Nl * nx))
-            cov[:nx, :nx] = cov_input[mask, mask]
-            cov[:nx, nx : 2 * nx] = cov_input[mask, cov_size[1] + mask]
-            cov[nx : 2 * nx, :nx] = cov_input[cov_size[0] + mask, mask]
-            cov[nx : 2 * nx, nx : 2 * nx] = cov_input[cov_size[0] + mask, cov_size[1] + mask]
+            cov[:nx, :nx] = cov_input[mask, mask.T]
+            cov[:nx, nx : 2 * nx] = cov_input[mask, cov_size[1] + mask.T]
+            cov[nx : 2 * nx, :nx] = cov_input[cov_size[0] + mask, mask.T]
+            cov[nx : 2 * nx, nx : 2 * nx] = cov_input[cov_size[0] + mask, cov_size[1] + mask.T]
             if pardict["do_hex"]:
-                cov[:nx, 2 * nx :] = cov_input[mask, 2 * cov_size[1] + mask]
-                cov[2 * nx :, :nx] = cov_input[2 * cov_size[0] + mask, mask]
-                cov[nx : 2 * nx, 2 * nx :] = cov_input[cov_size[0] + mask, 2 * cov_size[1] + mask]
-                cov[2 * nx :, nx : 2 * nx] = cov_input[2 * cov_size[0] + mask, cov_size[1] + mask]
-                cov[2 * nx :, 2 * nx :] = cov_input[2 * cov_size[0] + mask, 2 * cov_size[1] + mask]
-
+                cov[:nx, 2 * nx :] = cov_input[mask, 2 * cov_size[1] + mask.T]
+                cov[2 * nx :, :nx] = cov_input[2 * cov_size[0] + mask, mask.T]
+                cov[nx : 2 * nx, 2 * nx :] = cov_input[cov_size[0] + mask, 2 * cov_size[1] + mask.T]
+                cov[2 * nx :, nx : 2 * nx] = cov_input[2 * cov_size[0] + mask, cov_size[1] + mask.T]
+                cov[2 * nx :, 2 * nx :] = cov_input[2 * cov_size[0] + mask, 2 * cov_size[1] + mask.T]
         else:
             x_data, pk0, pk2, pk4 = self.read_pk(pardict["datafile"], pardict["xfit_min"], pardict["xfit_max"], 1)
             if pardict["do_hex"]:
@@ -519,7 +510,7 @@ class FittingData:
                 ]
 
         # Invert the covariance matrix
-        identity = np.eye(Nl * len(x_data))
+        identity = np.eye(Nl * nx)
         cov_lu, pivots, cov_inv, info = lapack.dgesv(cov, identity)
 
         chi2data = np.dot(fit_data, np.dot(cov_inv, fit_data))
@@ -572,7 +563,7 @@ def create_plot(pardict, fittingdata):
             plt_data[2 * nx :],
             yerr=plt_err[2 * nx :],
             marker="o",
-            markerfacecolor="b",
+            markerfacecolor="g",
             markeredgecolor="k",
             color="g",
             linestyle="None",
@@ -602,7 +593,7 @@ def create_plot(pardict, fittingdata):
     return plt
 
 
-def update_plot(pardict, fittingdata, P_model, plt):
+def update_plot(pardict, fittingdata, P_model, plt, keep=False):
 
     x_data = fittingdata.data["x_data"]
     Nl = 3 if pardict["do_hex"] else 2
@@ -618,11 +609,18 @@ def update_plot(pardict, fittingdata, P_model, plt):
             x_data, plt_data[2 * nx :], marker="None", color="g", linestyle="-", markeredgewidth=1.3, zorder=0,
         )
 
-    plt.pause(0.005)
-    if plt10 is not None:
-        plt10.remove()
-    if plt11 is not None:
-        plt11.remove()
+    if keep:
+        plt.ioff()
+        plt.show()
+    if not keep:
+        plt.pause(0.005)
+        if plt10 is not None:
+            plt10.remove()
+        if plt11 is not None:
+            plt11.remove()
+        if pardict["do_hex"]:
+            if plt12 is not None:
+                plt12.remove()
 
 
 def format_pardict(pardict):

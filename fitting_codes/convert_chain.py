@@ -29,40 +29,27 @@ if __name__ == "__main__":
     _, _, Da_fid, Hz_fid, f_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(birdmodel.pardict)
     fbc = float(pardict["omega_b"]) / float(pardict["omega_cdm"])
 
-    # Extract the name of the chainfile and read it in
-    if fixed_h:
-        h_str = "fixedh"
-    else:
-        h_str = "varyh"
-    if pardict["do_marg"]:
-        marg_str = "marg"
-    else:
-        marg_str = "all"
+    h_str = "fixedh" if fixed_h else "varyh"
+    marg_str = "marg" if pardict["do_marg"] else "all"
+    hex_str = "hex" if pardict["do_hex"] else "nohex"
+    dat_str = "xi" if pardict["do_corr"] else "pk"
+    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s_%s" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s"
+
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
-    if birdmodel.pardict["do_corr"]:
-        chainfile = str(
-            "%s_xi_%2d_%3d_%s_%s_%s"
-            % (
-                birdmodel.pardict["fitfile"],
-                birdmodel.pardict["xfit_min"],
-                birdmodel.pardict["xfit_max"],
-                taylor_strs[pardict["taylor_order"]],
-                h_str,
-                marg_str,
-            )
+    chainfile = str(
+        fmt_str
+        % (
+            birdmodel.pardict["fitfile"],
+            dat_str,
+            birdmodel.pardict["xfit_min"],
+            birdmodel.pardict["xfit_max"],
+            taylor_strs[pardict["taylor_order"]],
+            h_str,
+            hex_str,
+            marg_str,
         )
-    else:
-        chainfile = str(
-            "%s_pk_%3.2lf_%3.2lf_%s_%s_%s"
-            % (
-                birdmodel.pardict["fitfile"],
-                birdmodel.pardict["xfit_min"],
-                birdmodel.pardict["xfit_max"],
-                taylor_strs[pardict["taylor_order"]],
-                h_str,
-                marg_str,
-            )
-        )
+    )
+
     oldfile = chainfile + ".dat"
     newfile = chainfile + "_converted.dat"
     burntin, bestfit, like = read_chain(oldfile)
