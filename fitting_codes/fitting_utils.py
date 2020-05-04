@@ -86,7 +86,7 @@ class BirdModel:
             kin = linmod[0][0, :, 0]
         else:
             if self.template:
-                lintab, looptab = get_template_grids(self.pardict, pad=False)
+                lintab, looptab = get_template_grids(self.pardict, pad=False, cf=self.pardict["do_corr"])
                 paramsmod = None
                 kin = lintab[..., 0, :, 0][(0,) * 3]
             else:

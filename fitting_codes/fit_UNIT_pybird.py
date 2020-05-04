@@ -136,7 +136,7 @@ def lnprior(params, birdmodel, fixed_h):
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
 
-    # Flat priors for alpha_perp, alpha_par and fsigma8
+    # Flat priors for cosmological parameters
     if np.any(np.less([ln10As, h, omega_cdm, omega_b], lower_bounds)) or np.any(
         np.greater([ln10As, h, omega_cdm, omega_b], upper_bounds)
     ):

@@ -20,7 +20,10 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     # Set up the MCMC
     # How many free parameters and walkers (this is for emcee's method)
     if birdmodel.pardict["do_marg"]:
-        nparams = len(start) - 7
+        if birdmodel.pardict["do_corr"]:
+            nparams = len(start) - 4
+        else:
+            nparams = len(start) - 7
     else:
         nparams = len(start)
     nwalkers = nparams * 8
@@ -47,33 +50,24 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     pos, prob, state = sampler.run_mcmc(begin, 1)
     sampler.reset()
 
-    if pardict["do_marg"]:
-        marg_str = "marg"
-    else:
-        marg_str = "all"
+    marg_str = "marg" if pardict["do_marg"] else "all"
+    hex_str = "hex" if pardict["do_hex"] else "nohex"
+    dat_str = "xi" if pardict["do_corr"] else "pk"
+    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s.dat" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s.dat"
+
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
-    if birdmodel.pardict["do_corr"]:
-        chainfile = str(
-            "%s_xi_%2d_%3d_%s_template_%s.dat"
-            % (
-                birdmodel.pardict["fitfile"],
-                birdmodel.pardict["xfit_min"],
-                birdmodel.pardict["xfit_max"],
-                taylor_strs[pardict["taylor_order"]],
-                marg_str,
-            )
+    chainfile = str(
+        fmt_str
+        % (
+            birdmodel.pardict["fitfile"],
+            dat_str,
+            birdmodel.pardict["xfit_min"],
+            birdmodel.pardict["xfit_max"],
+            taylor_strs[pardict["taylor_order"]],
+            hex_str,
+            marg_str,
         )
-    else:
-        chainfile = str(
-            "%s_pk_%3.2lf_%3.2lf_%s_template_%s.dat"
-            % (
-                birdmodel.pardict["fitfile"],
-                birdmodel.pardict["xfit_min"],
-                birdmodel.pardict["xfit_max"],
-                taylor_strs[pardict["taylor_order"]],
-                marg_str,
-            )
-        )
+    )
     f = open(chainfile, "w")
 
     # Run and print out the chain for 20000 links
@@ -109,9 +103,12 @@ def lnprior(params, birdmodel):
     # Here we define the prior for all the parameters. We'll ignore the constants as they
     # cancel out when subtracting the log posteriors
     if birdmodel.pardict["do_marg"]:
-        b1, c2, c4 = params[3:]
+        b1, c2, c4 = params[-3:]
     else:
-        b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[3:]
+        if birdmodel.pardict["do_corr"]:
+            b1, c2, b3, c4, cct, cr1, cr2 = params[-7:]
+        else:
+            b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[-10:]
 
     lower_bounds = birdmodel.valueref - birdmodel.pardict["template_order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["template_order"] * birdmodel.delta
@@ -165,13 +162,30 @@ def lnlike(params, birdmodel, fittingdata, plt):
     if birdmodel.pardict["do_marg"]:
         b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
         b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
-        bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        if birdmodel.pardict["do_corr"]:
+            bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0]
+        else:
+            bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     else:
-        b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
-        b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
-        params[-9] = b2
-        params[-7] = b4
-        bs = params[-10:]
+        if birdmodel.pardict["do_corr"]:
+            b2 = (params[-6] + params[-4]) / np.sqrt(2.0)
+            b4 = (params[-6] - params[-4]) / np.sqrt(2.0)
+            bs = [params[-7], b2, params[-5], b4, params[-3], params[-2], params[-1]]
+        else:
+            b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
+            b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
+            bs = [
+                params[-10],
+                b2,
+                params[-8],
+                b4,
+                params[-6],
+                params[-5],
+                params[-4],
+                params[-3] * fittingdata.data["shot_noise"],
+                params[-2] * fittingdata.data["shot_noise"],
+                params[-1] * fittingdata.data["shot_noise"],
+            ]
 
     # Get the bird model
     Plin, Ploop = birdmodel.compute_pk(params[:3])
@@ -212,9 +226,8 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     # Does an optimization
-    # start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     do_emcee(lnpost, start, birdmodel, fittingdata, plt)
