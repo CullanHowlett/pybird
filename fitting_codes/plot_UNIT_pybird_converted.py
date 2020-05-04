@@ -17,16 +17,26 @@ if __name__ == "__main__":
     _, _, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
 
     # Set the chainfiles and names for each chain
+    # chainfiles = [
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_all_converted.dat",
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_marg_converted.dat",
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_varyh_nohex_marg_converted.dat",
+    # ]
+    # figfile = [
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_varyh_converted_alpha.pdf"
+    # ]
+    # fixed_hs = [False, False, False]
+    # names = [r"$\mathrm{Grid;\,No\,Marg}$", r"$\mathrm{Grid;\,Marg}$", r"$\mathrm{3^{rd}\,Order;\,Marg}$"]
+
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_all_converted.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_marg_converted.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_fixedh_nohex_marg_converted.dat",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_varyh_nohex_marg_converted.dat",
     ]
     figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_varyh_converted_alpha.pdf"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_nohex_converted_alpha.pdf"
     ]
-    fixed_hs = [False, False, False]
-    names = [r"$\mathrm{Grid;\,No\,Marg}$", r"$\mathrm{Grid;\,Marg}$", r"$\mathrm{3^{rd}\,Order;\,Marg}$"]
+    fixed_hs = [True, False]
+    names = [r"$\mathrm{Fixed\,}h$", r"$\mathrm{Vary\,}h$"]
 
     # chainfiles = [
     #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_all.dat",
@@ -54,14 +64,10 @@ if __name__ == "__main__":
         burntin = np.array(pd.read_csv(chainfile, delim_whitespace=True, header=None))
         like = burntin[:, -1]
         bestfit = burntin[np.argmax(burntin[:, -1]), :-1]
-        if fixed_h:
-            # paramnames = [r"$D_{A}(z)$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
-            paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
-            c.add_chain(burntin[:, [0, 1, 4, 6]], parameters=paramnames, name=names[chaini], posterior=like)
-        else:
-            # paramnames = [r"$D_{A}(z)$", r"$H(z)$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
-            paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
-            c.add_chain(burntin[:, [0, 1, 4, 6]], parameters=paramnames, name=names[chaini], posterior=like)
+        # paramnames = [r"$D_{A}(z)$", r"$H(z)$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
+        # c.add_chain(burntin[:, [2, 3, 4, 6]], parameters=paramnames, name=names[chaini], posterior=like)
+        paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
+        c.add_chain(burntin[:, [0, 1, 4, 6]], parameters=paramnames, name=names[chaini], posterior=like)
         bestfits.append(bestfit)
 
     print(bestfits)
