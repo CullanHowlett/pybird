@@ -395,7 +395,8 @@ class FittingData:
         }
 
         # Check covariance matrix is symmetric and positive-definite by trying to do a cholesky decomposition
-        if not np.all(self.data["cov"] - self.data["cov"].T == 0):
+        if not (np.abs((self.data["cov"] - self.data["cov"].T) / self.data["cov"]) <= 1.0e-6).all():
+            print(np.abs((self.data["cov"] - self.data["cov"].T) / self.data["cov"]))
             print("Error: Covariance matrix not symmetric!")
             exit(0)
         try:

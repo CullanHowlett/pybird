@@ -274,10 +274,10 @@ if __name__ == "__main__":
         )
 
     # Does an optimization
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
 
     # Does an MCMC with fixed h
     # if pardict["do_corr"]:
