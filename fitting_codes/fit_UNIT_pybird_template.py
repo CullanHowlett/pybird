@@ -46,14 +46,16 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
         ]
 
     # RELEASE THE CHAIN!!!
-    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, plt])
+    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, plt, 0])
     pos, prob, state = sampler.run_mcmc(begin, 1)
     sampler.reset()
 
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s.dat" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s.dat"
+    fmt_str = (
+        "%s_%s_%2d_%3d_%s_%s_%s_template.dat" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_template.dat"
+    )
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -88,7 +90,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     f.close()
 
 
-def lnpost(params, birdmodel, fittingdata, plt):
+def lnpost(params, birdmodel, fittingdata, plt, fixed_h):
 
     # This returns the posterior distribution which is given by the log prior plus the log likelihood
     prior = lnprior(params, birdmodel)
@@ -227,7 +229,7 @@ if __name__ == "__main__":
 
     # Does an optimization
     start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
     do_emcee(lnpost, start, birdmodel, fittingdata, plt)

@@ -6,7 +6,7 @@ import numpy as np
 import scipy as sp
 from scipy.interpolate import splrep, splev
 import sys
-from scipy.linalg import lapack
+from scipy.linalg import lapack, cholesky
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -44,20 +44,20 @@ class BirdModel:
                 paramsmod = None
                 if self.pardict["do_corr"]:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerClin_template_%s.npy" % self.pardict["gridname"]),
+                        os.path.join(self.pardict["outgrid"], "DerClin_%s_template.npy" % self.pardict["gridname"]),
                         allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerCloop_template_%s.npy" % self.pardict["gridname"]),
+                        os.path.join(self.pardict["outgrid"], "DerCloop_%s_template.npy" % self.pardict["gridname"]),
                         allow_pickle=True,
                     )
                 else:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPlin_template_%s.npy" % self.pardict["gridname"]),
+                        os.path.join(self.pardict["outgrid"], "DerPlin_%s_template.npy" % self.pardict["gridname"]),
                         allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPloop_template_%s.npy" % self.pardict["gridname"]),
+                        os.path.join(self.pardict["outgrid"], "DerPloop_%s_template.npy" % self.pardict["gridname"]),
                         allow_pickle=True,
                     )
             else:
@@ -393,6 +393,16 @@ class FittingData:
             "fitmask": fitmask,
             "shot_noise": shot_noise,
         }
+
+        # Check covariance matrix is symmetric and positive-definite by trying to do a cholesky decomposition
+        if not np.all(self.data["cov"] - self.data["cov"].T == 0):
+            print("Error: Covariance matrix not symmetric!")
+            exit(0)
+        try:
+            cholesky(self.data["cov"])
+        except:
+            print("Error: Covariance matrix not positive-definite!")
+            exit(0)
 
     def read_pk(self, inputfile, kmin, kmax, step_size):
 
