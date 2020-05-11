@@ -716,3 +716,18 @@ def read_chain(chainfile, burnlimitlow=5000, burnlimitup=None):
     burntlike = np.array(burntlike)
 
     return burntin, samples[bestid], burntlike
+
+
+def read_chain_backend(chainfile):
+
+    import emcee
+
+    reader = emcee.backends.HDFBackend(chainfile)
+
+    tau = reader.get_autocorr_time()
+    burnin = int(2 * np.max(tau))
+    samples = reader.get_chain(discard=burnin, flat=True)
+    log_prob_samples = reader.get_log_prob(discard=burnin, flat=True)
+    bestid = np.argmax(log_prob_samples)
+
+    return samples, samples[bestid], log_prob_samples

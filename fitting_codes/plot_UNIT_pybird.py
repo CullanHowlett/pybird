@@ -6,7 +6,14 @@ from chainconsumer import ChainConsumer
 
 sys.path.append("../")
 from tbird.Grid import run_camb
-from fitting_codes.fitting_utils import read_chain, BirdModel, FittingData, create_plot, update_plot, format_pardict
+from fitting_codes.fitting_utils import (
+    read_chain_backend,
+    BirdModel,
+    FittingData,
+    create_plot,
+    update_plot,
+    format_pardict,
+)
 
 
 if __name__ == "__main__":
@@ -19,13 +26,19 @@ if __name__ == "__main__":
 
     # Set the chainfiles and names for each chain
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_20_160_grid_varyh_nohex_all.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_20_160_grid_varyh_nohex_marg.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_160_grid_varyh_nohex_marg.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_varyh_nohex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_50_200_grid_varyh_nohex_marg.hdf5",
     ]
-    figfile = ["/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_varyh_nohex.pdf"]
+    figfile = [
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_grid_vary_nohex.pdf"
+    ]
     fixed_hs = [False, False, False]
-    names = [r"$\mathrm{Grid;\,No\,Marg}$", r"$\mathrm{Grid;\,Marg}$", r"$\mathrm{3^{rd}\,Order;\,Marg}$"]
+    names = [
+        r"$P(k)$;\,\mathrm{0.00-0.30}h\mathrm{Mpc^{-1}}",
+        r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}$",
+        r"$\xi(s);\,\mathrm{50-200}h^{-1}\mathrm{Mpc}$",
+    ]
 
     # chainfiles = [
     #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_fixedh_nohex_marg.dat",
@@ -58,7 +71,7 @@ if __name__ == "__main__":
     bestfits = []
     for chaini, (chainfile, fixed_h) in enumerate(zip(chainfiles, fixed_hs)):
 
-        burntin, bestfit, like = read_chain(chainfile, burnlimitup=20000)
+        burntin, bestfit, like = read_chain_backend(chainfile)
         burntin[:, 0] = np.exp(burntin[:, 0]) / 1.0e1
         if fixed_h:
             paramnames = [r"$A_{s}\times 10^{9}$", r"$\Omega_{m}$", r"$b_{1}$"]

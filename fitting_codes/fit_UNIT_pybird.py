@@ -57,16 +57,11 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
             [(0.1 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)
         ]
 
-    # RELEASE THE CHAIN!!!
-    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, plt, fixed_h])
-    pos, prob, state = sampler.run_mcmc(begin, 1)
-    sampler.reset()
-
     h_str = "fixedh" if fixed_h else "varyh"
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s_%s.dat" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s.dat"
+    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s.hdf5"
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -82,24 +77,47 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
             marg_str,
         )
     )
-    f = open(chainfile, "w")
 
-    # Run and print out the chain for 20000 links
+    # Set up the backend
+    backend = emcee.backends.HDFBackend(chainfile)
+    backend.reset(nwalkers, nparams)
+
+    # Initialize the sampler
+    sampler = emcee.EnsembleSampler(
+        nwalkers, nparams, func, args=[birdmodel, fittingdata, plt, fixed_h], backend=backend
+    )
+
+    # Run the sampler for a max of 20000 iterations. We check convergence every 100 steps and stop if
+    # the chain is longer than 100 times the estimated autocorrelation time and if this estimate
+    # changed by less than 1%. I copied this from the emcee site as it seemed reasonable.
+    max_iter = 40000
+    index = 0
+    old_tau = np.inf
+    autocorr = np.empty(max_iter)
     counter = 0
-    for result in sampler.sample(pos, iterations=20000):
-        counter += 1
-        if (counter % 100) == 0:
-            print(counter)
-            print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
-        position = result.coords
-        lnprobab = result.log_prob
-        for k in range(position.shape[0]):
-            f.write("%4d  " % k)
-            for m in range(position.shape[1]):
-                f.write("%12.6f  " % position[k][m])
-            f.write("%12.6f  " % lnprobab[k])
-            f.write("\n")
-    f.close()
+    for sample in sampler.sample(begin, iterations=max_iter, progress=True):
+
+        # Only check convergence every 100 steps
+        if sampler.iteration % 100:
+            continue
+
+        # Compute the autocorrelation time so far
+        # Using tol=0 means that we'll always get an estimate even
+        # if it isn't trustworthy
+        tau = sampler.get_autocorr_time(tol=0)
+        autocorr[index] = np.mean(tau)
+        counter += 100
+        print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+        print("Mean Auto-Correlation time: {0:.3f}".format(autocorr[index]))
+
+        # Check convergence
+        converged = np.all(tau * 100 < sampler.iteration)
+        converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
+        if converged:
+            print("Reached Auto-Correlation time goal: %d > 100 x %.3f" % (counter, autocorr[index]))
+            break
+        old_tau = tau
+        index += 1
 
 
 def lnpost(params, birdmodel, fittingdata, plt, fixed_h):
@@ -274,10 +292,10 @@ if __name__ == "__main__":
         )
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
 
     # Does an MCMC with fixed h
     # if pardict["do_corr"]:
