@@ -18,26 +18,24 @@ if __name__ == "__main__":
     _, _, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
 
     # Set the chainfiles and names for each chain
+    chainfiles = [
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_20_160_grid_varyh_nohex_all.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_20_160_grid_varyh_nohex_marg.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_160_grid_varyh_nohex_marg.dat",
+    ]
+    figfile = ["/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_varyh_nohex.pdf"]
+    fixed_hs = [False, False, False]
+    names = [r"$\mathrm{Grid;\,No\,Marg}$", r"$\mathrm{Grid;\,Marg}$", r"$\mathrm{3^{rd}\,Order;\,Marg}$"]
+
     # chainfiles = [
-    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_all.dat",
-    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_marg.dat",
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_fixedh_nohex_marg.dat",
     #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_varyh_nohex_marg.dat",
     # ]
     # figfile = [
-    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_varyh_nohex.pdf"
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_nohex.pdf"
     # ]
-    # fixed_hs = [False, False, False]
-    # names = [r"$\mathrm{Grid;\,No\,Marg}$", r"$\mathrm{Grid;\,Marg}$", r"$\mathrm{3^{rd}\,Order;\,Marg}$"]
-
-    chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_fixedh_nohex_marg.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_varyh_nohex_marg.dat",
-    ]
-    figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_nohex.pdf"
-    ]
-    fixed_hs = [True, False]
-    names = [r"$\mathrm{Fixed\,}h$", r"$\mathrm{Vary\,}h$"]
+    # fixed_hs = [True, False]
+    # names = [r"$\mathrm{Fixed\,}h$", r"$\mathrm{Vary\,}h$"]
 
     # chainfiles = [
     #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_all.dat",
