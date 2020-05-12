@@ -45,11 +45,6 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
             [(0.02 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)
         ]
 
-    # RELEASE THE CHAIN!!!
-    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, plt, 0])
-    pos, prob, state = sampler.run_mcmc(begin, 1)
-    sampler.reset()
-
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
@@ -70,24 +65,45 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
             marg_str,
         )
     )
-    f = open(chainfile, "w")
 
-    # Run and print out the chain for 20000 links
+    # Set up the backend
+    backend = emcee.backends.HDFBackend(chainfile)
+    backend.reset(nwalkers, nparams)
+
+    # Initialize the sampler
+    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, plt], backend=backend)
+
+    # Run the sampler for a max of 20000 iterations. We check convergence every 100 steps and stop if
+    # the chain is longer than 100 times the estimated autocorrelation time and if this estimate
+    # changed by less than 1%. I copied this from the emcee site as it seemed reasonable.
+    max_iter = 40000
+    index = 0
+    old_tau = np.inf
+    autocorr = np.empty(max_iter)
     counter = 0
-    for result in sampler.sample(pos, iterations=20000):
-        counter += 1
-        if (counter % 100) == 0:
-            print(counter)
-            print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
-        position = result.coords
-        lnprobab = result.log_prob
-        for k in range(position.shape[0]):
-            f.write("%4d  " % k)
-            for m in range(position.shape[1]):
-                f.write("%12.6f  " % position[k][m])
-            f.write("%12.6f  " % lnprobab[k])
-            f.write("\n")
-    f.close()
+    for sample in sampler.sample(begin, iterations=max_iter, progress=True):
+
+        # Only check convergence every 100 steps
+        if sampler.iteration % 100:
+            continue
+
+        # Compute the autocorrelation time so far
+        # Using tol=0 means that we'll always get an estimate even
+        # if it isn't trustworthy
+        tau = sampler.get_autocorr_time(tol=0)
+        autocorr[index] = np.mean(tau)
+        counter += 100
+        print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+        print("Mean Auto-Correlation time: {0:.3f}".format(autocorr[index]))
+
+        # Check convergence
+        converged = np.all(tau * 100 < sampler.iteration)
+        converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
+        if converged:
+            print("Reached Auto-Correlation time goal: %d > 100 x %.3f" % (counter, autocorr[index]))
+            break
+        old_tau = tau
+        index += 1
 
 
 def lnpost(params, birdmodel, fittingdata, plt, fixed_h):
@@ -135,6 +151,7 @@ def lnprior(params, birdmodel):
         return c4_prior
 
     else:
+
         # Gaussian prior for b3 of width 2 centred on 0
         b3_prior = -0.5 * 0.25 * b3 ** 2
 
@@ -147,16 +164,22 @@ def lnprior(params, birdmodel):
         # Gaussian prior for cr1 of width 4 centred on 0
         cr2_prior = -0.5 * 0.0625 * cr2 ** 2
 
-        # Gaussian prior for ce1 of width 1 centred on 0
-        ce1_prior = -0.5 * 0.25 * ce1 ** 2
+        if birdmodel.pardict["do_corr"]:
 
-        # Gaussian prior for cemono of width 2 centred on 0
-        cemono_prior = -0.5 * 0.25 * cemono ** 2
+            return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior
 
-        # Gaussian prior for cequad of width 2 centred on 0
-        cequad_prior = -0.5 * 0.25 * cequad ** 2
+        else:
 
-        return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
+            # Gaussian prior for ce1 of width 2 centred on 0
+            ce1_prior = -0.5 * 0.25 * ce1 ** 2
+
+            # Gaussian prior for cemono of width 2 centred on 0
+            cemono_prior = -0.5 * 0.25 * cemono ** 2
+
+            # Gaussian prior for cequad of width 2 centred on 0
+            cequad_prior = -0.5 * 0.25 * cequad ** 2
+
+            return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
 
 
 def lnlike(params, birdmodel, fittingdata, plt):
@@ -227,9 +250,13 @@ if __name__ == "__main__":
     if plot_flag:
         plt = create_plot(pardict, fittingdata)
 
+    if pardict["do_corr"]:
+        start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    else:
+        start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+
     # Does an optimization
-    start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)

@@ -35,7 +35,7 @@ if __name__ == "__main__":
     ]
     fixed_hs = [False, False, False]
     names = [
-        r"$P(k)$;\,\mathrm{0.00-0.30}h\mathrm{Mpc^{-1}}",
+        r"$P(k);\,\mathrm{0.00-0.30}h\mathrm{Mpc^{-1}}$",
         r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}$",
         r"$\xi(s);\,\mathrm{50-200}h^{-1}\mathrm{Mpc}$",
     ]
