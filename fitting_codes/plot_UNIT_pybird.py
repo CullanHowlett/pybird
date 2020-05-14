@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # Set the chainfiles and names for each chain
     chainfiles = [
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_marg.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_varyh_nohex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_varyh_nohex_all.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_50_200_grid_varyh_nohex_marg.hdf5",
     ]
     figfile = [
@@ -86,8 +86,8 @@ if __name__ == "__main__":
     print(c.analysis.get_summary())
 
     # Get the bestfit bird model
-    if False:
-        params = bestfits[0]
+    if True:
+        params = bestfits[1]
         shot_noise = 309.210197  # Taken from the header of the data power spectrum file.
         fittingdata = FittingData(pardict, shot_noise=shot_noise)
 
@@ -97,25 +97,39 @@ if __name__ == "__main__":
         # Plotting (for checking/debugging, should turn off for production runs)
         plt = create_plot(pardict, fittingdata)
 
+        if birdmodel.pardict["do_marg"]:
+            b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
+            b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
+            if birdmodel.pardict["do_corr"]:
+                bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0]
+            else:
+                bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        else:
+            if birdmodel.pardict["do_corr"]:
+                b2 = (params[-6] + params[-4]) / np.sqrt(2.0)
+                b4 = (params[-6] - params[-4]) / np.sqrt(2.0)
+                bs = [params[-7], b2, params[-5], b4, params[-3], params[-2], params[-1]]
+            else:
+                b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
+                b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
+                bs = [
+                    params[-10],
+                    b2,
+                    params[-8],
+                    b4,
+                    params[-6],
+                    params[-5],
+                    params[-4],
+                    params[-3] * fittingdata.data["shot_noise"],
+                    params[-2] * fittingdata.data["shot_noise"],
+                    params[-1] * fittingdata.data["shot_noise"],
+                ]
         ln10As, h, Omega_m = params[:3]
         fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
         omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
         omega_b = Omega_m * h ** 2 - omega_cdm
+        print(ln10As, h, omega_cdm, omega_b)
 
-        b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
-        b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
-        bs = [
-            params[-10],
-            b2,
-            params[-8],
-            b4,
-            params[-6],
-            params[-5],
-            params[-4],
-            params[-3] * fittingdata.data["shot_noise"],
-            params[-2] * fittingdata.data["shot_noise"],
-            params[-1] * fittingdata.data["shot_noise"],
-        ]
         Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
         P_model = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
         Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
@@ -124,12 +138,12 @@ if __name__ == "__main__":
         update_plot(pardict, fittingdata, P_model, plt, keep=True)
         print(params, chi_squared)
 
-        np.savetxt(
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_varyh_nohex_all_bestfit.dat",
+        """np.savetxt(
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30-200_varyh_nohex_all_bestfit.dat",
             np.c_[
                 fittingdata.data["x_data"],
                 P_model[: len(fittingdata.data["x_data"])],
                 P_model[len(fittingdata.data["x_data"]) :],
             ],
             header="k       P0          P2",
-        )
+        )"""

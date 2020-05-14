@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # Set up pybird
     Nl = 3
     common = pybird.Common(Nl=Nl, kmax=0.5, optiresum=False)
-    commoncf = pybird.Common(Nl=Nl, kmax=0.5, optiresum=False)
+    commoncf = pybird.Common(Nl=Nl, smax=1000)
     nonlinear = pybird.NonLinear(load=False, save=False, co=common)
     nonlinearcf = pybird.NonLinear(load=False, save=False, co=commoncf)
     resum = pybird.Resum(co=common)

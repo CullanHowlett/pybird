@@ -13,7 +13,7 @@ from fitting_codes.fitting_utils import (
 )
 
 
-def do_emcee(func, start, birdmodel, fittingdata, plt):
+def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
 
     import emcee
 
@@ -29,28 +29,39 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     nwalkers = nparams * 8
 
     if birdmodel.pardict["do_marg"]:
-        begin = [
-            [
-                (0.01 * (np.random.rand() - 0.5) + 1.0) * start[0],
-                (0.01 * (np.random.rand() - 0.5) + 1.0) * start[1],
-                (0.1 * (np.random.rand() - 0.5) + 1.0) * start[2],
-                (0.1 * (np.random.rand() - 0.5) + 1.0) * start[3],
-                (0.1 * (np.random.rand() - 0.5) + 1.0) * start[4],
-                (0.1 * (np.random.rand() - 0.5) + 1.0) * start[6],
+        if fixed_h:
+            begin = [
+                [
+                    (0.01 * (np.random.rand() - 0.5) + 1.0) * start[0],
+                    (0.1 * (np.random.rand() - 0.5) + 1.0) * start[1],
+                    (0.1 * (np.random.rand() - 0.5) + 1.0) * start[2],
+                    (0.1 * (np.random.rand() - 0.5) + 1.0) * start[3],
+                    (0.1 * (np.random.rand() - 0.5) + 1.0) * start[5],
+                ]
+                for i in range(nwalkers)
             ]
-            for i in range(nwalkers)
-        ]
+        else:
+            begin = [
+                [
+                    (0.01 * (np.random.rand() - 0.5) + 1.0) * start[0],
+                    (0.01 * (np.random.rand() - 0.5) + 1.0) * start[1],
+                    (0.1 * (np.random.rand() - 0.5) + 1.0) * start[2],
+                    (0.1 * (np.random.rand() - 0.5) + 1.0) * start[3],
+                    (0.1 * (np.random.rand() - 0.5) + 1.0) * start[4],
+                    (0.1 * (np.random.rand() - 0.5) + 1.0) * start[6],
+                ]
+                for i in range(nwalkers)
+            ]
     else:
         begin = [
-            [(0.02 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)
+            [(0.1 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)
         ]
 
+    h_str = "fixedh" if fixed_h else "varyh"
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = (
-        "%s_%s_%2d_%3d_%s_%s_%s_template.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_template.hdf5"
-    )
+    fmt_str = "%s_%s_%2d_%3d_direct_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_direct_%s_%s_%s.hdf5"
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -60,7 +71,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
             dat_str,
             birdmodel.pardict["xfit_min"],
             birdmodel.pardict["xfit_max"],
-            taylor_strs[pardict["taylor_order"]],
+            h_str,
             hex_str,
             marg_str,
         )
@@ -71,7 +82,9 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     backend.reset(nwalkers, nparams)
 
     # Initialize the sampler
-    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, plt], backend=backend)
+    sampler = emcee.EnsembleSampler(
+        nwalkers, nparams, func, args=[birdmodel, fittingdata, plt, fixed_h], backend=backend
+    )
 
     # Run the sampler for a max of 20000 iterations. We check convergence every 100 steps and stop if
     # the chain is longer than 100 times the estimated autocorrelation time and if this estimate
@@ -106,17 +119,17 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
         index += 1
 
 
-def lnpost(params, birdmodel, fittingdata, plt):
+def lnpost(params, birdmodel, fittingdata, plt, fixed_h):
 
     # This returns the posterior distribution which is given by the log prior plus the log likelihood
-    prior = lnprior(params, birdmodel)
+    prior = lnprior(params, birdmodel, fixed_h)
     if not np.isfinite(prior):
         return -np.inf
-    like = lnlike(params, birdmodel, fittingdata, plt)
+    like = lnlike(params, birdmodel, fittingdata, plt, fixed_h)
     return prior + like
 
 
-def lnprior(params, birdmodel):
+def lnprior(params, birdmodel, fixed_h):
 
     # Here we define the prior for all the parameters. We'll ignore the constants as they
     # cancel out when subtracting the log posteriors
@@ -128,11 +141,22 @@ def lnprior(params, birdmodel):
         else:
             b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[-10:]
 
-    lower_bounds = birdmodel.valueref - birdmodel.pardict["template_order"] * birdmodel.delta
-    upper_bounds = birdmodel.valueref + birdmodel.pardict["template_order"] * birdmodel.delta
+    if fixed_h:
+        ln10As, Omega_m = params[:2]
+        h = birdmodel.valueref[1]
+    else:
+        ln10As, h, Omega_m = params[:3]
+    fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
+    omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
+    omega_b = Omega_m * h ** 2 - omega_cdm
 
-    # Flat priors for alpha_perp, alpha_par and fsigma8
-    if np.any(np.less(params[:3], lower_bounds)) or np.any(np.greater(params[:3], upper_bounds)):
+    lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
+    upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
+
+    # Flat priors for cosmological parameters
+    if np.any(np.less([ln10As, h, omega_cdm, omega_b], lower_bounds)) or np.any(
+        np.greater([ln10As, h, omega_cdm, omega_b], upper_bounds)
+    ):
         return -np.inf
 
     # Flat prior for b1
@@ -151,7 +175,6 @@ def lnprior(params, birdmodel):
         return c4_prior
 
     else:
-
         # Gaussian prior for b3 of width 2 centred on 0
         b3_prior = -0.5 * 0.25 * b3 ** 2
 
@@ -182,7 +205,7 @@ def lnprior(params, birdmodel):
             return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
 
 
-def lnlike(params, birdmodel, fittingdata, plt):
+def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
 
     if birdmodel.pardict["do_marg"]:
         b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
@@ -213,8 +236,16 @@ def lnlike(params, birdmodel, fittingdata, plt):
             ]
 
     # Get the bird model
-    Plin, Ploop = birdmodel.compute_pk(params[:3])
-    P_model = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
+    if fixed_h:
+        ln10As, Omega_m = params[:2]
+        h = birdmodel.valueref[1]
+    else:
+        ln10As, h, Omega_m = params[:3]
+    fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
+    omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
+    omega_b = Omega_m * h ** 2 - omega_cdm
+
+    P_model, Ploop = birdmodel.compute_model_direct([ln10As, h, omega_cdm, omega_b], bs, fittingdata.data["x_data"])
     Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
 
     chi_squared = birdmodel.compute_chi2(P_model, Pi, fittingdata.data)
@@ -243,20 +274,30 @@ if __name__ == "__main__":
     fittingdata = FittingData(pardict, shot_noise=shot_noise)
 
     # Set up the BirdModel
-    birdmodel = BirdModel(pardict, template=True)
+    birdmodel = BirdModel(pardict, template=False, direct=True)
 
     # Plotting (for checking/debugging, should turn off for production runs)
     plt = None
     if plot_flag:
         plt = create_plot(pardict, fittingdata)
 
+    omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
     if pardict["do_corr"]:
-        start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        start = np.array([birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     else:
-        start = np.array([1.0, 1.0, birdmodel.fN, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        start = np.array(
+            [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        )
 
     # Does an optimization
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+
+    # Does an MCMC with fixed h
+    # if pardict["do_corr"]:
+    #    start = np.array([birdmodel.valueref[0], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    # else:
+    #    start = np.array([birdmodel.valueref[0], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    # do_emcee(lnpost, start, birdmodel, fittingdata, plt, fixed_h=True)

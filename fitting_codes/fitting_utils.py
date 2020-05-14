@@ -2,6 +2,7 @@
 # with fixed or varying template, and for any number of cosmological parameters
 
 import os
+import copy
 import numpy as np
 import scipy as sp
 from scipy.interpolate import splrep, splev
@@ -11,30 +12,66 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 sys.path.append("../")
+from pybird import pybird
 from tbird.Grid import grid_properties, grid_properties_template, run_camb
 from tbird.computederivs import get_grids, get_template_grids, get_PSTaylor, get_ParamsTaylor
 
 # Wrapper around the pybird data and model evaluation
 class BirdModel:
-    def __init__(self, pardict, template=False):
+    def __init__(self, pardict, template=False, direct=False):
 
         self.pardict = pardict
         self.Nl = 3 if pardict["do_hex"] else 2
         self.template = template
+        self.direct = direct
 
         # Some constants for the EFT model
         self.k_m, self.k_nl = 0.7, 0.7
         self.eft_priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0])
         self.priormat = np.diagflat(1.0 / self.eft_priors ** 2)
 
-        # Get some values at the grid centre
-        if self.template:
-            _, _, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(pardict)
-            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
-        else:
+        # Get some values at the grid centre or set up Pybird if we are fitting directly
+        if self.direct:
             self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
+            self.common, self.nonlinear, self.resum, self.projection = self.setup_pybird()
+            self.kin = self.projection.kout
+        else:
+            if self.template:
+                _, _, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(pardict)
+                self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
+            else:
+                self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
 
-        self.kin, self.paramsmod, self.linmod, self.loopmod = self.load_model()
+            self.kin, self.paramsmod, self.linmod, self.loopmod = self.load_model()
+
+    def setup_pybird(self):
+
+        # Set up pybird
+        if self.pardict["do_corr"]:
+            common = pybird.Common(Nl=self.Nl, smax=1000)
+        else:
+            common = pybird.Common(Nl=self.Nl, kmax=0.5, optiresum=False)
+        nonlinear = pybird.NonLinear(load=False, save=False, co=common)
+        resum = pybird.Resum(co=common)
+
+        # Get some cosmological values at the grid centre
+        kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(self.pardict)
+
+        # Set up the window function and projection effects. No window at the moment for the UNIT sims,
+        # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
+        # used to make the measurements is the same as Grid centre
+        if self.pardict["do_corr"]:
+            projection = pybird.Projection(common.s, Da, Hz, co=common, cf=True)
+        else:
+            kout, nkout = common.k, len(common.k)
+            projection = pybird.Projection(kout, Da, Hz, co=common)
+            projection.p = kout
+            window = np.zeros((self.Nl, self.Nl, nkout, nkout))
+            for i in range(self.Nl):
+                window[i, i, :, :] = np.eye(nkout)
+            projection.Waldk = window
+
+        return common, nonlinear, resum, projection
 
     def load_model(self):
 
@@ -121,6 +158,44 @@ class BirdModel:
         Ploop = np.swapaxes(Ploop, axis1=1, axis2=2)[:, 1:, :]
 
         return Plin, Ploop
+
+    def compute_model_direct(self, coords, bs, x_data):
+
+        parameters = copy.deepcopy(self.pardict)
+        for k, var in enumerate(self.pardict["freepar"]):
+            parameters[var] = coords[k]
+        kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+
+        # Get non-linear power spectrum from pybird
+        bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=self.pardict["z_pk"], which="all", co=self.common)
+        self.nonlinear.PsCf(bird)
+        bird.setPsCfl()
+        self.resum.PsCf(bird)
+        self.projection.AP(bird)
+        if self.pardict["do_corr"]:
+            bird.setreduceCflb(bs)
+            P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.s, bird.fullCf[0]))
+            P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.s, bird.fullCf[1]))
+            if self.pardict["do_hex"]:
+                P4 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.projection.kout, bird.fullCf[2]))
+            plin, ploop = bird.formatTaylorCf(sdata=self.projection.kout)
+        else:
+            self.projection.Window(bird)
+            bird.setreducePslb(bs[:-3])
+            P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.k, bird.fullPs[0]))
+            P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.k, bird.fullPs[1]))
+            if self.pardict["do_hex"]:
+                P4 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.k, bird.fullPs[2]))
+            plin, ploop = bird.formatTaylorPs(kdata=self.projection.kout)
+            P0 += bs[-3] + bs[-2] * x_data ** 2 / self.k_m ** 2
+            P2 += bs[-1] * x_data ** 2 / self.k_m ** 2
+
+        if self.pardict["do_hex"]:
+            P_model = np.concatenate([P0, P2, P4])
+        else:
+            P_model = np.concatenate([P0, P2])
+
+        return P_model, ploop
 
     def compute_model(self, cvals, plin, ploop, x_data):
 
@@ -721,6 +796,7 @@ def read_chain(chainfile, burnlimitlow=5000, burnlimitup=None):
 
 def read_chain_backend(chainfile):
 
+    import copy
     import emcee
 
     reader = emcee.backends.HDFBackend(chainfile)
@@ -731,4 +807,4 @@ def read_chain_backend(chainfile):
     log_prob_samples = reader.get_log_prob(discard=burnin, flat=True)
     bestid = np.argmax(log_prob_samples)
 
-    return samples, samples[bestid], log_prob_samples
+    return samples, copy.copy(samples[bestid]), log_prob_samples

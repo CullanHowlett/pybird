@@ -38,7 +38,7 @@ if __name__ == "__main__":
     # Set up the window function and projection effects. No window at the moment for the UNIT sims,
     # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
     # used to make the measurements is the same as Grid centre
-    sout, nsout = np.linspace(1.0, 200.0, 200), 200
+    sout, nsout = commoncf.s, len(commoncf.s)
     kout, nkout = common.k, len(common.k)
     projection = pybird.Projection(kout, Da, Hz, co=common)
     projection.p = kout
@@ -54,6 +54,7 @@ if __name__ == "__main__":
     allClin = []
     allCloop = []
     allParams = []
+    allCAMB = []
     for i, theta in enumerate(arrayred):
         parameters = copy.deepcopy(pardict)
         truetheta = valueref + theta * delta
@@ -82,6 +83,9 @@ if __name__ == "__main__":
         Params = np.array([Da, Hz, fN, sigma8, sigma12, r_d])
         Plin, Ploop = bird.formatTaylorPs(kdata=kout)
         Clin, Cloop = crow.formatTaylorCf(sdata=sout)
+        Pin = np.c_[kin, Pin]
+        idxcol = np.full([Pin.shape[0], 1], idx)
+        allCAMB.append(np.hstack([Pin, idxcol]))
         idxcol = np.full([Plin.shape[0], 1], idx)
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
@@ -91,6 +95,7 @@ if __name__ == "__main__":
         allParams.append(np.hstack([Params, [idx]]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
+        np.save(os.path.join(pardict["outpk"], "CAMB_run%s.npy" % (str(job_no))), np.array(allCAMB))
         np.save(os.path.join(pardict["outpk"], "Plin_run%s.npy" % (str(job_no))), np.array(allPlin))
         np.save(os.path.join(pardict["outpk"], "Ploop_run%s.npy" % (str(job_no))), np.array(allPloop))
         np.save(os.path.join(pardict["outpk"], "Clin_run%s.npy" % (str(job_no))), np.array(allClin))

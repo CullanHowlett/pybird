@@ -6,7 +6,14 @@ from chainconsumer import ChainConsumer
 
 sys.path.append("../")
 from tbird.Grid import run_camb
-from fitting_codes.fitting_utils import read_chain, BirdModel, FittingData, create_plot, update_plot, format_pardict
+from fitting_codes.fitting_utils import (
+    read_chain_backend,
+    BirdModel,
+    FittingData,
+    create_plot,
+    update_plot,
+    format_pardict,
+)
 
 
 if __name__ == "__main__":
@@ -16,18 +23,17 @@ if __name__ == "__main__":
     pardict = ConfigObj(configfile)
     pardict = format_pardict(pardict)
     _, _, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
-    print(sigma8_fid)
 
     # Set the chainfiles and names for each chain
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_nohex_all_template.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_nohex_marg_template.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_nohex_marg_template.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_nohex_all_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_160_grid_nohex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_160_grid_hex_marg_template.hdf5",
     ]
     figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_nohex_template.pdf"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_grid_marg_template.pdf"
     ]
-    names = [r"$\mathrm{Grid;\,No\,Marg}$", r"$\mathrm{Grid;\,Marg}$", r"$\mathrm{3^{rd}\,Order;\,Marg}$"]
+    names = [r"$\mathrm{30-200;\,No\,Hex}$", r"$\mathrm{30-160;\,No\,Hex}$", r"$\mathrm{30-160;\,Hex}$"]
 
     truths = {
         r"$\alpha_{\perp}$": 1.0,
@@ -42,7 +48,8 @@ if __name__ == "__main__":
     bestfits = []
     for chaini, chainfile in enumerate(chainfiles):
 
-        burntin, bestfit, like = read_chain(chainfile, burnlimitup=20000)
+        print(chainfile)
+        burntin, bestfit, like = read_chain_backend(chainfile)
         burntin[:, 2] *= sigma8_fid
         burntin[:, 3] *= sigma8_fid
         paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
