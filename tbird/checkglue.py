@@ -47,6 +47,7 @@ if __name__ == "__main__":
         print(linfailed, loopfailed)
         raise Exception("Some processes have failed!")
 
+    gridCAMB = []
     gridlin = []
     gridloop = []
     gridCflin = []
@@ -55,11 +56,13 @@ if __name__ == "__main__":
     for i in range(njobs):
         print("Run ", i)
         Params = np.load(os.path.join(pardict["outpk"], "Params_run%d.npy" % i))
+        CAMB = np.load(os.path.join(pardict["outpk"], "CAMB_run%d.npy" % i))
         Plin = np.load(os.path.join(pardict["outpk"], "Plin_run%d.npy" % i))
         Ploop = np.load(os.path.join(pardict["outpk"], "Ploop_run%d.npy" % i))
         Clin = np.load(os.path.join(pardict["outpk"], "Clin_run%d.npy" % i))
         Cloop = np.load(os.path.join(pardict["outpk"], "Cloop_run%d.npy" % i))
         gridparams.append(Params[:, :-1])
+        gridCAMB.append(CAMB[:, :-1])
         gridlin.append(Plin[:, :, :-1])
         gridloop.append(Ploop[:, :, :-1])
         gridCflin.append(Clin[:, :, :-1])
@@ -77,6 +80,7 @@ if __name__ == "__main__":
         if not checkCfloop:
             print("Problem in loop CF: ", i, i * lenbatch, Cloop[0, 0, -1])
 
+    np.save(os.path.join(pardict["outgrid"], "TableCAMB_%s.npy" % pardict["gridname"]), np.concatenate(gridCAMB))
     np.save(os.path.join(pardict["outgrid"], "TablePlin_%s.npy" % pardict["gridname"]), np.concatenate(gridlin))
     np.save(os.path.join(pardict["outgrid"], "TablePloop_%s.npy" % pardict["gridname"]), np.concatenate(gridloop))
     np.save(os.path.join(pardict["outgrid"], "TableClin_%s.npy" % pardict["gridname"]), np.concatenate(gridCflin))
