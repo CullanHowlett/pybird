@@ -107,7 +107,7 @@ def run_camb(pardict, background_only=False):
         pars.set_dark_energy(w=float(parlinear["w0_fld"]), dark_energy_model="fluid")
     pars.InitPower.set_params(As=float(parlinear["A_s"]), ns=float(parlinear["n_s"]))
     pars.set_matter_power(
-        redshifts=[float(parlinear["z_pk"]), 0.0001], kmax=float(parlinear["P_k_max_h/Mpc"]),
+        redshifts=[float(parlinear["z_pk"]), 0.0001], kmax=float(parlinear["P_k_max_h/Mpc"]), nonlinear=False
     )
     pars.set_cosmology(
         H0=float(parlinear["H0"]),
@@ -128,7 +128,7 @@ def run_camb(pardict, background_only=False):
 
         # Get the power spectrum
         kin, _, Plin = results.get_matter_power_spectrum(
-            minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=2000
+            minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=2000,
         )
 
     # Get some derived quantities
@@ -142,7 +142,7 @@ def run_camb(pardict, background_only=False):
     if background_only:
         return Da, H
     else:
-        return kin, Plin[-1], Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
+        return kin, Plin[0], Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
 
 
 if __name__ == "__main__":

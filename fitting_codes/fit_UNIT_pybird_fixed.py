@@ -1,19 +1,43 @@
 import numpy as np
 import sys
+import pandas as pd
 from configobj import ConfigObj
 
 sys.path.append("../")
+from pybird import pybird
 from fitting_codes.fitting_utils import (
     FittingData,
     BirdModel,
     create_plot,
     update_plot,
     format_pardict,
-    do_optimization,
 )
 
 
-def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
+def do_optimization(func, start, birdmodel, fittingdata, plt, Plin, Ploop):
+
+    from scipy.optimize import basinhopping
+
+    result = basinhopping(
+        func,
+        start,
+        niter_success=10,
+        niter=100,
+        stepsize=0.1,
+        minimizer_kwargs={
+            "args": (birdmodel, fittingdata, plt, Plin, Ploop),
+            "method": "Nelder-Mead",
+            "tol": 1.0e-3,
+            "options": {"maxiter": 40000},
+        },
+    )
+    print("#-------------- Best-fit----------------")
+    print(result)
+
+    return result
+
+
+def do_emcee(func, start, birdmodel, fittingdata, plt, Plin, Ploop):
 
     import emcee
 
@@ -120,45 +144,27 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
         index += 1
 
 
-def lnpost(params, birdmodel, fittingdata, plt, fixed_h):
+def lnpost(params, birdmodel, fittingdata, plt, Plin, Ploop):
 
     # This returns the posterior distribution which is given by the log prior plus the log likelihood
-    prior = lnprior(params, birdmodel, fixed_h)
+    prior = lnprior(params, birdmodel)
     if not np.isfinite(prior):
         return -np.inf
-    like = lnlike(params, birdmodel, fittingdata, plt, fixed_h)
+    like = lnlike(params, birdmodel, fittingdata, plt, Plin, Ploop)
     return prior + like
 
 
-def lnprior(params, birdmodel, fixed_h):
+def lnprior(params, birdmodel):
 
     # Here we define the prior for all the parameters. We'll ignore the constants as they
     # cancel out when subtracting the log posteriors
     if birdmodel.pardict["do_marg"]:
-        b1, c2, c4 = params[-3:]
+        b1, c2, c4 = params
     else:
         if birdmodel.pardict["do_corr"]:
-            b1, c2, b3, c4, cct, cr1, cr2 = params[-7:]
+            b1, c2, b3, c4, cct, cr1, cr2 = params
         else:
-            b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[-10:]
-
-    if fixed_h:
-        ln10As, Omega_m = params[:2]
-        h = birdmodel.valueref[1]
-    else:
-        ln10As, h, Omega_m = params[:3]
-    fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
-    omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
-    omega_b = Omega_m * h ** 2 - omega_cdm
-
-    lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
-    upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
-
-    # Flat priors for cosmological parameters
-    if np.any(np.less([ln10As, h, omega_cdm, omega_b], lower_bounds)) or np.any(
-        np.greater([ln10As, h, omega_cdm, omega_b], upper_bounds)
-    ):
-        return -np.inf
+            b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params
 
     # Flat prior for b1
     if b1 < 0.0 or b1 > 3.0:
@@ -206,7 +212,7 @@ def lnprior(params, birdmodel, fixed_h):
             return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
 
 
-def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
+def lnlike(params, birdmodel, fittingdata, plt, Plin, Ploop):
 
     if birdmodel.pardict["do_marg"]:
         b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
@@ -237,16 +243,6 @@ def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
             ]
 
     # Get the bird model
-    if fixed_h:
-        ln10As, Omega_m = params[:2]
-        h = birdmodel.valueref[1]
-    else:
-        ln10As, h, Omega_m = params[:3]
-    fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
-    omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
-    omega_b = Omega_m * h ** 2 - omega_cdm
-
-    Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
     Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
 
@@ -262,8 +258,7 @@ def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
 
 if __name__ == "__main__":
 
-    # Code to generate a power spectrum template at fixed cosmology using pybird, then fit the AP parameters and fsigma8
-    # First read in the config file
+    # Code to generate a power spectrum template at fixed cosmology using pybird then fit only the bias parameters
     configfile = sys.argv[1]
     plot_flag = int(sys.argv[2])
     pardict = ConfigObj(configfile)
@@ -275,24 +270,70 @@ if __name__ == "__main__":
     shot_noise = 309.210197  # Taken from the header of the data power spectrum file.
     fittingdata = FittingData(pardict, shot_noise=shot_noise)
 
-    # Set up the BirdModel
-    birdmodel = BirdModel(pardict, template=False)
+    # Set up the BirdModel by reading in the linear power spectrum
+    pardict["do_hex"] = 1
+    birdmodel = BirdModel(pardict, template=False, direct=True)
+    Pin = np.array(
+        pd.read_csv(
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/Pk_Planck15_Table4.txt",
+            delim_whitespace=True,
+            header=None,
+            skiprows=0,
+        )
+    )
+    Om = float(pardict["omega_cdm"]) + float(pardict["omega_b"]) / float(pardict["h"]) ** 2
+    birdmodel.Pmod *= (pybird.DgN(Om, 1.0 / (1.0 + float(pardict["z_pk"]))) / pybird.DgN(Om, 1.0)) ** 2
+
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure(0)
+    ax = fig.add_axes([0.13, 0.13, 0.85, 0.85])
+    ax.plot(Pin[:, 0], Pin[:, 1], color="r")
+    ax.plot(birdmodel.kmod, birdmodel.Pmod, color="b")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    plt.show()
+
+    bird = pybird.Bird(
+        birdmodel.kmod,
+        birdmodel.Pmod,
+        birdmodel.fN,
+        DA=birdmodel.Da,
+        H=birdmodel.Hz,
+        z=pardict["z_pk"],
+        which="all",
+        co=birdmodel.common,
+    )
+    birdmodel.nonlinear.PsCf(bird)
+    bird.setPsCfl()
+    birdmodel.resum.PsCf(bird)
+    birdmodel.projection.AP(bird)
+    birdmodel.projection.kdata(bird)
+    if pardict["do_corr"]:
+        Plin, Ploop = bird.formatTaylorCf(sdata=birdmodel.kin)
+    else:
+        Plin, Ploop = bird.formatTaylorPs(kdata=birdmodel.kin)
+    Plin = np.swapaxes(Plin.reshape((birdmodel.Nl, Plin.shape[-2] // birdmodel.Nl, Plin.shape[-1])), axis1=1, axis2=2)[
+        :, 1:, :
+    ]
+    Ploop = np.swapaxes(
+        Ploop.reshape((birdmodel.Nl, Ploop.shape[-2] // birdmodel.Nl, Ploop.shape[-1])), axis1=1, axis2=2
+    )[:, 1:, :]
+    pardict["do_hex"] = 0
+    birdmodel.Nl = 2
 
     # Plotting (for checking/debugging, should turn off for production runs)
     plt = None
     if plot_flag:
         plt = create_plot(pardict, fittingdata)
 
-    omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
     if pardict["do_corr"]:
-        start = np.array([birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        start = np.array([1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     else:
-        start = np.array(
-            [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-        )
+        start = np.array([1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt, Plin, Ploop)
 
     # Does an MCMC
     # do_emcee(lnpost, start, birdmodel, fittingdata, plt)

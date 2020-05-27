@@ -33,6 +33,7 @@ class BirdModel:
         # Get some values at the grid centre or set up Pybird if we are fitting directly
         if self.direct:
             self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
+            self.kmod, self.Pmod, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(pardict)
             self.common, self.nonlinear, self.resum, self.projection = self.setup_pybird()
             self.kin = self.projection.kout
         else:
@@ -54,17 +55,14 @@ class BirdModel:
         nonlinear = pybird.NonLinear(load=False, save=False, co=common)
         resum = pybird.Resum(co=common)
 
-        # Get some cosmological values at the grid centre
-        kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(self.pardict)
-
         # Set up the window function and projection effects. No window at the moment for the UNIT sims,
         # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
         # used to make the measurements is the same as Grid centre
         if self.pardict["do_corr"]:
-            projection = pybird.Projection(common.s, Da, Hz, co=common, cf=True)
+            projection = pybird.Projection(common.s, self.Da, self.Hz, co=common, cf=True)
         else:
             kout, nkout = common.k, len(common.k)
-            projection = pybird.Projection(kout, Da, Hz, co=common)
+            projection = pybird.Projection(kout, self.Da, self.Hz, co=common)
             projection.p = kout
             window = np.zeros((self.Nl, self.Nl, nkout, nkout))
             for i in range(self.Nl):
@@ -77,6 +75,7 @@ class BirdModel:
 
         # Load in the model components
         if self.pardict["taylor_order"]:
+            print(self.pardict["taylor_order"])
             if self.template:
                 paramsmod = None
                 if self.pardict["do_corr"]:
@@ -236,21 +235,23 @@ class BirdModel:
         if self.pardict["do_hex"]:
             P4 = np.dot(cvals, ploop4) + plin4[0] + b1 * plin4[1] + b1 * b1 * plin4[2]
 
-        P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P0))
-        P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P2))
+        P0_interp = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P0))
+        P2_interp = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P2))
         if self.pardict["do_hex"]:
-            P4 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P4))
+            P4_interp = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P4))
 
         if not self.pardict["do_corr"]:
-            P0 += ce1 + cemono * x_data ** 2 / self.k_m ** 2
-            P2 += cequad * x_data ** 2 / self.k_m ** 2
+            P0_interp += ce1 + cemono * x_data ** 2 / self.k_m ** 2
+            P2_interp += cequad * x_data ** 2 / self.k_m ** 2
 
         if self.pardict["do_hex"]:
             P_model = np.concatenate([P0, P2, P4])
+            P_model_interp = np.concatenate([P0_interp, P2_interp, P4_interp])
         else:
             P_model = np.concatenate([P0, P2])
+            P_model_interp = np.concatenate([P0_interp, P2_interp])
 
-        return P_model
+        return P_model, P_model_interp
 
     def compute_chi2(self, P_model, Pi, data):
 
@@ -680,9 +681,8 @@ def create_plot(pardict, fittingdata):
     return plt
 
 
-def update_plot(pardict, fittingdata, P_model, plt, keep=False):
+def update_plot(pardict, x_data, P_model, plt, keep=False):
 
-    x_data = fittingdata.data["x_data"]
     Nl = 3 if pardict["do_hex"] else 2
     nx = len(x_data)
     plt_data = np.tile(x_data ** 2, Nl) * P_model if pardict["do_corr"] else np.tile(x_data, Nl) * P_model

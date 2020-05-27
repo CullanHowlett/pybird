@@ -64,6 +64,8 @@ if __name__ == "__main__":
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
         kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+        Om = float(pardict["omega_cdm"]) + float(pardict["omega_b"]) / float(pardict["h"]) ** 2
+        Pin *= (pybird.DgN(Om, 1.0 / (1.0 + float(pardict["z_pk"]))) / pybird.DgN(Om, 1.0)) ** 2
 
         # Get non-linear power spectrum from pybird
         bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
