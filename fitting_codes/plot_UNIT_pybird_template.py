@@ -22,7 +22,7 @@ if __name__ == "__main__":
     configfile = sys.argv[1]
     pardict = ConfigObj(configfile)
     pardict = format_pardict(pardict)
-    _, _, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
+    _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
 
     # Set the chainfiles and names for each chain
     chainfiles = [

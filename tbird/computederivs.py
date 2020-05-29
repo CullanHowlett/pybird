@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
     # Get the grid properties
     if template:
-        kin, Pin, Da_fid, Hz_fid, fN, sigma8, sigma12, r_d = run_camb(pardict)
+        kin, Pin, Om, Da_fid, Hz_fid, fN, sigma8, sigma12, r_d = run_camb(pardict)
         valueref, delta, flattenedgrid, truecrd = grid_properties_template(pardict, fN)
 
         print("Let's start!")

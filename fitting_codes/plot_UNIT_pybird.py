@@ -22,22 +22,22 @@ if __name__ == "__main__":
     configfile = sys.argv[1]
     pardict = ConfigObj(configfile)
     pardict = format_pardict(pardict)
-    _, _, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
+    _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
 
     # Set the chainfiles and names for each chain
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_varyh_nohex_marg.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_varyh_nohex_all.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_50_200_grid_varyh_nohex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.25_grid_varyh_nohex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_varyh_nohex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_varyh_nohex_all.hdf5",
     ]
     figfile = [
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_grid_vary_nohex.pdf"
     ]
     fixed_hs = [False, False, False]
     names = [
-        r"$P(k);\,\mathrm{0.00-0.30}h\mathrm{Mpc^{-1}}$",
-        r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}$",
-        r"$\xi(s);\,\mathrm{50-200}h^{-1}\mathrm{Mpc}$",
+        r"$P(k);\,\mathrm{0.00-0.25}h\mathrm{Mpc^{-1}}\,\mathrm{Marg}$",
+        r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
+        r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{All}$",
     ]
 
     # chainfiles = [
@@ -87,12 +87,13 @@ if __name__ == "__main__":
 
     # Get the bestfit bird model
     if True:
-        params = bestfits[1]
+        params = bestfits[2]
         shot_noise = 309.210197  # Taken from the header of the data power spectrum file.
         fittingdata = FittingData(pardict, shot_noise=shot_noise)
 
         # Set up the BirdModel
-        birdmodel = BirdModel(pardict, template=False)
+        birdmodel = BirdModel(pardict)
+        print(birdmodel.valueref)
 
         # Plotting (for checking/debugging, should turn off for production runs)
         plt = create_plot(pardict, fittingdata)
@@ -125,17 +126,18 @@ if __name__ == "__main__":
                     params[-1] * fittingdata.data["shot_noise"],
                 ]
         ln10As, h, Omega_m = params[:3]
+        Omega_nu = float(birdmodel.pardict["Sum_mnu"]) / (93.14 * h ** 2)
         fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
-        omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
-        omega_b = Omega_m * h ** 2 - omega_cdm
+        omega_cdm = (Omega_m - Omega_nu) / (1.0 + fbc) * h ** 2
+        omega_b = (Omega_m - Omega_nu) * h ** 2 - omega_cdm
         print(ln10As, h, omega_cdm, omega_b)
 
         Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
-        P_model = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
+        P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
         Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
 
-        chi_squared = birdmodel.compute_chi2(P_model, Pi, fittingdata.data)
-        update_plot(pardict, fittingdata, P_model, plt, keep=True)
+        chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
+        update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt, keep=True)
         print(params, chi_squared)
 
         """np.savetxt(

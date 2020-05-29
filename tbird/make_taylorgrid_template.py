@@ -17,7 +17,7 @@ if __name__ == "__main__":
     pardict = ConfigObj(configfile)
 
     # Get some cosmological values at the grid centre
-    kin, Pin, Da_fid, Hz_fid, fN, sigma8, sigma12, r_d = run_camb(pardict)
+    kin, Pin, Om, Da_fid, Hz_fid, fN, sigma8, sigma12, r_d = run_camb(pardict)
 
     # Compute the values of the growth rate that this job will do
     valueref, delta, flattenedgrid, _ = grid_properties_template(pardict, fN)

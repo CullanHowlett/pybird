@@ -107,7 +107,7 @@ def run_camb(pardict, background_only=False):
         pars.set_dark_energy(w=float(parlinear["w0_fld"]), dark_energy_model="fluid")
     pars.InitPower.set_params(As=float(parlinear["A_s"]), ns=float(parlinear["n_s"]))
     pars.set_matter_power(
-        redshifts=[float(parlinear["z_pk"]), 0.0001], kmax=float(parlinear["P_k_max_h/Mpc"]), nonlinear=False
+        redshifts=[float(parlinear["z_pk"]), 0.0], kmax=float(parlinear["P_k_max_h/Mpc"]), nonlinear=False
     )
     pars.set_cosmology(
         H0=float(parlinear["H0"]),
@@ -132,6 +132,7 @@ def run_camb(pardict, background_only=False):
         )
 
     # Get some derived quantities
+    Omega_m = results.get_Omega("cdm") + results.get_Omega("baryon")
     Da = results.angular_diameter_distance(float(parlinear["z_pk"])) * float(parlinear["H0"]) / 299792.458
     H = results.hubble_parameter(float(parlinear["z_pk"])) / float(parlinear["H0"])
     fsigma8 = results.get_fsigma8()[0]
@@ -142,12 +143,16 @@ def run_camb(pardict, background_only=False):
     if background_only:
         return Da, H
     else:
-        return kin, Plin[0], Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
+        return kin, Plin[-1], Omega_m, Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
 
 
 if __name__ == "__main__":
 
     import sys
+
+    sys.path.append("../")
+    import matplotlib.pyplot as plt
+    from classy import Class
     from configobj import ConfigObj
 
     # Read in the config file, job number and total number of jobs
@@ -155,4 +160,39 @@ if __name__ == "__main__":
     pardict = ConfigObj(configfile)
 
     # Get some cosmological values at the grid centre
-    kin, Plin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+    kin, Plin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+
+    zpk = 0.9873
+    M = Class()
+    M.set(
+        {
+            "ln10^{10}A_s": 3.064325065,
+            "n_s": 0.9667,
+            "h": 0.6774,
+            "omega_b": 0.02230,
+            "omega_cdm": 0.1188,
+            "N_ur": 0.00641,
+            "N_ncdm": 3,
+            "m_ncdm": "0.02, 0.02, 0.02",
+        }
+    )
+
+    M.set({"output": "mPk", "P_k_max_1/Mpc": 20.0, "z_max_pk": zpk})
+    M.compute()
+
+    # P(k) in (Mpc/h)**3
+    Pk = [M.pk(ki * M.h(), zpk) * M.h() ** 3 for ki in kin]
+
+    fig = plt.figure(0)
+    ax = fig.add_axes([0.13, 0.13, 0.85, 0.85])
+    ax.plot(kin, Pk, color="r")
+    ax.plot(kin, Plin, color="b")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlim(-4.0, 0.0)
+    plt.show()
+
+    fig = plt.figure(1)
+    ax = fig.add_axes([0.13, 0.13, 0.85, 0.85])
+    ax.plot(kin, 100.0 * (Plin / Pk - 1.0), color="r")
+    plt.show()

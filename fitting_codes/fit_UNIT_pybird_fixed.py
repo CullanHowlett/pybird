@@ -163,8 +163,11 @@ def lnprior(params, birdmodel):
     else:
         if birdmodel.pardict["do_corr"]:
             b1, c2, b3, c4, cct, cr1, cr2 = params
+            # b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params
         else:
             b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params
+            # b1, c2, b3, c4, cct, cr1, cr2 = params
+            # ce1, cemono, cequad = [0.0, 0.0, 0.0]
 
     # Flat prior for b1
     if b1 < 0.0 or b1 > 3.0:
@@ -196,6 +199,17 @@ def lnprior(params, birdmodel):
 
         if birdmodel.pardict["do_corr"]:
 
+            """# Gaussian prior for ce1 of width 2 centred on 0
+            ce1_prior = -0.5 * 0.25 * ce1 ** 2
+
+            # Gaussian prior for cemono of width 2 centred on 0
+            cemono_prior = -0.5 * 0.25 * cemono ** 2
+
+            # Gaussian prior for cequad of width 2 centred on 0
+            cequad_prior = -0.5 * 0.25 * cequad ** 2
+
+            return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior"""
+
             return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior
 
         else:
@@ -226,6 +240,20 @@ def lnlike(params, birdmodel, fittingdata, plt, Plin, Ploop):
             b2 = (params[-6] + params[-4]) / np.sqrt(2.0)
             b4 = (params[-6] - params[-4]) / np.sqrt(2.0)
             bs = [params[-7], b2, params[-5], b4, params[-3], params[-2], params[-1]]
+            """b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
+            b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
+            bs = [
+                params[-10],
+                b2,
+                params[-8],
+                b4,
+                params[-6],
+                params[-5],
+                params[-4],
+                params[-3] / fittingdata.data["shot_noise"],
+                params[-2] / fittingdata.data["shot_noise"],
+                params[-1] / fittingdata.data["shot_noise"],
+            ]"""
         else:
             b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
             b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
@@ -241,6 +269,9 @@ def lnlike(params, birdmodel, fittingdata, plt, Plin, Ploop):
                 params[-2] * fittingdata.data["shot_noise"],
                 params[-1] * fittingdata.data["shot_noise"],
             ]
+            """b2 = (params[-6] + params[-4]) / np.sqrt(2.0)
+            b4 = (params[-6] - params[-4]) / np.sqrt(2.0)
+            bs = [params[-7], b2, params[-5], b4, params[-3], params[-2], params[-1], 0.0, 0.0, 0.0]"""
 
     # Get the bird model
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
@@ -249,7 +280,7 @@ def lnlike(params, birdmodel, fittingdata, plt, Plin, Ploop):
     chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
 
     if plt is not None:
-        update_plot(pardict, birdmodel.kin, P_model, plt)
+        update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt)
         if np.random.rand() < 0.1:
             print(params, chi_squared)
 
@@ -273,34 +304,13 @@ if __name__ == "__main__":
     # Set up the BirdModel by reading in the linear power spectrum
     pardict["do_hex"] = 1
     birdmodel = BirdModel(pardict, template=False, direct=True)
-    Pin = np.array(
-        pd.read_csv(
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/Pk_Planck15_Table4.txt",
-            delim_whitespace=True,
-            header=None,
-            skiprows=0,
-        )
-    )
-    Om = float(pardict["omega_cdm"]) + float(pardict["omega_b"]) / float(pardict["h"]) ** 2
-    birdmodel.Pmod *= (pybird.DgN(Om, 1.0 / (1.0 + float(pardict["z_pk"]))) / pybird.DgN(Om, 1.0)) ** 2
-
-    import matplotlib.pyplot as plt
-
-    fig = plt.figure(0)
-    ax = fig.add_axes([0.13, 0.13, 0.85, 0.85])
-    ax.plot(Pin[:, 0], Pin[:, 1], color="r")
-    ax.plot(birdmodel.kmod, birdmodel.Pmod, color="b")
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    plt.show()
-
     bird = pybird.Bird(
         birdmodel.kmod,
         birdmodel.Pmod,
-        birdmodel.fN,
+        pybird.fN(0.3089, 0.9873),
         DA=birdmodel.Da,
         H=birdmodel.Hz,
-        z=pardict["z_pk"],
+        z=float(pardict["z_pk"]),
         which="all",
         co=birdmodel.common,
     )
@@ -322,6 +332,9 @@ if __name__ == "__main__":
     pardict["do_hex"] = 0
     birdmodel.Nl = 2
 
+    # birdmodel = BirdModel(pardict, template=False)
+    # Plin, Ploop = birdmodel.compute_pk(birdmodel.valueref)
+
     # Plotting (for checking/debugging, should turn off for production runs)
     plt = None
     if plot_flag:
@@ -330,7 +343,7 @@ if __name__ == "__main__":
     if pardict["do_corr"]:
         start = np.array([1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     else:
-        start = np.array([1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        start = np.array([1.3, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0])
 
     # Does an optimization
     result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt, Plin, Ploop)

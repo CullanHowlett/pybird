@@ -33,7 +33,7 @@ if __name__ == "__main__":
     resumcf = pybird.Resum(co=commoncf)
 
     # Get some cosmological values at the grid centre
-    kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+    kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
 
     # Set up the window function and projection effects. No window at the moment for the UNIT sims,
     # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
@@ -63,9 +63,7 @@ if __name__ == "__main__":
 
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
-        kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
-        Om = float(pardict["omega_cdm"]) + float(pardict["omega_b"]) / float(pardict["h"]) ** 2
-        Pin *= (pybird.DgN(Om, 1.0 / (1.0 + float(pardict["z_pk"]))) / pybird.DgN(Om, 1.0)) ** 2
+        kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
 
         # Get non-linear power spectrum from pybird
         bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)

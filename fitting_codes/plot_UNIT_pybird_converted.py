@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # First read in the config file and compute Da_fid, Hz_fid and sigma8_fid
     configfile = sys.argv[1]
     pardict = ConfigObj(configfile)
-    _, _, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
+    _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
 
     # Set the chainfiles and names for each chain
     # chainfiles = [

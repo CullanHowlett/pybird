@@ -33,12 +33,14 @@ class BirdModel:
         # Get some values at the grid centre or set up Pybird if we are fitting directly
         if self.direct:
             self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
-            self.kmod, self.Pmod, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(pardict)
+            self.kmod, self.Pmod, self.Om, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(
+                pardict
+            )
             self.common, self.nonlinear, self.resum, self.projection = self.setup_pybird()
             self.kin = self.projection.kout
         else:
             if self.template:
-                _, _, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(pardict)
+                _, _, self.Om, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(pardict)
                 self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
             else:
                 self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
@@ -163,7 +165,7 @@ class BirdModel:
         parameters = copy.deepcopy(self.pardict)
         for k, var in enumerate(self.pardict["freepar"]):
             parameters[var] = coords[k]
-        kin, Pin, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+        kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
 
         # Get non-linear power spectrum from pybird
         bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=self.pardict["z_pk"], which="all", co=self.common)
@@ -661,11 +663,11 @@ def create_plot(pardict, fittingdata):
 
     plt.xlim(0.0, pardict["xfit_max"] * 1.05)
     if pardict["do_corr"]:
-        plt.xlabel(r"$s\,(h^{-1}\,\mathrm{Mpc})$", fontsize=22)
-        plt.ylabel(r"$s^{2}\xi(s)$", fontsize=22, labelpad=5)
+        plt.xlabel(r"$s\,(h^{-1}\,\mathrm{Mpc})$", fontsize=16)
+        plt.ylabel(r"$s^{2}\xi(s)$", fontsize=16, labelpad=5)
     else:
-        plt.xlabel(r"$k\,(h\,\mathrm{Mpc}^{-1})$", fontsize=22)
-        plt.ylabel(r"$kP(k)\,(h^{-3}\,\mathrm{Mpc}^3)$", fontsize=22, labelpad=5)
+        plt.xlabel(r"$k\,(h\,\mathrm{Mpc}^{-1})$", fontsize=16)
+        plt.ylabel(r"$kP(k)\,(h^{-3}\,\mathrm{Mpc}^3)$", fontsize=16, labelpad=5)
     plt.tick_params(width=1.3)
     plt.tick_params("both", length=10, which="major")
     plt.tick_params("both", length=5, which="minor")
@@ -675,6 +677,7 @@ def create_plot(pardict, fittingdata):
         tick.set_fontsize(14)
     for tick in plt.gca().yaxis.get_ticklabels():
         tick.set_fontsize(14)
+    plt.tight_layout()
     plt.gca().set_autoscale_on(False)
     plt.ion()
 

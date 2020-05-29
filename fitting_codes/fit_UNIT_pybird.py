@@ -141,15 +141,18 @@ def lnprior(params, birdmodel, fixed_h):
             b1, c2, b3, c4, cct, cr1, cr2 = params[-7:]
         else:
             b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[-10:]
+            # b1, c2, b3, c4, cct, cr1, cr2 = params[-7:]
+            # ce1, cemono, cequad = [0.0, 0.0, 0.0]
 
     if fixed_h:
         ln10As, Omega_m = params[:2]
         h = birdmodel.valueref[1]
     else:
         ln10As, h, Omega_m = params[:3]
+    Omega_nu = float(birdmodel.pardict["Sum_mnu"]) / (93.14 * h ** 2)
     fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
-    omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
-    omega_b = Omega_m * h ** 2 - omega_cdm
+    omega_cdm = (Omega_m - Omega_nu) / (1.0 + fbc) * h ** 2
+    omega_b = (Omega_m - Omega_nu) * h ** 2 - omega_cdm
 
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
@@ -235,6 +238,9 @@ def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
                 params[-2] * fittingdata.data["shot_noise"],
                 params[-1] * fittingdata.data["shot_noise"],
             ]
+            """b2 = (params[-6] + params[-4]) / np.sqrt(2.0)
+            b4 = (params[-6] - params[-4]) / np.sqrt(2.0)
+            bs = [params[-7], b2, params[-5], b4, params[-3], params[-2], params[-1], 0.0, 0.0, 0.0]"""
 
     # Get the bird model
     if fixed_h:
@@ -242,9 +248,10 @@ def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
         h = birdmodel.valueref[1]
     else:
         ln10As, h, Omega_m = params[:3]
+    Omega_nu = float(birdmodel.pardict["Sum_mnu"]) / (93.14 * h ** 2)
     fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
-    omega_cdm = Omega_m / (1.0 + fbc) * h ** 2
-    omega_b = Omega_m * h ** 2 - omega_cdm
+    omega_cdm = (Omega_m - Omega_nu) / (1.0 + fbc) * h ** 2
+    omega_b = (Omega_m - Omega_nu) * h ** 2 - omega_cdm
 
     Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
@@ -253,7 +260,7 @@ def lnlike(params, birdmodel, fittingdata, plt, fixed_h):
     chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
 
     if plt is not None:
-        update_plot(pardict, birdmodel.kin, P_model, plt)
+        update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt)
         if np.random.rand() < 0.1:
             print(params, chi_squared)
 

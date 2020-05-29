@@ -26,7 +26,7 @@ if __name__ == "__main__":
     birdmodel = BirdModel(pardict)
 
     # Compute the values at the central point
-    _, _, Da_fid, Hz_fid, f_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(birdmodel.pardict)
+    _, _, Om, Da_fid, Hz_fid, f_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(birdmodel.pardict)
     fbc = float(pardict["omega_b"]) / float(pardict["omega_cdm"])
 
     h_str = "fixedh" if fixed_h else "varyh"
