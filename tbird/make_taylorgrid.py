@@ -33,7 +33,7 @@ if __name__ == "__main__":
     resumcf = pybird.Resum(co=commoncf)
 
     # Get some cosmological values at the grid centre
-    if pardict["Code"] == "CAMB":
+    if pardict["code"] == "CAMB":
         kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
     else:
         kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(pardict)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
-        if pardict["Code"] == "CAMB":
+        if pardict["code"] == "CAMB":
             kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
         else:
             kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(pardict)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         allParams.append(np.hstack([Params, [idx]]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
-        if pardict["Code"] == "CAMB":
+        if pardict["code"] == "CAMB":
             np.save(os.path.join(pardict["outpk"], "CAMB_run%s.npy" % (str(job_no))), np.array(allPin))
         else:
             np.save(os.path.join(pardict["outpk"], "CLASS_run%s.npy" % (str(job_no))), np.array(allPin))

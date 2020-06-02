@@ -9,6 +9,7 @@ if __name__ == "__main__":
     configfile = sys.argv[1]
     njobs = int(sys.argv[2])
     pardict = ConfigObj(configfile)
+    gridname = pardict["Code"].lower() + "-" + pardict["gridname"]
 
     ntot = (2 * float(pardict["order"]) + 1) ** len(pardict["freepar"])
     lenbatch = ntot / njobs
@@ -83,12 +84,12 @@ if __name__ == "__main__":
         if not checkCfloop:
             print("Problem in loop CF: ", i, i * lenbatch, Cloop[0, 0, -1])
 
-    if pardict["Code"] == "CAMB":
-        np.save(os.path.join(pardict["outgrid"], "TableCAMB_%s.npy" % pardict["gridname"]), np.concatenate(gridPin))
+    if pardict["code"] == "CAMB":
+        np.save(os.path.join(pardict["outgrid"], "TableCAMB_%s.npy" % gridname), np.concatenate(gridPin))
     else:
-        np.save(os.path.join(pardict["outgrid"], "TableCLASS_%s.npy" % pardict["gridname"]), np.concatenate(gridPin))
-    np.save(os.path.join(pardict["outgrid"], "TablePlin_%s.npy" % pardict["gridname"]), np.concatenate(gridlin))
-    np.save(os.path.join(pardict["outgrid"], "TablePloop_%s.npy" % pardict["gridname"]), np.concatenate(gridloop))
-    np.save(os.path.join(pardict["outgrid"], "TableClin_%s.npy" % pardict["gridname"]), np.concatenate(gridCflin))
-    np.save(os.path.join(pardict["outgrid"], "TableCloop_%s.npy" % pardict["gridname"]), np.concatenate(gridCfloop))
-    np.save(os.path.join(pardict["outgrid"], "TableParams_%s.npy" % pardict["gridname"]), np.concatenate(gridparams))
+        np.save(os.path.join(pardict["outgrid"], "TableCLASS_%s.npy" % gridname), np.concatenate(gridPin))
+    np.save(os.path.join(pardict["outgrid"], "TablePlin_%s.npy" % gridname), np.concatenate(gridlin))
+    np.save(os.path.join(pardict["outgrid"], "TablePloop_%s.npy" % gridname), np.concatenate(gridloop))
+    np.save(os.path.join(pardict["outgrid"], "TableClin_%s.npy" % gridname), np.concatenate(gridCflin))
+    np.save(os.path.join(pardict["outgrid"], "TableCloop_%s.npy" % gridname), np.concatenate(gridCfloop))
+    np.save(os.path.join(pardict["outgrid"], "TableParams_%s.npy" % gridname), np.concatenate(gridparams))
