@@ -66,7 +66,7 @@ def grid_properties_template(pardict, fN):
     return valueref, delta, flattenedgrid, truecrd
 
 
-def run_camb(pardict, background_only=False):
+def run_camb(pardict):
     """ Runs an instance of CAMB given the cosmological parameters in pardict
 
     Parameters
@@ -122,15 +122,12 @@ def run_camb(pardict, background_only=False):
     pars.NonLinear = camb.model.NonLinear_none
 
     # Run CAMB
-    if background_only:
-        results = camb.get_background(pars, no_thermo=True)
-    else:
-        results = camb.get_results(pars)
+    results = camb.get_results(pars)
 
-        # Get the power spectrum
-        kin, _, Plin = results.get_matter_power_spectrum(
-            minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=200,
-        )
+    # Get the power spectrum
+    kin, _, Plin = results.get_matter_power_spectrum(
+        minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=200,
+    )
 
     # Get some derived quantities
     Omega_m = results.get_Omega("cdm") + results.get_Omega("baryon") + results.get_Omega("nu")
@@ -141,10 +138,7 @@ def run_camb(pardict, background_only=False):
     sigma12 = results.get_sigmaR(12.0, hubble_units=False)[0]
     r_d = results.get_derived_params()["rdrag"]
 
-    if background_only:
-        return Da, H
-    else:
-        return kin, Plin[-1], Omega_m, Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
+    return kin, Plin[-1], Omega_m, Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
 
 
 def run_class(pardict):

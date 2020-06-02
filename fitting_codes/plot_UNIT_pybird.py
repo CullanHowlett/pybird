@@ -5,7 +5,7 @@ from configobj import ConfigObj
 from chainconsumer import ChainConsumer
 
 sys.path.append("../")
-from tbird.Grid import run_camb
+from tbird.Grid import run_camb, run_class
 from fitting_codes.fitting_utils import (
     read_chain_backend,
     BirdModel,
@@ -22,22 +22,23 @@ if __name__ == "__main__":
     configfile = sys.argv[1]
     pardict = ConfigObj(configfile)
     pardict = format_pardict(pardict)
-    _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
+    if pardict["code"] == "CAMB":
+        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
+    else:
+        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_class(pardict)
 
     # Set the chainfiles and names for each chain
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.25_grid_varyh_nohex_marg.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_varyh_nohex_marg.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_varyh_nohex_all.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.25_grid_varyh_nohex_marg_class.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_varyh_nohex_marg_class.hdf5",
     ]
     figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_grid_vary_nohex.pdf"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_grid_vary_nohex_marg_class.pdf"
     ]
-    fixed_hs = [False, False, False]
+    fixed_hs = [False, False]
     names = [
         r"$P(k);\,\mathrm{0.00-0.25}h\mathrm{Mpc^{-1}}\,\mathrm{Marg}$",
         r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
-        r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{All}$",
     ]
 
     # chainfiles = [
@@ -87,7 +88,7 @@ if __name__ == "__main__":
 
     # Get the bestfit bird model
     if True:
-        params = bestfits[2]
+        params = bestfits[1]
         shot_noise = 309.210197  # Taken from the header of the data power spectrum file.
         fittingdata = FittingData(pardict, shot_noise=shot_noise)
 

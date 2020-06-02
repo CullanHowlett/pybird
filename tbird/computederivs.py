@@ -14,7 +14,7 @@ def get_template_grids(parref, nmult=3, nout=3, pad=True, cf=False):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]
-    name = parref["gridname"]
+    name = parref["code"].lower() + "-" + parref["gridname"]
 
     # Coordinates have shape (3, 2 * order_1 + 1, ..., 2 * order_n + 1)
     shapecrd = np.concatenate([[3], np.full(3, 2 * int(parref["template_order"]) + 1)])
@@ -45,7 +45,7 @@ def get_grids(parref, nmult=3, nout=3, pad=True, cf=False):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     outgrid = parref["outgrid"]
-    name = parref["gridname"]
+    name = parref["code"].lower() + "-" + parref["gridname"]
 
     # Coordinates have shape (len(freepar), 2 * order_1 + 1, ..., 2 * order_n + 1)
     shapecrd = np.concatenate([[len(parref["freepar"])], np.full(len(parref["freepar"]), 2 * int(parref["order"]) + 1)])

@@ -61,7 +61,9 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s.hdf5"
+    fmt_str = (
+        "%s_%s_%2d_%3d_%s_%s_%s_%s_class.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s_class.hdf5"
+    )
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -292,17 +294,17 @@ if __name__ == "__main__":
 
     omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
     if pardict["do_corr"]:
-        start = np.array([birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        start = np.array([birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     else:
         start = np.array(
-            [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         )
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
 
     # Does an MCMC with fixed h
     # if pardict["do_corr"]:

@@ -66,10 +66,10 @@ if __name__ == "__main__":
 
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
-        if pardict["code"] == "CAMB":
-            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+        if parameters["code"] == "CAMB":
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
         else:
-            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(pardict)
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(parameters)
 
         # Get non-linear power spectrum from pybird
         bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         allParams.append(np.hstack([Params, [idx]]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
-        if pardict["code"] == "CAMB":
+        if parameters["code"] == "CAMB":
             np.save(os.path.join(pardict["outpk"], "CAMB_run%s.npy" % (str(job_no))), np.array(allPin))
         else:
             np.save(os.path.join(pardict["outpk"], "CLASS_run%s.npy" % (str(job_no))), np.array(allPin))

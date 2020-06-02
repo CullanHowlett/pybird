@@ -31,7 +31,7 @@ class BirdModel:
         self.priormat = np.diagflat(1.0 / self.eft_priors ** 2)
 
         # Get some values at the grid centre
-        if pardict["Code"] == "CAMB":
+        if pardict["code"] == "CAMB":
             self.kmod, self.Pmod, self.Om, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(
                 pardict
             )
@@ -81,50 +81,42 @@ class BirdModel:
     def load_model(self):
 
         # Load in the model components
+        gridname = self.pardict["code"].lower() + "-" + self.pardict["gridname"]
         if self.pardict["taylor_order"]:
             print(self.pardict["taylor_order"])
             if self.template:
                 paramsmod = None
                 if self.pardict["do_corr"]:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerClin_%s_template.npy" % self.pardict["gridname"]),
-                        allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerClin_%s_template.npy" % gridname), allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerCloop_%s_template.npy" % self.pardict["gridname"]),
-                        allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerCloop_%s_template.npy" % gridname), allow_pickle=True,
                     )
                 else:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPlin_%s_template.npy" % self.pardict["gridname"]),
-                        allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerPlin_%s_template.npy" % gridname), allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPloop_%s_template.npy" % self.pardict["gridname"]),
-                        allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerPloop_%s_template.npy" % gridname), allow_pickle=True,
                     )
             else:
                 paramsmod = np.load(
-                    os.path.join(self.pardict["outgrid"], "DerParams_%s.npy" % self.pardict["gridname"]),
-                    allow_pickle=True,
+                    os.path.join(self.pardict["outgrid"], "DerParams_%s.npy" % gridname), allow_pickle=True,
                 )
                 if self.pardict["do_corr"]:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerClin_%s.npy" % self.pardict["gridname"]),
-                        allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerClin_%s.npy" % gridname), allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerCloop_%s.npy" % self.pardict["gridname"]),
-                        allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerCloop_%s.npy" % gridname), allow_pickle=True,
                     )
                 else:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPlin_%s.npy" % self.pardict["gridname"]),
-                        allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerPlin_%s.npy" % gridname), allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPloop_%s.npy" % self.pardict["gridname"]),
-                        allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerPloop_%s.npy" % gridname), allow_pickle=True,
                     )
             kin = linmod[0][0, :, 0]
         else:
@@ -170,7 +162,7 @@ class BirdModel:
         parameters = copy.deepcopy(self.pardict)
         for k, var in enumerate(self.pardict["freepar"]):
             parameters[var] = coords[k]
-        if self.pardict["Code"] == "CAMB":
+        if self.pardict["code"] == "CAMB":
             kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
         else:
             kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(parameters)
