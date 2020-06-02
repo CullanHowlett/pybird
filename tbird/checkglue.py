@@ -9,7 +9,7 @@ if __name__ == "__main__":
     configfile = sys.argv[1]
     njobs = int(sys.argv[2])
     pardict = ConfigObj(configfile)
-    gridname = pardict["Code"].lower() + "-" + pardict["gridname"]
+    gridname = pardict["code"].lower() + "-" + pardict["gridname"]
 
     ntot = (2 * float(pardict["order"]) + 1) ** len(pardict["freepar"])
     lenbatch = ntot / njobs
