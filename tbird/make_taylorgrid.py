@@ -6,7 +6,7 @@ from configobj import ConfigObj
 
 sys.path.append("../")
 from pybird import pybird
-from tbird.Grid import grid_properties, run_camb
+from tbird.Grid import grid_properties, run_camb, run_class
 
 if __name__ == "__main__":
 
@@ -33,7 +33,10 @@ if __name__ == "__main__":
     resumcf = pybird.Resum(co=commoncf)
 
     # Get some cosmological values at the grid centre
-    kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+    if pardict["Code"] == "CAMB":
+        kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+    else:
+        kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(pardict)
 
     # Set up the window function and projection effects. No window at the moment for the UNIT sims,
     # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
@@ -54,7 +57,7 @@ if __name__ == "__main__":
     allClin = []
     allCloop = []
     allParams = []
-    allCAMB = []
+    allPin = []
     for i, theta in enumerate(arrayred):
         parameters = copy.deepcopy(pardict)
         truetheta = valueref + theta * delta
@@ -63,7 +66,10 @@ if __name__ == "__main__":
 
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
-        kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+        if pardict["Code"] == "CAMB":
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+        else:
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(pardict)
 
         # Get non-linear power spectrum from pybird
         bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
@@ -85,7 +91,7 @@ if __name__ == "__main__":
         Clin, Cloop = crow.formatTaylorCf(sdata=sout)
         Pin = np.c_[kin, Pin]
         idxcol = np.full([Pin.shape[0], 1], idx)
-        allCAMB.append(np.hstack([Pin, idxcol]))
+        allPin.append(np.hstack([Pin, idxcol]))
         idxcol = np.full([Plin.shape[0], 1], idx)
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
@@ -95,7 +101,10 @@ if __name__ == "__main__":
         allParams.append(np.hstack([Params, [idx]]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
-        np.save(os.path.join(pardict["outpk"], "CAMB_run%s.npy" % (str(job_no))), np.array(allCAMB))
+        if pardict["Code"] == "CAMB":
+            np.save(os.path.join(pardict["outpk"], "CAMB_run%s.npy" % (str(job_no))), np.array(allPin))
+        else:
+            np.save(os.path.join(pardict["outpk"], "CLASS_run%s.npy" % (str(job_no))), np.array(allPin))
         np.save(os.path.join(pardict["outpk"], "Plin_run%s.npy" % (str(job_no))), np.array(allPlin))
         np.save(os.path.join(pardict["outpk"], "Ploop_run%s.npy" % (str(job_no))), np.array(allPloop))
         np.save(os.path.join(pardict["outpk"], "Clin_run%s.npy" % (str(job_no))), np.array(allClin))

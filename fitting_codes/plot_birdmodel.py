@@ -8,36 +8,37 @@ from scipy.interpolate import splev, splrep
 sys.path.append("../")
 from pybird import pybird
 from tbird.Grid import run_camb
-from fitting_codes.fitting_utils import BirdModel, format_pardict, FittingData
+from fitting_codes.fitting_utils import format_pardict, FittingData
 
 if __name__ == "__main__":
 
     from classy import Class
 
+    # Set up the data
+    configfile = sys.argv[1]
+    pardict = ConfigObj(configfile)
+    pardict = format_pardict(pardict)
+    fittingdata = FittingData(pardict)
+    kin, Plin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+
     # Read in Guido's test files
     dataC11 = np.array(
         pd.read_csv(
-            "/Volumes/Work/UQ/DESI/cBIRD/UNIT_output_files/noresumCf.dat",
+            "/Volumes/Work/UQ/DESI/cBIRD/UNIT_output_files/resumCf.dat", header=None, skiprows=0, delim_whitespace=True,
+        )
+    )
+    datas = dataC11[:, 0].reshape((2, -1))
+    dataxi11 = dataC11[:, 1].reshape((2, -1))
+    datapk = np.array(
+        pd.read_csv(
+            "/Volumes/Work/UQ/DESI/cBIRD/UNIT_output_files/P11_desi.dat",
             header=None,
             skiprows=0,
             delim_whitespace=True,
         )
     )
-    datas = dataC11[:, 0].reshape((2, -1))
-    dataxi11 = dataC11[:, 1].reshape((2, -1))
 
-    # Code to generate a power spectrum template at fixed cosmology using pybird, then fit the AP parameters and fsigma8
-    # First read in the config file
-    configfile = sys.argv[1]
-    pardict = ConfigObj(configfile)
-
-    # Just converts strings in pardicts to numbers in int/float etc.
-    pardict = format_pardict(pardict)
-    pardict["omega_cdm"] = 0.1188130
-
-    # Set up the BirdModel
-    # kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
-    kin = np.logspace(-5, 0, 200)
+    kin2 = np.logspace(-5, 0, 200)
     zpk = 0.9873
     M = Class()
     M.set(
@@ -56,14 +57,25 @@ if __name__ == "__main__":
     M.set({"output": "mPk", "P_k_max_1/Mpc": 1.0, "z_max_pk": zpk})
     M.compute()
 
-    # P(k) in (Mpc/h)**3
-    # Pin = Pin[kin <= 1.0]
-    # kin = kin[kin <= 1.0]
-    Pk = [M.pk(ki * M.h(), zpk) * M.h() ** 3 for ki in kin]
+    Pk = [M.pk(ki * M.h(), zpk) * M.h() ** 3 for ki in kin2]
+
+    Da_class, Hz_class, fN_class, Om_class = (
+        M.angular_distance(zpk) * M.Hubble(0.0),
+        M.Hubble(zpk) / M.Hubble(0.0),
+        M.scale_independent_growth_factor_f(zpk),
+        M.Om_m(0.0),
+    )
+
+    # Plot power spectrum ratio. The two methods agree almost perfectly.
+    plt.errorbar(datapk[:, 0], datapk[:, 1] / Pk - 1.0, color="r", linestyle="-")
+    plt.xlabel(r"$k\,(h\,\mathrm{Mpc}^{-1})$", fontsize=22)
+    plt.ylabel(r"$P_{\mathrm{Guido}}(k)/P_{\mathrm{Cullan}}(k)-1$", fontsize=22, labelpad=5)
+    plt.ylim(-1.0e-5, 1.0e-5)
+    plt.show()
 
     sdata = np.linspace(25, 200, 50)
     Om_AP = 0.30
-    z_AP = float(pardict["z_pk"])
+    z_AP = float(zpk)
 
     common = pybird.Common(Nl=2, kmax=0.3, smax=1000, optiresum=True)
     nonlinear = pybird.NonLinear(load=False, save=False, co=common)
@@ -71,25 +83,16 @@ if __name__ == "__main__":
     projection = pybird.Projection(sdata, pybird.DA(Om_AP, z_AP), pybird.Hubble(Om_AP, z_AP), co=common, cf=True)
     bs = [1.3, 0.8, 0.2, 0.8, 0.2, 0, 0]
 
-    crow = pybird.Bird(
-        kin,
-        Pk,
-        pybird.fN(0.3089, zpk),
-        DA=pybird.DA(0.3089, zpk),
-        H=pybird.Hubble(0.3089, zpk),
-        z=pardict["z_pk"],
-        which="full",
-        co=common,
-    )
+    print(Om, Om_class)
+    print(fN, fN_class, pybird.fN(Om, zpk), pybird.fN(Om_class, zpk))
+
+    crow = pybird.Bird(kin, Plin, DA=Da, H=Hz, f=fN, z=zpk, which="full", co=common,)
     nonlinear.PsCf(crow)
     crow.setPsCf(bs)
-    # resum.PsCf(crow)
+    resum.PsCf(crow)
     # projection.AP(crow)
     # projection.kdata(crow)
     # crow.setreduceCflb(bs)
-
-    # Set up the data
-    fittingdata = FittingData(pardict)
 
     plt.errorbar(datas[0], datas[0] ** 2 * dataxi11[0], color="r", linestyle="-")
     plt.errorbar(datas[1], datas[1] ** 2 * dataxi11[1], color="b", linestyle="-")

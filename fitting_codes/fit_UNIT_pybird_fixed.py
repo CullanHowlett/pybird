@@ -307,7 +307,7 @@ if __name__ == "__main__":
     bird = pybird.Bird(
         birdmodel.kmod,
         birdmodel.Pmod,
-        pybird.fN(0.3089, 0.9873),
+        birdmodel.fN,
         DA=birdmodel.Da,
         H=birdmodel.Hz,
         z=float(pardict["z_pk"]),

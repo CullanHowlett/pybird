@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import camb
+from classy import Class
 
 
 def grid_properties(pardict):
@@ -128,11 +129,11 @@ def run_camb(pardict, background_only=False):
 
         # Get the power spectrum
         kin, _, Plin = results.get_matter_power_spectrum(
-            minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=2000,
+            minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=200,
         )
 
     # Get some derived quantities
-    Omega_m = results.get_Omega("cdm") + results.get_Omega("baryon")
+    Omega_m = results.get_Omega("cdm") + results.get_Omega("baryon") + results.get_Omega("nu")
     Da = results.angular_diameter_distance(float(parlinear["z_pk"])) * float(parlinear["H0"]) / 299792.458
     H = results.hubble_parameter(float(parlinear["z_pk"])) / float(parlinear["H0"])
     fsigma8 = results.get_fsigma8()[0]
@@ -146,53 +147,114 @@ def run_camb(pardict, background_only=False):
         return kin, Plin[-1], Omega_m, Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
 
 
+def run_class(pardict):
+    """ Runs an instance of CAMB given the cosmological parameters in pardict
+
+    Parameters
+    ----------
+    pardict: dict
+        A dictionary of parameters read from the config file
+
+    Returns
+    -------
+    kin: np.array
+        the k-values of the CAMB linear power spectrum
+    Plin: np.array
+        The linear power spectrum
+    Da: float
+        The angular diameter distance to the value of z_pk in the config file, without the factor c/H_0
+    H: float
+        The Hubble parameter at z_pk, without the factor H_0
+    fN: float
+        The scale-independent growth rate at z_pk
+    """
+
+    parlinear = copy.deepcopy(pardict)
+    parlinear["m_ncdm"] = parlinear["m_ncdm"][0] + "," + parlinear["m_ncdm"][1] + "," + parlinear["m_ncdm"][2]
+
+    # Set the CLASS parameters
+    M = Class()
+    if "A_s" not in parlinear.keys():
+        if "ln10^{10}A_s" in parlinear.keys():
+            parlinear["A_s"] = np.exp(float(parlinear["ln10^{10}A_s"])) / 1.0e10
+        else:
+            print("Error: Neither ln10^{10}A_s nor A_s given in config file")
+            exit()
+    if "H0" not in parlinear.keys():
+        if "h" in parlinear.keys():
+            parlinear["H0"] = 100.0 * float(parlinear["h"])
+        else:
+            print("Error: Neither H0 nor h given in config file")
+            exit()
+    M.set(
+        {
+            "A_s": float(parlinear["A_s"]),
+            "n_s": float(parlinear["n_s"]),
+            "H0": float(parlinear["H0"]),
+            "omega_b": float(parlinear["omega_b"]),
+            "omega_cdm": float(parlinear["omega_cdm"]),
+            "N_ur": float(parlinear["N_ur"]),
+            "N_ncdm": int(parlinear["N_ncdm"]),
+            "m_ncdm": parlinear["m_ncdm"],
+        }
+    )
+    M.set({"output": "mPk", "P_k_max_1/Mpc": float(parlinear["P_k_max_h/Mpc"]), "z_max_pk": float(parlinear["z_pk"])})
+    M.compute()
+
+    kin = np.logspace(np.log10(2.0e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
+    Plin = [M.pk(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin]
+
+    # Get some derived quantities
+    Omega_m = M.Om_m(0.0)
+    Da = M.angular_distance(float(parlinear["z_pk"])) * M.Hubble(0.0)
+    H = M.Hubble(float(parlinear["z_pk"])) / M.Hubble(0.0)
+    f = M.scale_independent_growth_factor_f(float(parlinear["z_pk"]))
+    sigma8 = M.sigma(8.0 / M.h(), float(parlinear["z_pk"]))
+    sigma12 = M.sigma(12.0, float(parlinear["z_pk"]))
+    r_d = M.rs_drag()
+
+    return kin, Plin, Omega_m, Da, H, f, sigma8, sigma12, r_d
+
+
 if __name__ == "__main__":
 
     import sys
 
     sys.path.append("../")
     import matplotlib.pyplot as plt
-    from classy import Class
     from configobj import ConfigObj
+    from scipy.interpolate import splev, splrep
 
     # Read in the config file, job number and total number of jobs
     configfile = sys.argv[1]
     pardict = ConfigObj(configfile)
 
     # Get some cosmological values at the grid centre
-    kin, Plin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
-
-    zpk = 0.9873
-    M = Class()
-    M.set(
-        {
-            "ln10^{10}A_s": 3.064325065,
-            "n_s": 0.9667,
-            "h": 0.6774,
-            "omega_b": 0.02230,
-            "omega_cdm": 0.1188,
-            "N_ur": 0.00641,
-            "N_ncdm": 3,
-            "m_ncdm": "0.02, 0.02, 0.02",
-        }
+    kin_camb, Plin_camb, Om_camb, Da_camb, Hz_camb, fN_camb, sigma8_camb, sigma12_camb, r_d_camb = run_camb(pardict)
+    kin_class, Plin_class, Om_class, Da_class, Hz_class, fN_class, sigma8_class, sigma12_class, r_d_class = run_class(
+        pardict
     )
 
-    M.set({"output": "mPk", "P_k_max_1/Mpc": 20.0, "z_max_pk": zpk})
-    M.compute()
-
-    # P(k) in (Mpc/h)**3
-    Pk = [M.pk(ki * M.h(), zpk) * M.h() ** 3 for ki in kin]
+    print(Om_camb, Om_class, 100.0 * (Om_camb / Om_class - 1.0))
+    print(Da_camb, Da_class, 100.0 * (Da_camb / Da_class - 1.0))
+    print(Hz_camb, Hz_class, 100.0 * (Hz_camb / Hz_class - 1.0))
+    print(fN_camb, fN_class, 100.0 * (fN_camb / fN_class - 1.0))
+    print(sigma8_camb, sigma8_class, 100.0 * (sigma8_camb / sigma8_class - 1.0))
+    print(sigma12_camb, sigma12_class, 100.0 * (sigma12_camb / sigma12_class - 1.0))
+    print(r_d_camb, r_d_class, 100.0 * (r_d_camb / r_d_class - 1.0))
 
     fig = plt.figure(0)
     ax = fig.add_axes([0.13, 0.13, 0.85, 0.85])
-    ax.plot(kin, Pk, color="r")
-    ax.plot(kin, Plin, color="b")
+    ax.plot(kin_camb, Plin_camb, color="r")
+    ax.plot(kin_class, Plin_class, color="b")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlim(-4.0, 0.0)
+    ax.set_xlim(1.0e-5, 1.1 * float(pardict["P_k_max_h/Mpc"]))
     plt.show()
 
     fig = plt.figure(1)
     ax = fig.add_axes([0.13, 0.13, 0.85, 0.85])
-    ax.plot(kin, 100.0 * (Plin / Pk - 1.0), color="r")
+    ax.plot(kin_camb, 100.0 * (Plin_camb / splev(kin_camb, splrep(kin_class, Plin_class)) - 1.0), color="r")
+    ax.plot(kin_class, 100.0 * (splev(kin_class, splrep(kin_camb, Plin_camb)) / Plin_class - 1.0), color="b")
+
     plt.show()

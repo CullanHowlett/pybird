@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 sys.path.append("../")
 from pybird import pybird
-from tbird.Grid import grid_properties, grid_properties_template, run_camb
+from tbird.Grid import grid_properties, grid_properties_template, run_camb, run_class
 from tbird.computederivs import get_grids, get_template_grids, get_PSTaylor, get_ParamsTaylor
 
 # Wrapper around the pybird data and model evaluation
@@ -30,21 +30,26 @@ class BirdModel:
         self.eft_priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0])
         self.priormat = np.diagflat(1.0 / self.eft_priors ** 2)
 
-        # Get some values at the grid centre or set up Pybird if we are fitting directly
-        if self.direct:
-            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
+        # Get some values at the grid centre
+        if pardict["Code"] == "CAMB":
             self.kmod, self.Pmod, self.Om, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(
                 pardict
             )
+        else:
+            self.kmod, self.Pmod, self.Om, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_class(
+                pardict
+            )
+
+        if self.template:
+            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
+        else:
+            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
+
+        # Prepare the model
+        if self.direct:
             self.common, self.nonlinear, self.resum, self.projection = self.setup_pybird()
             self.kin = self.projection.kout
         else:
-            if self.template:
-                _, _, self.Om, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(pardict)
-                self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
-            else:
-                self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
-
             self.kin, self.paramsmod, self.linmod, self.loopmod = self.load_model()
 
     def setup_pybird(self):
@@ -165,7 +170,10 @@ class BirdModel:
         parameters = copy.deepcopy(self.pardict)
         for k, var in enumerate(self.pardict["freepar"]):
             parameters[var] = coords[k]
-        kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+        if self.pardict["Code"] == "CAMB":
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+        else:
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(parameters)
 
         # Get non-linear power spectrum from pybird
         bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=self.pardict["z_pk"], which="all", co=self.common)
