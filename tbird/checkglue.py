@@ -57,7 +57,7 @@ if __name__ == "__main__":
     for i in range(njobs):
         print("Run ", i)
         Params = np.load(os.path.join(pardict["outpk"], "Params_run%d.npy" % i))
-        if pardict["Code"] == "CAMB":
+        if pardict["code"] == "CAMB":
             Pin = np.load(os.path.join(pardict["outpk"], "CAMB_run%d.npy" % i))
         else:
             Pin = np.load(os.path.join(pardict["outpk"], "CLASS_run%d.npy" % i))
