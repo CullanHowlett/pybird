@@ -86,7 +86,7 @@ if __name__ == "__main__":
     print(Om, Om_class)
     print(fN, fN_class, pybird.fN(Om, zpk), pybird.fN(Om_class, zpk))
 
-    crow = pybird.Bird(kin, Plin, DA=Da, H=Hz, f=fN, z=zpk, which="full", co=common,)
+    crow = pybird.Bird(kin, Plin, DA=Da_class, H=Hz_class, f=fN_class, z=zpk, which="full", co=common,)
     nonlinear.PsCf(crow)
     crow.setPsCf(bs)
     resum.PsCf(crow)

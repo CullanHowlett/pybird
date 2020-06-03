@@ -30,15 +30,19 @@ if __name__ == "__main__":
     # Set the chainfiles and names for each chain
     chainfiles = [
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.25_grid_varyh_nohex_marg_class.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.25_grid_varyh_nohex_marg_camb.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_varyh_nohex_marg_class.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_varyh_nohex_marg_camb.hdf5",
     ]
     figfile = [
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_grid_vary_nohex_marg_class.pdf"
     ]
-    fixed_hs = [False, False]
+    fixed_hs = [False, False, False, False]
     names = [
-        r"$P(k);\,\mathrm{0.00-0.25}h\mathrm{Mpc^{-1}}\,\mathrm{Marg}$",
-        r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
+        r"$P(k);\,\mathrm{0.00-0.25}h\mathrm{Mpc^{-1}}\,\mathrm{Marg\,CLASS}$",
+        r"$P(k);\,\mathrm{0.00-0.25}h\mathrm{Mpc^{-1}}\,\mathrm{Marg\,CAMB}$",
+        r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg\,CLASS}$",
+        r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg\,CAMB}$",
     ]
 
     # chainfiles = [
@@ -88,7 +92,7 @@ if __name__ == "__main__":
 
     # Get the bestfit bird model
     if True:
-        params = bestfits[1]
+        params = bestfits[3]
         shot_noise = 309.210197  # Taken from the header of the data power spectrum file.
         fittingdata = FittingData(pardict, shot_noise=shot_noise)
 

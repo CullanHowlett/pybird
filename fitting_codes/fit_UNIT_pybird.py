@@ -62,7 +62,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt, fixed_h=False):
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
     fmt_str = (
-        "%s_%s_%2d_%3d_%s_%s_%s_%s_class.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s_class.hdf5"
+        "%s_%s_%2d_%3d_%s_%s_%s_%s_camb.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s_camb.hdf5"
     )
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
