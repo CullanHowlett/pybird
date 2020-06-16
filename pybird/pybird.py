@@ -273,7 +273,50 @@ def MPC(l, pn):
 
 
 # precomputed k/q-arrays, in [h/Mpc] and [Mpc/h]
-kbird = np.array([0.001, 0.005, 0.0075, 0.01, 0.0125, 0.015, 0.0175, 0.02])
+kbird = np.array(
+    [
+        0.001,
+        0.005,
+        0.0075,
+        0.01,
+        0.0125,
+        0.015,
+        0.0175,
+        0.02,
+        0.025,
+        0.03,
+        0.035,
+        0.04,
+        0.045,
+        0.05,
+        0.055,
+        0.06,
+        0.065,
+        0.07,
+        0.075,
+        0.08,
+        0.085,
+        0.09,
+        0.095,
+        0.1,
+        0.105,
+        0.11,
+        0.115,
+        0.12,
+        0.125,
+        0.13,
+        0.135,
+        0.14,
+        0.145,
+        0.15,
+        0.155,
+        0.16,
+        0.17,
+        0.18,
+        0.19,
+        0.2,
+    ]
+)
 sbird = np.array(
     [
         1.000e00,
@@ -370,7 +413,7 @@ class Common(object):
         The maximum multipole to calculate (default 2)
     """
 
-    def __init__(self, Nl=2, kmin=0.001, kmax=0.25, smin=1.0, smax=None, optiresum=True, accboost=1.0):
+    def __init__(self, Nl=2, kmin=0.001, kmax=0.25, smin=1.0, smax=None, optiresum=True):
 
         self.optiresum = optiresum
 
@@ -388,12 +431,12 @@ class Common(object):
             kmax = 0.5
             self.optiresum = True
             slog = np.geomspace(1.0, 1000.0, 100)
-            slin = np.arange(40.0 / accboost, 200.0, 2.5 / accboost)
+            slin = np.arange(40.0, 200.0, 2.5)
             slogmask = np.where((slog > slin[-1]) | (slog < slin[0]))[0]
             self.s = np.unique(np.sort(np.concatenate((slog[slogmask], slin))))
         else:
             if self.optiresum is True:
-                self.s = np.arange(60.0, 200.0, 2.5 / accboost)
+                self.s = np.arange(60.0, 200.0, 2.5)
             else:
                 self.s = sbird
         self.Ns = self.s.shape[0]
@@ -401,14 +444,11 @@ class Common(object):
         if kmax is not None:
             self.kmin = kmin  # no support for kmin: keep default
             self.kmax = kmax
-            self.k = kbird
-            if self.kmax > kbird[-1]:
-                kextra = np.arange(kbird[-1], 0.3 + 1e-3, 0.005 / accboost)
-                self.k = np.concatenate([self.k, kextra[1:]])
-            if self.kmax > 0.3:
-                kextra = np.arange(0.3, self.kmax + 1e-3, 0.01 / accboost)
-                self.k = np.concatenate([self.k, kextra[1:]])
-
+            if self.kmax <= kbird[-1]:
+                self.k = kbird
+            else:
+                kextra = np.arange(kbird[-1], kmax + 0.01, 0.01)
+                self.k = np.concatenate([kbird, kextra[1:]])
             self.Nk = self.k.shape[0]
 
         self.l11 = np.empty(shape=(self.Nl, self.N11))
@@ -1325,7 +1365,9 @@ class NonLinear(object):
         bird : class
             an object of type Bird()
         """
-        coef = self.Coef(bird, window=0.2)
+        if self.co.optiresum is False or self.co.smax is not None:
+            window = 0.6
+        coef = self.Coef(bird, window=window)
         coefsPow = self.CoefsPow(coef)
         self.makeC11(coefsPow, bird)
         self.makeCct(coefsPow, bird)
@@ -1340,7 +1382,9 @@ class NonLinear(object):
         bird : class
             an object of type Bird()
         """
-        coef = self.Coef(bird, window=0.2)
+        if self.co.optiresum is False or self.co.smax is not None:
+            window = 0.6
+        coef = self.Coef(bird, window=window)
 
         coefkPow = self.CoefkPow(coef)
         self.makeP22(coefkPow, bird)
@@ -1624,9 +1668,7 @@ class Resum(object):
             self.IRCf = np.zeros(shape=(2, self.co.Nl, self.co.Ns))
             for a, IRa in enumerate(self.IRPs):
                 for l, IRal in enumerate(IRa):
-                    Coef = 1j ** (2 * l) * self.Cfft.Coef(
-                        self.co.k, IRal * DampingWindow, extrap="padding", window=None
-                    )
+                    Coef = 1j ** (2 * l) * self.Cfft.Coef(self.co.k, IRal * DampingWindow, extrap="padding", window=0.6)
                     CoefsPow = np.einsum("n,ns->ns", Coef, self.sPow)
                     self.IRCf[a, l] = np.real(np.einsum("ns,n->s", CoefsPow, self.Ml[l]))
 
