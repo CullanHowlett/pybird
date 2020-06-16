@@ -3,13 +3,13 @@ import pybird as pybird
 ### Example for Taylor grid
 
 ### To create outside the grid
-nonlinear = pybird.NonLinear(load=True,save=True)
+nonlinear = pybird.NonLinear(load=True, save=True)
 resum = pybird.Resum()
 
 
 ### To create at each grid step
-kin, Plin = np.loadtxt('output/test/class_pk.dat', unpack = True)
-Omega_m = (0.1284905+0.0233854)/0.690**2
+kin, Plin = np.loadtxt("output/test/class_pk.dat", unpack=True)
+Omega_m = (0.1284905 + 0.0233854) / 0.690 ** 2
 z = 0.55
 bird = pybird.Bird(kin, Plin, Omega_m, z, full=False)
 nonlinear.PsCf(bird, window=None)
@@ -29,10 +29,9 @@ bird.subtractShotNoise()
 k = pybird.common.k
 
 
-
 ### You can test if everything went well with the following method:
-bs = np.array([2.3, 0.8, 0.2, 0.8, 0.4, -7., 0.])
+bs = np.array([2.3, 0.8, 0.2, 0.8, 0.4, -7.0, 0.0])
 bird.setreducePslb(bs)
 
 l = 0
-plt.plot(k, k*bird.fullPs[l])
+plt.plot(k, k * bird.fullPs[l])

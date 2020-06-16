@@ -3,11 +3,27 @@ import os
 import subprocess
 
 
-keys_cbird = ["PathToOutput", "PathToLinearPowerSpectrum",
-              "knl", "km", "nbar",
-              "ComputePowerSpectrum", "ResumPowerSpectrum", "ComputeBispectrum",
-              "z_pk", "ln10^{10}A_s", "n_s", "h", "omega_b", "omega_cdm","N_ncdm","Sum_mnu",
-              "PathToTriangles", "aperp", "apar"]
+keys_cbird = [
+    "PathToOutput",
+    "PathToLinearPowerSpectrum",
+    "knl",
+    "km",
+    "nbar",
+    "ComputePowerSpectrum",
+    "ResumPowerSpectrum",
+    "ComputeBispectrum",
+    "z_pk",
+    "ln10^{10}A_s",
+    "n_s",
+    "h",
+    "omega_b",
+    "omega_cdm",
+    "N_ncdm",
+    "Sum_mnu",
+    "PathToTriangles",
+    "aperp",
+    "apar",
+]
 
 
 class NonLinearPower(object):
@@ -30,15 +46,15 @@ class NonLinearPower(object):
     Plin : np.array
         The linear power spectrum at z_pk
     """
+
     def __init__(self, paramdict, kmin=None, kmax=None):
-        self.cbird_exe = os.path.abspath(os.path.join(paramdict["cbird_folder"],
-                                         paramdict["cbird_exe"]))
+        self.cbird_exe = os.path.abspath(os.path.join(paramdict["cbird_folder"], paramdict["cbird_exe"]))
         if not os.path.isfile(self.cbird_exe):
             print("You want your CBIRD code in %s. You must compile it!" % self.cbird_exe)
             raise IOError
         self.paramdict = {}
         for k, v in paramdict.items():
-            if ('path' in k.lower()) or ('folder' in k.lower()):
+            if ("path" in k.lower()) or ("folder" in k.lower()):
                 self.paramdict[k] = v  # os.path.abspath(v)
             else:
                 self.paramdict[k] = v
@@ -58,8 +74,8 @@ class NonLinearPower(object):
                 os.makedirs(self.outdir)
         except IOError:
             print("Cannot create directory: %s" % self.outdir)
-        parfile = os.path.join(self.outdir, 'cbird.ini')
-        with open(parfile, 'w') as f:
+        parfile = os.path.join(self.outdir, "cbird.ini")
+        with open(parfile, "w") as f:
             for k, v in self.paramdict.items():
                 f.write("%s = %s \n" % (k, v))
         return parfile
@@ -93,7 +109,7 @@ class NonLinearPower(object):
             return
         if (self.kmin is not None) and (self.kmax is not None):
             kin = Plin[:, 0]
-            kmask = np.where((kin>=self.kmin)&(kin<=self.kmax))[0]
+            kmask = np.where((kin >= self.kmin) & (kin <= self.kmax))[0]
             Plin = Plin[kmask, :4]
         return Plin
 
@@ -109,6 +125,6 @@ class NonLinearPower(object):
             return
         if (self.kmin is not None) and (self.kmax is not None):
             kin = Ploop[:, 0]
-            kmask = np.where((kin>=self.kmin)&(kin<=self.kmax))[0]
+            kmask = np.where((kin >= self.kmin) & (kin <= self.kmax))[0]
             Ploop = Ploop[kmask]
         return np.concatenate([Ploop[:, :1], Ploop[:, 4:]], axis=1)
