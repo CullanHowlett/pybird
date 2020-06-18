@@ -2,13 +2,13 @@ import os
 import numpy as np
 from copy import deepcopy
 
-from common import Common, co
-from bird import Bird
-from nonlinear import NonLinear
-from resum import Resum
-from projection import Projection
-from angular import Angular
-from greenfunction import GreenFunction
+from .common import Common, co
+from .bird import Bird
+from .nonlinear import NonLinear
+from .resum import Resum
+from .projection import Projection
+from .angular import Angular
+from .greenfunction import GreenFunction
 
 
 # import importlib, sys
@@ -197,21 +197,21 @@ class Correlator(object):
             "xdata": Option("xdata", (np.ndarray, list), description="Array of data points.", default=None),
             "with_resum": Option("with_resum", bool, description="Apply IR-resummation.", default=True),
             "with_AP": Option(
-                "wity_AP",
+                "with_AP",
                 bool,
                 description="Apply Alcock Paczynski effect. Automatically set to False for 'output': 'w'.",
                 default=False,
             ),
-            "z_AP": Option(
-                "z_AP",
+            "DA_AP": Option(
+                "DA_AP",
                 (float, list, np.ndarray),
-                description="Fiducial redshift used to convert coordinates to distances. A list can be provided for multi skycuts. If only one value is passed, use it for all skycuts.",
+                description="Fiducial Angular diameter distance. A list can be provided for multi skycuts. If only one value is passed, use it for all skycuts.",
                 default=None,
             ),
-            "Omega_m_AP": Option(
-                "Omega_m_AP",
+            "H_AP": Option(
+                "H_AP",
                 (float, list, np.ndarray),
-                description="Fiducial matter abundance used to convert coordinates to distances. A list can be provided for multi skycuts. If only one value is passed, use it for all skycuts.",
+                description="Fiducial Hubble parameter. A list can be provided for multi skycuts. If only one value is passed, use it for all skycuts.",
                 default=None,
             ),
             "with_window": Option(
@@ -685,6 +685,14 @@ class Correlator(object):
             exact_time=self.config["with_exact_time"],
         )
 
+        if self.config["xdata"] is None:
+            if self.config["with_cf"]:
+                self.config["xdata"] = self.co.s
+            else:
+                self.config["xdata"] = self.co.k
+            if len(self.config["xdata"]) == 1 and isinstance(self.config["xdata"][0], (list, np.ndarray)):
+                self.config["xdata"] = self.config["xdata"][0]
+
         if not only_common:
             self.nonlinear = NonLinear(load=True, save=True, co=self.co)
             self.resum = Resum(co=self.co)
@@ -705,8 +713,8 @@ class Correlator(object):
                 if self.config["skycut"] == 1:
                     self.projection = Projection(
                         self.config["xdata"],
-                        Om_AP=self.config["Omega_m_AP"],
-                        z_AP=self.config["z_AP"],
+                        DA_AP=self.config["DA_AP"],
+                        H_AP=self.config["H_AP"],
                         window_fourier_name=self.config["windowPk"],
                         path_to_window="",
                         window_configspace_file=self.config["windowCf"],
@@ -739,18 +747,18 @@ class Correlator(object):
                             windowCf = None
 
                         if self.config["with_AP"]:
-                            if isinstance(self.config["Omega_m_AP"], float):
-                                Om_AP = self.config["Omega_m_AP"]
-                            elif len(self.config["Omega_m_AP"]) is self.config["skycut"]:
-                                Om_AP = self.config["Omega_m_AP"][i]
+                            if isinstance(self.config["DA_AP"], float):
+                                DA_AP = self.config["DA_AP"]
+                            elif len(self.config["DA_AP"]) is self.config["skycut"]:
+                                DA_AP = self.config["DA_AP"][i]
 
-                            if isinstance(self.config["z_AP"], float):
-                                z_AP = self.config["z_AP"]
-                            elif len(self.config["z_AP"]) is self.config["skycut"]:
-                                z_AP = self.config["z_AP"][i]
+                            if isinstance(self.config["H_AP"], float):
+                                H_AP = self.config["H_AP"]
+                            elif len(self.config["H_AP"]) is self.config["skycut"]:
+                                H_AP = self.config["H_AP"][i]
                         else:
-                            Om_AP = None
-                            z_AP = None
+                            DA_AP = None
+                            H_AP = None
 
                         if self.config["with_redshift_bin"]:
                             zz = self.config["zz"][i]
@@ -762,8 +770,8 @@ class Correlator(object):
                         self.projection.append(
                             Projection(
                                 xdata,
-                                Om_AP=Om_AP,
-                                z_AP=z_AP,
+                                DA_AP=DA_AP,
+                                H_AP=H_AP,
                                 window_fourier_name=windowPk,
                                 path_to_window="",
                                 window_configspace_file=windowCf,
@@ -1119,10 +1127,11 @@ class Correlator(object):
                 raise Exception("Please specify as many redshifts 'z' as the number of skycuts.")
             self.config["z"] = np.asarray(self.config["z"])
 
-        if self.config["xdata"] is None:
-            raise Exception("Please specify a data point array 'xdata'.")
-        if len(self.config["xdata"]) == 1 and isinstance(self.config["xdata"][0], (list, np.ndarray)):
-            self.config["xdata"] = self.config["xdata"][0]
+        # if self.config["xdata"] is None:
+        #    raise Exception("Please specify a data point array 'xdata'.")
+        if self.config["xdata"] is not None:
+            if len(self.config["xdata"]) == 1 and isinstance(self.config["xdata"][0], (list, np.ndarray)):
+                self.config["xdata"] = self.config["xdata"][0]
         # else:
         #     self.config["xdata"] = np.asarray(self.config["xdata"])
 
@@ -1146,11 +1155,13 @@ class Correlator(object):
         #             raise Exception("Please provide a commmon data point array \'xdata\' or as many arrays (in a list) as the corresponding skycuts.")
 
         if self.config["with_AP"]:
-            if self.config["z_AP"] is None or self.config["Omega_m_AP"] is None:
-                raise Exception("You asked to apply the AP effect. Please specify 'z_AP' and 'Omega_m_AP'.")
+            if self.config["DA_AP"] is None or self.config["H_AP"] is None:
+                raise Exception("You asked to apply the AP effect. Please specify 'DA_AP' and 'H_AP'.")
             if self.config["skycut"] == 1:
-                if isinstance(self.config["z_AP"], list):
-                    self.config["z_AP"] = self.config["z_AP"][0]
+                if isinstance(self.config["DA_AP"], list):
+                    self.config["DA_AP"] = self.config["DA_AP"][0]
+                if isinstance(self.config["H_AP"], list):
+                    self.config["H_AP"] = self.config["H_AP"][0]
 
         if self.config["with_window"]:
 

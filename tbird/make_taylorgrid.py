@@ -5,7 +5,7 @@ import copy
 from configobj import ConfigObj
 
 sys.path.append("../")
-from pybird import pybird
+from pybird_dev import pybird
 from tbird.Grid import grid_properties, run_camb, run_class
 
 if __name__ == "__main__":
@@ -23,33 +23,46 @@ if __name__ == "__main__":
     final = min((job_no + 1) * lenrun, len(flattenedgrid))
     arrayred = flattenedgrid[start:final]
 
-    # Set up pybird
-    Nl = 3
-    common = pybird.Common(Nl=Nl, kmax=0.5, optiresum=False)
-    commoncf = pybird.Common(Nl=Nl, kmax=0.3, smax=1000, optiresum=True)
-    nonlinear = pybird.NonLinear(load=False, save=False, co=common)
-    nonlinearcf = pybird.NonLinear(load=False, save=False, co=commoncf)
-    resum = pybird.Resum(co=common)
-    resumcf = pybird.Resum(co=commoncf)
-
     # Get some cosmological values at the grid centre
     if pardict["code"] == "CAMB":
         kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
     else:
         kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(pardict)
 
-    # Set up the window function and projection effects. No window at the moment for the UNIT sims,
-    # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
-    # used to make the measurements is the same as Grid centre
-    sout, nsout = commoncf.s, len(commoncf.s)
-    kout, nkout = common.k, len(common.k)
-    projection = pybird.Projection(kout, Da, Hz, co=common)
-    projection.p = kout
-    window = np.zeros((Nl, Nl, nkout, nkout))
-    for i in range(Nl):
-        window[i, i, :, :] = np.eye(nkout)
-    projection.Waldk = window
-    projectioncf = pybird.Projection(sout, Da, Hz, co=commoncf, cf=True)
+    # Set up pybird
+    Nl = 3
+    z_pk = float(pardict["z_pk"])
+    correlator = pybird.Correlator()
+    correlatorcf = pybird.Correlator()
+
+    correlator.set(
+        {
+            "output": "bPk",
+            "multipole": Nl,
+            "z": z_pk,
+            "optiresum": False,
+            "with_bias": False,
+            "with_exact_time": True,
+            "kmax": 0.5,
+            "with_AP": True,
+            "DA_AP": Da,
+            "H_AP": Hz,
+        }
+    )
+    correlatorcf.set(
+        {
+            "output": "bCf",
+            "multipole": Nl,
+            "z": z_pk,
+            "optiresum": True,
+            "with_bias": False,
+            "with_exact_time": True,
+            "kmax": 0.5,
+            "with_AP": True,
+            "DA_AP": Da,
+            "H_AP": Hz,
+        }
+    )
 
     # Now loop over all grid cells and compute the EFT model
     allPlin = []
@@ -72,23 +85,12 @@ if __name__ == "__main__":
             kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(parameters)
 
         # Get non-linear power spectrum from pybird
-        bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=common)
-        nonlinear.PsCf(bird)
-        bird.setPsCfl()
-        resum.PsCf(bird)
-        projection.AP(bird)
-        projection.Window(bird)
-
-        crow = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=pardict["z_pk"], which="all", co=commoncf)
-        nonlinearcf.PsCf(crow)
-        crow.setPsCfl()
-        resumcf.PsCf(crow)
-        projectioncf.AP(crow)
-        projectioncf.kdata(crow)
+        correlator.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
+        correlatorcf.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
 
         Params = np.array([Da, Hz, fN, sigma8, sigma12, r_d])
-        Plin, Ploop = bird.formatTaylorPs(kdata=kout)
-        Clin, Cloop = crow.formatTaylorCf(sdata=sout)
+        Plin, Ploop = correlator.bird.formatTaylorPs()
+        Clin, Cloop = correlatorcf.bird.formatTaylorCf()
         Pin = np.c_[kin, Pin]
         idxcol = np.full([Pin.shape[0], 1], idx)
         allPin.append(np.hstack([Pin, idxcol]))

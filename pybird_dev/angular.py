@@ -4,7 +4,7 @@ from numpy import pi, cos, sin, log, exp, sqrt, trapz
 from scipy.interpolate import interp1d, UnivariateSpline, RectBivariateSpline
 from scipy.special import legendre
 from scipy.integrate import quad, dblquad, simps
-from common import co
+from .common import co
 
 
 class Angular(object):

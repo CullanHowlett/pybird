@@ -5,8 +5,8 @@ from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.special import legendre, spherical_jn, j1
 from copy import deepcopy
-from fftlog import FFTLog, MPC
-from common import co
+from .fftlog import FFTLog, MPC
+from .common import co
 
 
 def cH(Om, a):
@@ -92,8 +92,8 @@ class Projection(object):
     def __init__(
         self,
         xout,
-        Om_AP=None,
-        z_AP=None,
+        DA_AP=None,
+        H_AP=None,
         nbinsmu=100,
         window_fourier_name=None,
         path_to_window=None,
@@ -110,12 +110,9 @@ class Projection(object):
         self.cf = self.co.with_cf
         self.xout = xout
 
-        if Om_AP is not None and z_AP is not None:
-            self.Om_AP = Om_AP
-            self.z_AP = z_AP
-
-            self.DA = DA(self.Om_AP, self.z_AP)
-            self.H = Hubble(self.Om_AP, self.z_AP)
+        if DA_AP is not None and H_AP is not None:
+            self.DA = DA_AP
+            self.H = H_AP
             self.muacc = np.linspace(0.0, 1.0, nbinsmu)
             if self.cf:
                 self.sgrid, self.mugrid = np.meshgrid(self.co.s, self.muacc, indexing="ij")
