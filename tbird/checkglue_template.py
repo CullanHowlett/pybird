@@ -75,15 +75,7 @@ if __name__ == "__main__":
         if not checkCfloop:
             print("Problem in loop CF: ", i, i * lenbatch, Cloop[0, 0, -1])
 
-    np.save(
-        os.path.join(pardict["outgrid"], "TablePlin_%s_template.npy" % pardict["gridname"]), np.concatenate(gridlin)
-    )
-    np.save(
-        os.path.join(pardict["outgrid"], "TablePloop_%s_template.npy" % pardict["gridname"]), np.concatenate(gridloop)
-    )
-    np.save(
-        os.path.join(pardict["outgrid"], "TableClin_%s_template.npy" % pardict["gridname"]), np.concatenate(gridCflin)
-    )
-    np.save(
-        os.path.join(pardict["outgrid"], "TableCloop_%s_template.npy" % pardict["gridname"]), np.concatenate(gridCfloop)
-    )
+    np.save(os.path.join(pardict["outgrid"], "TablePlin_%s_template.npy" % gridname), np.concatenate(gridlin))
+    np.save(os.path.join(pardict["outgrid"], "TablePloop_%s_template.npy" % gridname), np.concatenate(gridloop))
+    np.save(os.path.join(pardict["outgrid"], "TableClin_%s_template.npy" % gridname), np.concatenate(gridCflin))
+    np.save(os.path.join(pardict["outgrid"], "TableCloop_%s_template.npy" % gridname), np.concatenate(gridCfloop))
