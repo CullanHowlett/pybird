@@ -42,7 +42,7 @@ if __name__ == "__main__":
             "z": z_pk,
             "optiresum": False,
             "with_bias": False,
-            "with_exact_time": False,
+            "with_exact_time": True,
             "kmax": 0.5,
             "with_AP": True,
             "DA_AP": Da,
@@ -54,9 +54,9 @@ if __name__ == "__main__":
             "output": "bCf",
             "multipole": Nl,
             "z": z_pk,
-            "optiresum": False,
+            "optiresum": True,
             "with_bias": False,
-            "with_exact_time": False,
+            "with_exact_time": True,
             "kmax": 0.5,
             "with_AP": True,
             "DA_AP": Da,
@@ -88,7 +88,7 @@ if __name__ == "__main__":
         correlator.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
         correlatorcf.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
 
-        Params = np.array([Da, Hz, fN, sigma8, sigma12, r_d])
+        Params = np.array([Om, Da, Hz, fN, sigma8, sigma12, r_d])
         Plin, Ploop = correlator.bird.formatTaylorPs()
         Clin, Cloop = correlatorcf.bird.formatTaylorCf()
         Pin = np.c_[kin, Pin]

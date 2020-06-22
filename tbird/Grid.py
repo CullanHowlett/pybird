@@ -35,7 +35,7 @@ def grid_properties(pardict):
     return valueref, delta, flattenedgrid, truecrd
 
 
-def grid_properties_template(pardict, fN):
+def grid_properties_template(pardict, fN, sigma8):
     """ Computes some useful properties of the grid given the parameters read from the input file
 
     Parameters
@@ -56,12 +56,12 @@ def grid_properties_template(pardict, fN):
     """
 
     order = float(pardict["template_order"])
-    valueref = np.array([1.0, 1.0, fN])
+    valueref = np.array([1.0, 1.0, fN, sigma8])
     delta = np.array(pardict["template_dx"], dtype=np.float) * valueref
-    squarecrd = [np.arange(-order, order + 1) for l in range(3)]
-    truecrd = [valueref[l] + delta[l] * np.arange(-order, order + 1) for l in range(3)]
+    squarecrd = [np.arange(-order, order + 1) for l in range(4)]
+    truecrd = [valueref[l] + delta[l] * np.arange(-order, order + 1) for l in range(4)]
     squaregrid = np.array(np.meshgrid(*squarecrd, indexing="ij"))
-    flattenedgrid = squaregrid.reshape([3, -1]).T
+    flattenedgrid = squaregrid.reshape([4, -1]).T
 
     return valueref, delta, flattenedgrid, truecrd
 
@@ -164,7 +164,10 @@ def run_class(pardict):
     """
 
     parlinear = copy.deepcopy(pardict)
-    parlinear["m_ncdm"] = parlinear["m_ncdm"][0] + "," + parlinear["m_ncdm"][1] + "," + parlinear["m_ncdm"][2]
+    if int(parlinear["N_ncdm"] == 2):
+        parlinear["m_ncdm"] = parlinear["m_ncdm"][0] + "," + parlinear["m_ncdm"][1]
+    if int(parlinear["N_ncdm"] == 3):
+        parlinear["m_ncdm"] = parlinear["m_ncdm"][0] + "," + parlinear["m_ncdm"][1] + "," + parlinear["m_ncdm"][2]
 
     # Set the CLASS parameters
     M = Class()
@@ -196,15 +199,15 @@ def run_class(pardict):
     M.compute()
 
     kin = np.logspace(np.log10(2.0e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
-    Plin = [M.pk(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin]
+    Plin = [M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin]
 
     # Get some derived quantities
     Omega_m = M.Om_m(0.0)
     Da = M.angular_distance(float(parlinear["z_pk"])) * M.Hubble(0.0)
     H = M.Hubble(float(parlinear["z_pk"])) / M.Hubble(0.0)
     f = M.scale_independent_growth_factor_f(float(parlinear["z_pk"]))
-    sigma8 = M.sigma(8.0 / M.h(), float(parlinear["z_pk"]))
-    sigma12 = M.sigma(12.0, float(parlinear["z_pk"]))
+    sigma8 = M.sigma_cb(8.0 / M.h(), float(parlinear["z_pk"]))
+    sigma12 = M.sigma_cb(12.0, float(parlinear["z_pk"]))
     r_d = M.rs_drag()
 
     return kin, Plin, Omega_m, Da, H, f, sigma8, sigma12, r_d

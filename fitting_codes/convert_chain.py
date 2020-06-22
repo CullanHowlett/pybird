@@ -6,8 +6,8 @@ from configobj import ConfigObj
 from chainconsumer import ChainConsumer
 
 sys.path.append("../")
-from tbird.Grid import run_camb
-from fitting_codes.fitting_utils import format_pardict, BirdModel, read_chain
+from tbird.Grid import run_camb, run_class
+from fitting_codes.fitting_utils import format_pardict, BirdModel, read_chain_backend
 
 if __name__ == "__main__":
 
@@ -16,7 +16,6 @@ if __name__ == "__main__":
 
     # First, read in the config file used for the fit
     configfile = sys.argv[1]
-    fixed_h = int(sys.argv[2])
     pardict = ConfigObj(configfile)
 
     # Just converts strings in pardicts to numbers in int/float etc.
@@ -26,14 +25,15 @@ if __name__ == "__main__":
     birdmodel = BirdModel(pardict)
 
     # Compute the values at the central point
-    _, _, Om, Da_fid, Hz_fid, f_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(birdmodel.pardict)
-    fbc = float(pardict["omega_b"]) / float(pardict["omega_cdm"])
+    if pardict["code"] == "CAMB":
+        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
+    else:
+        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_class(pardict)
 
-    h_str = "fixedh" if fixed_h else "varyh"
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s_%s" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s_%s"
+    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s"
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -44,15 +44,13 @@ if __name__ == "__main__":
             birdmodel.pardict["xfit_min"],
             birdmodel.pardict["xfit_max"],
             taylor_strs[pardict["taylor_order"]],
-            h_str,
             hex_str,
             marg_str,
         )
     )
-
-    oldfile = chainfile + ".dat"
+    oldfile = chainfile + ".hdf5"
     newfile = chainfile + "_converted.dat"
-    burntin, bestfit, like = read_chain(oldfile)
+    burntin, bestfit, like = read_chain_backend(oldfile)
 
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
@@ -62,21 +60,13 @@ if __name__ == "__main__":
     for i, (vals, loglike) in enumerate(zip(burntin, like)):
         if i % 1000 == 0:
             print(i)
-        if fixed_h:
-            h = float(pardict["h"])
-            om = vals[1]
-            b1 = vals[2]
-        else:
-            h = vals[1]
-            om = vals[2]
-            b1 = vals[3]
-        omega_cdm = om * h ** 2 / (1.0 + fbc)
-        omega_b = om * h ** 2 - omega_cdm
-        if np.any(np.less([vals[0], h, omega_cdm, omega_b], lower_bounds)) or np.any(
-            np.greater([vals[0], h, omega_cdm, omega_b], upper_bounds)
+        ln10As, h, omega_cdm, b1 = vals[:4]
+        omega_b = birdmodel.valueref[3]
+        if np.any(np.less([ln10As, h, omega_cdm, omega_b], lower_bounds)) or np.any(
+            np.greater([ln10As, h, omega_cdm, omega_b], upper_bounds)
         ):
             continue
-        Da, Hz, f, sigma8, sigma12, r_d = birdmodel.compute_params([vals[0], h, omega_cdm, omega_b])
+        Da, Hz, f, sigma8, sigma12, r_d = birdmodel.compute_params([ln10As, h, omega_cdm, omega_b])
         alpha_perp = (Da / h) * (float(pardict["h"]) / Da_fid) * (r_d_fid * float(pardict["h"]) / (r_d * h))
         alpha_par = (float(pardict["h"]) * Hz_fid) / (h * Hz) * (r_d_fid * float(pardict["h"]) / (r_d * h))
         chainvals.append(

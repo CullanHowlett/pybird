@@ -19,31 +19,10 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
 
     # Set up the MCMC
     # How many free parameters and walkers (this is for emcee's method)
-    if birdmodel.pardict["do_marg"]:
-        if birdmodel.pardict["do_corr"]:
-            nparams = len(start) - 7
-        else:
-            nparams = len(start) - 7
-    else:
-        nparams = len(start)
+    nparams = len(start)
     nwalkers = nparams * 8
 
-    if birdmodel.pardict["do_marg"]:
-        begin = [
-            [
-                (0.01 * (np.random.rand() - 0.5) + 1.0) * start[0],
-                (0.01 * (np.random.rand() - 0.5) + 1.0) * start[1],
-                (0.1 * (np.random.rand() - 0.5) + 1.0) * start[2],
-                (0.1 * (np.random.rand() - 0.5) + 1.0) * start[3],
-                (0.1 * (np.random.rand() - 0.5) + 1.0) * start[4],
-                (0.1 * (np.random.rand() - 0.5) + 1.0) * start[6],
-            ]
-            for i in range(nwalkers)
-        ]
-    else:
-        begin = [
-            [(0.1 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)
-        ]
+    begin = [[(0.1 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)]
 
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
@@ -74,7 +53,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     # Run the sampler for a max of 20000 iterations. We check convergence every 100 steps and stop if
     # the chain is longer than 100 times the estimated autocorrelation time and if this estimate
     # changed by less than 1%. I copied this from the emcee site as it seemed reasonable.
-    max_iter = 40000
+    max_iter = 20000
     index = 0
     old_tau = np.inf
     autocorr = np.empty(max_iter)
@@ -126,12 +105,8 @@ def lnprior(params, birdmodel):
         else:
             b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[-10:]
 
-    ln10As, h, Omega_m = params[:3]
-    Omega_nu = float(birdmodel.pardict["Sum_mnu"]) / (93.14 * h ** 2)
-    fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
-    omega_cdm = (Omega_m - Omega_nu) / (1.0 + fbc) * h ** 2
-    omega_b = (Omega_m - Omega_nu) * h ** 2 - omega_cdm
-
+    ln10As, h, omega_cdm = params[:3]
+    omega_b = birdmodel.valueref[3]
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
 
@@ -169,31 +144,16 @@ def lnprior(params, birdmodel):
         # Gaussian prior for cr1 of width 4 centred on 0
         cr2_prior = -0.5 * 0.0625 * cr2 ** 2
 
-        if birdmodel.pardict["do_corr"]:
+        # Gaussian prior for ce1 of width 2 centred on 0
+        ce1_prior = -0.5 * 0.25 * ce1 ** 2
 
-            # Gaussian prior for ce1 of width 2 centred on 0
-            ce1_prior = -0.5 * 0.25 * ce1 ** 2
+        # Gaussian prior for cemono of width 2 centred on 0
+        cemono_prior = -0.5 * 0.25 * cemono ** 2
 
-            # Gaussian prior for cemono of width 2 centred on 0
-            cemono_prior = -0.5 * 0.25 * cemono ** 2
+        # Gaussian prior for cequad of width 2 centred on 0
+        cequad_prior = -0.5 * 0.25 * cequad ** 2
 
-            # Gaussian prior for cequad of width 2 centred on 0
-            cequad_prior = -0.5 * 0.25 * cequad ** 2
-
-            return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
-
-        else:
-
-            # Gaussian prior for ce1 of width 2 centred on 0
-            ce1_prior = -0.5 * 0.25 * ce1 ** 2
-
-            # Gaussian prior for cemono of width 2 centred on 0
-            cemono_prior = -0.5 * 0.25 * cemono ** 2
-
-            # Gaussian prior for cequad of width 2 centred on 0
-            cequad_prior = -0.5 * 0.25 * cequad ** 2
-
-            return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
+        return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
 
 
 def lnlike(params, birdmodel, fittingdata, plt):
@@ -201,48 +161,26 @@ def lnlike(params, birdmodel, fittingdata, plt):
     if birdmodel.pardict["do_marg"]:
         b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
         b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
-        if birdmodel.pardict["do_corr"]:
-            bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        else:
-            bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     else:
-        if birdmodel.pardict["do_corr"]:
-            b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
-            b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
-            bs = [
-                params[-10],
-                b2,
-                params[-8],
-                b4,
-                params[-6],
-                params[-5],
-                params[-4],
-                params[-3] * fittingdata.data["shot_noise"],
-                params[-2] * fittingdata.data["shot_noise"],
-                params[-1] * fittingdata.data["shot_noise"],
-            ]
-        else:
-            b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
-            b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
-            bs = [
-                params[-10],
-                b2,
-                params[-8],
-                b4,
-                params[-6],
-                params[-5],
-                params[-4],
-                params[-3] * fittingdata.data["shot_noise"],
-                params[-2] * fittingdata.data["shot_noise"],
-                params[-1] * fittingdata.data["shot_noise"],
-            ]
+        b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
+        b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
+        bs = [
+            params[-10],
+            b2,
+            params[-8],
+            b4,
+            params[-6],
+            params[-5],
+            params[-4],
+            params[-3] * fittingdata.data["shot_noise"],
+            params[-2] * fittingdata.data["shot_noise"],
+            params[-1] * fittingdata.data["shot_noise"],
+        ]
 
     # Get the bird model
-    ln10As, h, Omega_m = params[:3]
-    Omega_nu = float(birdmodel.pardict["Sum_mnu"]) / (93.14 * h ** 2)
-    fbc = float(birdmodel.valueref[3]) / float(birdmodel.valueref[2])
-    omega_cdm = (Omega_m - Omega_nu) / (1.0 + fbc) * h ** 2
-    omega_b = (Omega_m - Omega_nu) * h ** 2 - omega_cdm
+    ln10As, h, omega_cdm = params[:3]
+    omega_b = birdmodel.valueref[3]
 
     Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
@@ -280,18 +218,13 @@ if __name__ == "__main__":
     if plot_flag:
         plt = create_plot(pardict, fittingdata)
 
-    omstart = (birdmodel.valueref[2] + birdmodel.valueref[3]) / birdmodel.valueref[1] ** 2
-    if pardict["do_corr"]:
-        start = np.array(
-            [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        )
+    if birdmodel.pardict["do_marg"]:
+        start = np.concatenate([birdmodel.valueref[:3], [1.0, 1.0, 1.0]])
     else:
-        start = np.array(
-            [birdmodel.valueref[0], birdmodel.valueref[1], omstart, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        )
+        start = np.concatenate([birdmodel.valueref[:3], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]])
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    do_emcee(lnpost, start, birdmodel, fittingdata, plt)

@@ -18,12 +18,12 @@ if __name__ == "__main__":
 
     # Get some cosmological values at the grid centre
     if pardict["code"] == "CAMB":
-        kin, Pin, Om, Da_fid, Hz_fid, fN, sigma8, sigma12, r_d = run_camb(pardict)
+        kin, Pin, Om, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12, r_d = run_camb(pardict)
     else:
-        kin, Pin, Om, Da_fid, Hz_fid, fN, sigma8, sigma12, r_d = run_class(pardict)
+        kin, Pin, Om, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12, r_d = run_class(pardict)
 
     # Compute the values of the growth rate that this job will do
-    valueref, delta, flattenedgrid, _ = grid_properties_template(pardict, fN)
+    valueref, delta, flattenedgrid, _ = grid_properties_template(pardict, fN_fid, sigma8_fid)
     lenrun = int(len(flattenedgrid) / njobs)
     start = job_no * lenrun
     final = min((job_no + 1) * lenrun, len(flattenedgrid))
@@ -79,10 +79,16 @@ if __name__ == "__main__":
 
         Da = Da_fid * truetheta[0]
         Hz = Hz_fid / truetheta[1]
+        sigma8_scale = truetheta[3] / sigma8_fid
+        Pin_scaled = copy.copy(Pin) * sigma8_scale ** 2
 
         # Get non-linear power spectrum from pybird
-        correlator.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": truetheta[2], "DA": Da, "H": Hz})
-        correlatorcf.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": truetheta[2], "DA": Da, "H": Hz})
+        correlator.compute(
+            {"k11": kin, "P11": Pin_scaled, "z": z_pk, "Omega0_m": Om, "f": truetheta[2], "DA": Da, "H": Hz}
+        )
+        correlatorcf.compute(
+            {"k11": kin, "P11": Pin_scaled, "z": z_pk, "Omega0_m": Om, "f": truetheta[2], "DA": Da, "H": Hz}
+        )
 
         Plin, Ploop = correlator.bird.formatTaylorPs()
         Clin, Cloop = correlatorcf.bird.formatTaylorCf()

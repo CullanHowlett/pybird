@@ -107,12 +107,12 @@ if __name__ == "__main__":
         update_plot(pardict, fittingdata, P_model, plt, keep=True)
         print(params, chi_squared)
 
-        np.savetxt(
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_nohex_all_bestfit_template.dat",
-            np.c_[
-                fittingdata.data["x_data"],
-                P_model[: len(fittingdata.data["x_data"])],
-                P_model[len(fittingdata.data["x_data"]) :],
-            ],
-            header="k       P0          P2",
-        )
+        # np.savetxt(
+        #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_nohex_all_bestfit_template.dat",
+        #    np.c_[
+        #        fittingdata.data["x_data"],
+        #        P_model[: len(fittingdata.data["x_data"])],
+        #        P_model[len(fittingdata.data["x_data"]) :],
+        #    ],
+        #    header="k       P0          P2",
+        # )

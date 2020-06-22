@@ -204,10 +204,7 @@ class BirdModel:
         plin0, plin2, plin4 = plin
         ploop0, ploop2, ploop4 = ploop
 
-        if self.pardict["do_corr"]:
-            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
-        else:
-            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
+        b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
 
         # the columns of the Ploop data files.
         cvals = np.array(
@@ -271,10 +268,7 @@ class BirdModel:
         if self.pardict["do_marg"]:
 
             Covbi = np.dot(Pi, np.dot(data["cov_inv"], Pi.T))
-            if self.pardict["do_corr"]:
-                Covbi += self.priormat[:4, :4]
-            else:
-                Covbi += self.priormat
+            Covbi += self.priormat
             Cinvbi = np.linalg.inv(Covbi)
             vectorbi = np.dot(P_model, np.dot(data["cov_inv"], Pi.T)) - np.dot(data["invcovdata"], Pi.T)
             chi2nomar = (
@@ -363,12 +357,55 @@ class BirdModel:
 
             if self.pardict["do_corr"]:
 
+                if self.pardict["do_hex"]:
+                    C0 = np.array(
+                        [
+                            np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data),
+                            np.zeros(len(x_data)),
+                            np.zeros(len(x_data)),
+                        ]
+                    )  # shot-noise mono
+                    C1 = np.array(
+                        [
+                            -np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data ** 2),
+                            np.zeros(len(x_data)),
+                            np.zeros(len(x_data)),
+                        ]
+                    )  # k^2 mono
+                    C2 = np.array(
+                        [
+                            np.zeros(len(x_data)),
+                            np.exp(-self.k_m * x_data)
+                            * (3.0 + 3.0 * self.k_m * x_data + self.k_m ** 2 * x_data ** 2)
+                            / (4.0 * np.pi * x_data ** 3),
+                            np.zeros(len(x_data)),
+                        ]
+                    )  # k^2 quad
+                else:
+                    C0 = np.array(
+                        [np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data), np.zeros(len(x_data))]
+                    )  # shot-noise mono
+                    C1 = np.array(
+                        [-np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data ** 2), np.zeros(len(x_data))]
+                    )  # k^2 mono
+                    C2 = np.array(
+                        [
+                            np.zeros(len(x_data)),
+                            np.exp(-self.k_m * x_data)
+                            * (3.0 + 3.0 * self.k_m * x_data + self.k_m ** 2 * x_data ** 2)
+                            / (4.0 * np.pi * x_data ** 3),
+                        ]
+                    )  # k^2 quad
+
                 Pi = np.array(
                     [
                         Pb3,  # *b3
                         2.0 * Pcct / self.k_nl ** 2,  # *cct
                         2.0 * Pcr1 / self.k_m ** 2,  # *cr1
                         2.0 * Pcr2 / self.k_m ** 2,  # *cr2
+                        C0 * self.k_m ** 2 * shot_noise,  # ce1
+                        C1 * self.k_m ** 2 * shot_noise,  # cemono
+                        C2 * shot_noise,  # cequad
                     ]
                 )
 
