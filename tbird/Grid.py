@@ -199,7 +199,7 @@ def run_class(pardict):
     M.compute()
 
     kin = np.logspace(np.log10(2.0e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
-    Plin = [M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin]
+    Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin])
 
     # Get some derived quantities
     Omega_m = M.Om_m(0.0)

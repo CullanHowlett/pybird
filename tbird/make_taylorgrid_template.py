@@ -80,7 +80,7 @@ if __name__ == "__main__":
         Da = Da_fid * truetheta[0]
         Hz = Hz_fid / truetheta[1]
         sigma8_scale = truetheta[3] / sigma8_fid
-        Pin_scaled = copy.copy(Pin) * sigma8_scale ** 2
+        Pin_scaled = Pin * sigma8_scale ** 2
 
         # Get non-linear power spectrum from pybird
         correlator.compute(
