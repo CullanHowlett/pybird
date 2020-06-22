@@ -54,7 +54,7 @@ if __name__ == "__main__":
             "output": "bCf",
             "multipole": Nl,
             "z": z_pk,
-            "optiresum": True,
+            "optiresum": False,
             "with_bias": False,
             "with_exact_time": True,
             "kmax": 0.5,

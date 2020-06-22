@@ -47,6 +47,7 @@ class BirdModel:
 
         # Prepare the model
         if self.direct:
+            Exception("Direct not currently supported :(")
             self.common, self.nonlinear, self.resum, self.projection = self.setup_pybird()
             self.kin = self.projection.kout
         else:
@@ -204,7 +205,7 @@ class BirdModel:
         ploop0, ploop2, ploop4 = ploop
 
         if self.pardict["do_corr"]:
-            b1, b2, b3, b4, cct, cr1, cr2 = cvals
+            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
         else:
             b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
 
@@ -242,7 +243,17 @@ class BirdModel:
         if self.pardict["do_hex"]:
             P4_interp = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P4))
 
-        if not self.pardict["do_corr"]:
+        if self.pardict["do_corr"]:
+            C0 = np.exp(-self.k_m * x_data) * self.k_m ** 2 / (4.0 * np.pi * x_data)
+            C1 = -self.k_m ** 2 * np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data ** 2)
+            C2 = (
+                np.exp(-self.k_m * x_data)
+                * (3.0 + 3.0 * self.k_m * x_data + self.k_m ** 2 * x_data ** 2)
+                / (4.0 * np.pi * x_data ** 3)
+            )
+            P0_interp += ce1 * C0 + cemono * C1
+            P2_interp += cequad * C2
+        else:
             P0_interp += ce1 + cemono * x_data ** 2 / self.k_m ** 2
             P2_interp += cequad * x_data ** 2 / self.k_m ** 2
 
@@ -457,7 +468,7 @@ class BirdModel:
 
 # Holds all the data in a convenient dictionary
 class FittingData:
-    def __init__(self, pardict, shot_noise=100.0):
+    def __init__(self, pardict, shot_noise=0.0):
 
         x_data, fit_data, cov, cov_inv, chi2data, invcovdata, fitmask = self.read_data(pardict)
 
@@ -738,7 +749,7 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
         niter=100,
         stepsize=0.1,
         minimizer_kwargs={
-            "args": (birdmodel, fittingdata, plt, 0),
+            "args": (birdmodel, fittingdata, plt),
             "method": "Nelder-Mead",
             "tol": 1.0e-3,
             "options": {"maxiter": 40000},
