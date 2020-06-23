@@ -11,7 +11,7 @@ if __name__ == "__main__":
     pardict = ConfigObj(configfile)
     gridname = pardict["code"].lower() + "-" + pardict["gridname"]
 
-    ntot = (2 * float(pardict["template_order"]) + 1) ** 3
+    ntot = (2 * float(pardict["template_order"]) + 1) ** 4
     lenbatch = ntot / njobs
 
     linfailed = []
