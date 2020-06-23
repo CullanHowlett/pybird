@@ -17,7 +17,7 @@ def get_template_grids(parref, nmult=3, nout=3, pad=True, cf=False):
     name = parref["code"].lower() + "-" + parref["gridname"]
 
     # Coordinates have shape (3, 2 * order_1 + 1, ..., 2 * order_n + 1)
-    shapecrd = np.concatenate([[3], np.full(3, 2 * int(parref["template_order"]) + 1)])
+    shapecrd = np.concatenate([[4], np.full(4, 2 * int(parref["template_order"]) + 1)])
     padshape = [(1, 1)] * (len(shapecrd) - 1)
 
     # grids need to be reshaped and padded at both ends along the freepar directions
