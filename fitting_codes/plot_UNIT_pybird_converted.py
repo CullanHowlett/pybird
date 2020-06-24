@@ -50,7 +50,7 @@ if __name__ == "__main__":
         like = burntin[:, -1]
         bestfit = burntin[np.argmax(burntin[:, -1]), :-1]
         paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
-        c.add_chain(burntin[:, [0, 1, 4, 6]], parameters=paramnames, name=names[chaini], posterior=like)
+        c.add_chain(burntin[:, [0, 1, 5, 7]], parameters=paramnames, name=names[chaini], posterior=like)
         bestfits.append(bestfit)
 
     print(bestfits)

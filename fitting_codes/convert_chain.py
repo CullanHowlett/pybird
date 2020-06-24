@@ -66,13 +66,14 @@ if __name__ == "__main__":
             np.greater([ln10As, h, omega_cdm, omega_b], upper_bounds)
         ):
             continue
-        Da, Hz, f, sigma8, sigma12, r_d = birdmodel.compute_params([ln10As, h, omega_cdm, omega_b])
+        Om, Da, Hz, f, sigma8, sigma12, r_d = birdmodel.compute_params([ln10As, h, omega_cdm, omega_b])
         alpha_perp = (Da / h) * (float(pardict["h"]) / Da_fid) * (r_d_fid * float(pardict["h"]) / (r_d * h))
         alpha_par = (float(pardict["h"]) * Hz_fid) / (h * Hz) * (r_d_fid * float(pardict["h"]) / (r_d * h))
         chainvals.append(
             (
                 alpha_perp,
                 alpha_par,
+                Om,
                 2997.92458 * Da / h,
                 100.0 * h * Hz,
                 f * sigma8,

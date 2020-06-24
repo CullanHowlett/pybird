@@ -41,7 +41,9 @@ class BirdModel:
             )
 
         if self.template:
-            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(pardict, self.fN)
+            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(
+                pardict, self.fN, self.sigma8
+            )
         else:
             self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
 
@@ -124,7 +126,7 @@ class BirdModel:
             if self.template:
                 lintab, looptab = get_template_grids(self.pardict, pad=False, cf=self.pardict["do_corr"])
                 paramsmod = None
-                kin = lintab[..., 0, :, 0][(0,) * 3]
+                kin = lintab[..., 0, :, 0][(0,) * 4]
             else:
                 paramstab, lintab, looptab = get_grids(self.pardict, pad=False, cf=self.pardict["do_corr"])
                 paramsmod = sp.interpolate.RegularGridInterpolator(self.truecrd, paramstab)

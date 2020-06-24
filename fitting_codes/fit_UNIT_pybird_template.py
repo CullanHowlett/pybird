@@ -55,7 +55,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     # Run the sampler for a max of 20000 iterations. We check convergence every 100 steps and stop if
     # the chain is longer than 100 times the estimated autocorrelation time and if this estimate
     # changed by less than 1%. I copied this from the emcee site as it seemed reasonable.
-    max_iter = 20000
+    max_iter = 30000
     index = 0
     old_tau = np.inf
     autocorr = np.empty(max_iter)
@@ -110,8 +110,13 @@ def lnprior(params, birdmodel):
     lower_bounds = birdmodel.valueref - birdmodel.pardict["template_order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["template_order"] * birdmodel.delta
 
+    alpha_perp, alpha_par, fsigma8 = params[:3]
+    f = fsigma8 / birdmodel.valueref[3]
+
     # Flat priors for alpha_perp, alpha_par f and sigma8
-    if np.any(np.less(params[:4], lower_bounds)) or np.any(np.greater(params[:4], upper_bounds)):
+    if np.any(np.less([alpha_perp, alpha_par, f, birdmodel.valueref[3]], lower_bounds)) or np.any(
+        np.greater([alpha_perp, alpha_par, f, birdmodel.valueref[3]], upper_bounds)
+    ):
         return -np.inf
 
     # Flat prior for b1
@@ -178,7 +183,10 @@ def lnlike(params, birdmodel, fittingdata, plt):
         ]
 
     # Get the bird model
-    Plin, Ploop = birdmodel.compute_pk(params[:4])
+    alpha_perp, alpha_par, fsigma8 = params[:3]
+    f = fsigma8 / birdmodel.valueref[3]
+
+    Plin, Ploop = birdmodel.compute_pk([alpha_perp, alpha_par, f, birdmodel.valueref[3]])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
     Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
 
@@ -215,9 +223,9 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     if pardict["do_marg"]:
-        start = np.array([1.0, 1.0, birdmodel.fN, birdmodel.sigma8, 1.3, 1.0, 1.0])
+        start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.3, 1.0, 1.0])
     else:
-        start = np.array([1.0, 1.0, birdmodel.fN, birdmodel.sigma8, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,])
 
     # Does an optimization
     # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
