@@ -29,22 +29,25 @@ if __name__ == "__main__":
 
     # Set the chainfiles and names for each chain
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_hex_marg.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_20_200_grid_hex_marg.hdf5",
     ]
     figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_grid_hex_marg.pdf"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_grid_hex_marg.pdf"
     ]
     names = [
-        r"$P(k);\,\mathrm{0.00-0.30}h\mathrm{Mpc^{-1}}\,\mathrm{Marg}$",
         r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
+        r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
+        r"$\xi(s);\,\mathrm{20-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
     ]
 
     truths = {
         r"$A_{s}\times 10^{9}$": np.exp(float(pardict["ln10^{10}A_s"])) / 1.0e1,
         r"$h$": float(pardict["h"]),
+        # r"$\Omega_{m}$": Om_fid,
         r"$\omega_{cdm}$": float(pardict["omega_cdm"]),
-        r"$\omega_{b}$": float(pardict["omega_b"]),
+        # r"$\omega_{b}$": float(pardict["omega_b"]),
     }
 
     # Output name for the figure
@@ -56,6 +59,7 @@ if __name__ == "__main__":
 
         burntin, bestfit, like = read_chain_backend(chainfile)
         burntin[:, 0] = np.exp(burntin[:, 0]) / 1.0e1
+        # burntin[:, 2] = (burntin[:, 2] + float(pardict["omega_b"]) + (0.06 / 93.14)) / burntin[:, 1] ** 2
         paramnames = [r"$A_{s}\times 10^{9}$", r"$h$", r"$\omega_{cdm}$", r"$b_{1}$"]
         c.add_chain(burntin[:, :4], parameters=paramnames, name=names[chaini], posterior=like)
         bestfits.append(bestfit)

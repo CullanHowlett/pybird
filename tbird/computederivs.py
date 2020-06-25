@@ -85,7 +85,7 @@ def get_pder_lin(parref, pi, dx, filename, template=False):
     t0 = time.time()
 
     if template:
-        lenpar = 3
+        lenpar = 4
         idx = int(parref["template_order"]) + 1
     else:
         lenpar = len(parref["freepar"])
