@@ -86,7 +86,6 @@ class BirdModel:
         # Load in the model components
         gridname = self.pardict["code"].lower() + "-" + self.pardict["gridname"]
         if self.pardict["taylor_order"]:
-            print(self.pardict["taylor_order"])
             if self.template:
                 paramsmod = None
                 if self.pardict["do_corr"]:
@@ -237,24 +236,24 @@ class BirdModel:
         if self.pardict["do_hex"]:
             P4 = np.dot(cvals, ploop4) + plin4[0] + b1 * plin4[1] + b1 * b1 * plin4[2]
 
-        P0_interp = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P0))
-        P2_interp = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P2))
+        P0_interp = sp.interpolate.splev(x_data[0], sp.interpolate.splrep(self.kin, P0))
+        P2_interp = sp.interpolate.splev(x_data[1], sp.interpolate.splrep(self.kin, P2))
         if self.pardict["do_hex"]:
-            P4_interp = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.kin, P4))
+            P4_interp = sp.interpolate.splev(x_data[2], sp.interpolate.splrep(self.kin, P4))
 
         if self.pardict["do_corr"]:
-            C0 = np.exp(-self.k_m * x_data) * self.k_m ** 2 / (4.0 * np.pi * x_data)
-            C1 = -self.k_m ** 2 * np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data ** 2)
+            C0 = np.exp(-self.k_m * x_data[0]) * self.k_m ** 2 / (4.0 * np.pi * x_data[0])
+            C1 = -self.k_m ** 2 * np.exp(-self.k_m * x_data[0]) / (4.0 * np.pi * x_data[0] ** 2)
             C2 = (
-                np.exp(-self.k_m * x_data)
-                * (3.0 + 3.0 * self.k_m * x_data + self.k_m ** 2 * x_data ** 2)
-                / (4.0 * np.pi * x_data ** 3)
+                np.exp(-self.k_m * x_data[1])
+                * (3.0 + 3.0 * self.k_m * x_data[1] + self.k_m ** 2 * x_data[1] ** 2)
+                / (4.0 * np.pi * x_data[1] ** 3)
             )
             P0_interp += ce1 * C0 + cemono * C1
             P2_interp += cequad * C2
         else:
-            P0_interp += ce1 + cemono * x_data ** 2 / self.k_m ** 2
-            P2_interp += cequad * x_data ** 2 / self.k_m ** 2
+            P0_interp += ce1 + cemono * x_data[0] ** 2 / self.k_m ** 2
+            P2_interp += cequad * x_data[1] ** 2 / self.k_m ** 2
 
         if self.pardict["do_hex"]:
             P_model = np.concatenate([P0, P2, P4])
@@ -285,7 +284,7 @@ class BirdModel:
 
             # Compute the chi_squared
             chi_squared = 0.0
-            for i in range(self.Nl * len(data["x_data"])):
+            for i in range(len(data["fit_data"])):
                 chi_squared += (P_model[i] - data["fit_data"][i]) * np.sum(
                     data["cov_inv"][i, 0:] * (P_model - data["fit_data"])
                 )
@@ -299,105 +298,59 @@ class BirdModel:
 
             ploop0, ploop2, ploop4 = ploop
 
+            Pb3 = np.array(
+                [
+                    splev(x_data[0], splrep(self.kin, ploop0[3] + b1 * ploop0[7])),
+                    splev(x_data[1], splrep(self.kin, ploop2[3] + b1 * ploop2[7])),
+                ]
+            )
+            Pcct = np.array(
+                [
+                    splev(x_data[0], splrep(self.kin, ploop0[15] + b1 * ploop0[12])),
+                    splev(x_data[1], splrep(self.kin, ploop2[15] + b1 * ploop2[12])),
+                ]
+            )
+            Pcr1 = np.array(
+                [
+                    splev(x_data[0], splrep(self.kin, ploop0[16] + b1 * ploop0[13])),
+                    splev(x_data[1], splrep(self.kin, ploop2[16] + b1 * ploop2[13])),
+                ]
+            )
+            Pcr2 = np.array(
+                [
+                    splev(x_data[0], splrep(self.kin, ploop0[17] + b1 * ploop0[14])),
+                    splev(x_data[1], splrep(self.kin, ploop2[17] + b1 * ploop2[14])),
+                ]
+            )
+
             if self.pardict["do_hex"]:
 
-                Pb3 = np.array(
-                    [
-                        splev(x_data, splrep(self.kin, ploop0[3] + b1 * ploop0[7])),
-                        splev(x_data, splrep(self.kin, ploop2[3] + b1 * ploop2[7])),
-                        splev(x_data, splrep(self.kin, ploop4[3] + b1 * ploop4[7])),
-                    ]
-                )
-                Pcct = np.array(
-                    [
-                        splev(x_data, splrep(self.kin, ploop0[15] + b1 * ploop0[12])),
-                        splev(x_data, splrep(self.kin, ploop2[15] + b1 * ploop2[12])),
-                        splev(x_data, splrep(self.kin, ploop4[15] + b1 * ploop4[12])),
-                    ]
-                )
-                Pcr1 = np.array(
-                    [
-                        splev(x_data, splrep(self.kin, ploop0[16] + b1 * ploop0[13])),
-                        splev(x_data, splrep(self.kin, ploop2[16] + b1 * ploop2[13])),
-                        splev(x_data, splrep(self.kin, ploop4[16] + b1 * ploop4[13])),
-                    ]
-                )
-                Pcr2 = np.array(
-                    [
-                        splev(x_data, splrep(self.kin, ploop0[17] + b1 * ploop0[14])),
-                        splev(x_data, splrep(self.kin, ploop2[17] + b1 * ploop2[14])),
-                        splev(x_data, splrep(self.kin, ploop4[17] + b1 * ploop4[14])),
-                    ]
-                )
-
-            else:
-
-                Pb3 = np.array(
-                    [
-                        splev(x_data, splrep(self.kin, ploop0[3] + b1 * ploop0[7])),
-                        splev(x_data, splrep(self.kin, ploop2[3] + b1 * ploop2[7])),
-                    ]
-                )
-                Pcct = np.array(
-                    [
-                        splev(x_data, splrep(self.kin, ploop0[15] + b1 * ploop0[12])),
-                        splev(x_data, splrep(self.kin, ploop2[15] + b1 * ploop2[12])),
-                    ]
-                )
-                Pcr1 = np.array(
-                    [
-                        splev(x_data, splrep(self.kin, ploop0[16] + b1 * ploop0[13])),
-                        splev(x_data, splrep(self.kin, ploop2[16] + b1 * ploop2[13])),
-                    ]
-                )
-                Pcr2 = np.array(
-                    [
-                        splev(x_data, splrep(self.kin, ploop0[17] + b1 * ploop0[14])),
-                        splev(x_data, splrep(self.kin, ploop2[17] + b1 * ploop2[14])),
-                    ]
-                )
+                Pb3 = np.vstack([Pb3, splev(x_data[2], splrep(self.kin, ploop4[3] + b1 * ploop4[7]))])
+                Pcct = np.vstack([Pcct, splev(x_data[2], splrep(self.kin, ploop4[15] + b1 * ploop4[12]))])
+                Pcr1 = np.vstack([Pcr1, splev(x_data[2], splrep(self.kin, ploop4[16] + b1 * ploop4[13]))])
+                Pcr2 = np.vstack([Pcr2, splev(x_data[2], splrep(self.kin, ploop4[17] + b1 * ploop4[14]))])
 
             if self.pardict["do_corr"]:
 
+                C0 = np.array(
+                    [np.exp(-self.k_m * x_data[0]) / (4.0 * np.pi * x_data[0]), np.zeros(len(x_data[1]))]
+                )  # shot-noise mono
+                C1 = np.array(
+                    [-np.exp(-self.k_m * x_data[0]) / (4.0 * np.pi * x_data[0] ** 2), np.zeros(len(x_data[1]))]
+                )  # k^2 mono
+                C2 = np.array(
+                    [
+                        np.zeros(len(x_data[0])),
+                        np.exp(-self.k_m * x_data[1])
+                        * (3.0 + 3.0 * self.k_m * x_data[1] + self.k_m ** 2 * x_data[1] ** 2)
+                        / (4.0 * np.pi * x_data[1] ** 3),
+                    ]
+                )  # k^2 quad
+
                 if self.pardict["do_hex"]:
-                    C0 = np.array(
-                        [
-                            np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data),
-                            np.zeros(len(x_data)),
-                            np.zeros(len(x_data)),
-                        ]
-                    )  # shot-noise mono
-                    C1 = np.array(
-                        [
-                            -np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data ** 2),
-                            np.zeros(len(x_data)),
-                            np.zeros(len(x_data)),
-                        ]
-                    )  # k^2 mono
-                    C2 = np.array(
-                        [
-                            np.zeros(len(x_data)),
-                            np.exp(-self.k_m * x_data)
-                            * (3.0 + 3.0 * self.k_m * x_data + self.k_m ** 2 * x_data ** 2)
-                            / (4.0 * np.pi * x_data ** 3),
-                            np.zeros(len(x_data)),
-                        ]
-                    )  # k^2 quad
-                else:
-                    C0 = np.array(
-                        [np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data), np.zeros(len(x_data))]
-                    )  # shot-noise mono
-                    C1 = np.array(
-                        [-np.exp(-self.k_m * x_data) / (4.0 * np.pi * x_data ** 2), np.zeros(len(x_data))]
-                    )  # k^2 mono
-                    C2 = np.array(
-                        [
-                            np.zeros(len(x_data)),
-                            np.exp(-self.k_m * x_data)
-                            * (3.0 + 3.0 * self.k_m * x_data + self.k_m ** 2 * x_data ** 2)
-                            / (4.0 * np.pi * x_data ** 3),
-                        ]
-                    )  # k^2 quad
+                    C0 = np.vstack([C0, np.zeros(len(x_data[2]))])  # shot-noise mono
+                    C1 = np.vstack([C1, np.zeros(len(x_data[2]))])  # k^2 mono
+                    C2 = np.vstack([C2, np.zeros(len(x_data[2]))])  # k^2 quad
 
                 Pi = np.array(
                     [
@@ -413,16 +366,14 @@ class BirdModel:
 
             else:
 
+                Onel0 = np.array([np.ones(len(x_data[0])), np.zeros(len(x_data[1]))])  # shot-noise mono
+                kl0 = np.array([x_data[0], np.zeros(len(x_data[1]))])  # k^2 mono
+                kl2 = np.array([np.zeros(len(x_data[0])), x_data[1]])  # k^2 quad
+
                 if self.pardict["do_hex"]:
-                    Onel0 = np.array(
-                        [np.ones(len(x_data)), np.zeros(len(x_data)), np.zeros(len(x_data))]
-                    )  # shot-noise mono
-                    kl0 = np.array([x_data, np.zeros(len(x_data)), np.zeros(len(x_data))])  # k^2 mono
-                    kl2 = np.array([np.zeros(len(x_data)), x_data, np.zeros(len(x_data))])  # k^2 quad
-                else:
-                    Onel0 = np.array([np.ones(len(x_data)), np.zeros(len(x_data))])  # shot-noise mono
-                    kl0 = np.array([x_data, np.zeros(len(x_data))])  # k^2 mono
-                    kl2 = np.array([np.zeros(len(x_data)), x_data])  # k^2 quad
+                    Onel0 = np.vstack([Onel0, np.zeros(len(x_data[2]))])  # shot-noise mono
+                    kl0 = np.vstack([kl0, np.zeros(len(x_data[2]))])  # k^2 mono
+                    kl2 = np.vstack([kl2, np.zeros(len(x_data[2]))])  # k^2 quad
 
                 Pi = np.array(
                     [
@@ -534,14 +485,14 @@ class FittingData:
             print("Error: Covariance matrix not positive-definite!")
             exit(0)
 
-    def read_pk(self, inputfile, kmin, kmax, step_size):
+    def read_pk(self, inputfile, step_size):
 
         dataframe = pd.read_csv(
             inputfile,
             comment="#",
             skiprows=10,
             delim_whitespace=True,
-            names=["k", "kmean", "pk0", "pk2", "pk4", "nk", "shot"],
+            names=["k", "pk0", "pk1", "pk2", "pk3", "pk4", "nk"],
         )
         k = dataframe["k"].values
         if step_size == 1:
@@ -576,8 +527,7 @@ class FittingData:
             pk2_rebinned = np.average(pk2, axis=1, weights=weight)
             pk4_rebinned = np.average(pk4, axis=1, weights=weight)
 
-        mask = (k_rebinned >= kmin) & (k_rebinned <= kmax)
-        return k_rebinned[mask], pk0_rebinned[mask], pk2_rebinned[mask], pk4_rebinned[mask]
+        return np.vstack([k_rebinned, pk0_rebinned, pk2_rebinned, pk4_rebinned]).T
 
     def read_data(self, pardict):
 
@@ -585,72 +535,48 @@ class FittingData:
         print(pardict["datafile"])
         if pardict["do_corr"]:
             data = np.array(pd.read_csv(pardict["datafile"], delim_whitespace=True, header=None))
-            x_data = data[:, 0]
-            fitmask = (
-                np.where(np.logical_and(x_data >= pardict["xfit_min"], x_data <= pardict["xfit_max"]))[0]
-            ).astype(int)
-            x_data = x_data[fitmask]
-            if pardict["do_hex"]:
-                Nl = 3
-                fit_data = np.concatenate([data[fitmask, 1], data[fitmask, 2], data[fitmask, 3]])
-            else:
-                Nl = 2
-                fit_data = np.concatenate([data[fitmask, 1], data[fitmask, 2]])
-
-            # Read in, reshape and mask the covariance matrix
-            cov_flat = np.array(pd.read_csv(pardict["covfile"], delim_whitespace=True, header=None))
-            cov_size = np.array([cov_flat[-1, 0] + 1, cov_flat[-1, 1] + 1]).astype(int)
-            cov_input = cov_flat[:, 2].reshape(cov_size)
-            cov_size = (cov_size / 3).astype(int)
-            nx = len(x_data)
-            mask = fitmask[:, None]
-            cov = np.zeros((Nl * nx, Nl * nx))
-            cov[:nx, :nx] = cov_input[mask, mask.T]
-            cov[:nx, nx : 2 * nx] = cov_input[mask, cov_size[1] + mask.T]
-            cov[nx : 2 * nx, :nx] = cov_input[cov_size[0] + mask, mask.T]
-            cov[nx : 2 * nx, nx : 2 * nx] = cov_input[cov_size[0] + mask, cov_size[1] + mask.T]
-            if pardict["do_hex"]:
-                cov[:nx, 2 * nx :] = cov_input[mask, 2 * cov_size[1] + mask.T]
-                cov[2 * nx :, :nx] = cov_input[2 * cov_size[0] + mask, mask.T]
-                cov[nx : 2 * nx, 2 * nx :] = cov_input[cov_size[0] + mask, 2 * cov_size[1] + mask.T]
-                cov[2 * nx :, nx : 2 * nx] = cov_input[2 * cov_size[0] + mask, cov_size[1] + mask.T]
-                cov[2 * nx :, 2 * nx :] = cov_input[2 * cov_size[0] + mask, 2 * cov_size[1] + mask.T]
         else:
-            x_data, pk0, pk2, pk4 = self.read_pk(pardict["datafile"], pardict["xfit_min"], pardict["xfit_max"], 1)
-            if pardict["do_hex"]:
-                Nl = 3
-                fit_data = np.concatenate([pk0, pk2, pk4])
-            else:
-                Nl = 2
-                fit_data = np.concatenate([pk0, pk2])
-            fitmask = None
+            data = self.read_pk(pardict["datafile"], 1)
 
-            # Read in, reshape and mask the covariance matrix
-            cov_flat = np.array(pd.read_csv(pardict["covfile"], delim_whitespace=True, header=None))
-            cov_size = np.array([cov_flat[-1, 0] + 1, cov_flat[-1, 1] + 1]).astype(int)
-            cov_input = cov_flat[:, 2].reshape(cov_size)
-            cov_size = (cov_size / 3).astype(int)
-            nx = len(x_data)
-            cov = np.empty((Nl * nx, Nl * nx))
-            cov[:nx, :nx] = cov_input[:nx, :nx]
-            cov[:nx, nx : 2 * nx] = cov_input[:nx, cov_size[1] : cov_size[1] + nx]
-            cov[nx : 2 * nx, :nx] = cov_input[cov_size[0] : cov_size[0] + nx, :nx]
-            cov[nx : 2 * nx, nx : 2 * nx] = cov_input[cov_size[0] : cov_size[0] + nx, cov_size[1] : cov_size[1] + nx]
-            if pardict["do_hex"]:
-                cov[:nx, 2 * nx :] = cov_input[:nx, 2 * cov_size[1] : 2 * cov_size[1] + nx]
-                cov[2 * nx :, :nx] = cov_input[2 * cov_size[0] : 2 * cov_size[0] + nx, :nx]
-                cov[nx : 2 * nx, 2 * nx :] = cov_input[
-                    cov_size[0] : cov_size[0] + nx, 2 * cov_size[1] : 2 * cov_size[1] + nx
-                ]
-                cov[2 * nx :, nx : 2 * nx] = cov_input[
-                    2 * cov_size[0] : 2 * cov_size[0] + nx, cov_size[1] : cov_size[1] + nx
-                ]
-                cov[2 * nx :, 2 * nx :] = cov_input[
-                    2 * cov_size[0] : 2 * cov_size[0] + nx, 2 * cov_size[1] : 2 * cov_size[1] + nx
-                ]
+        x_data = data[:, 0]
+        fitmask = [
+            (np.where(np.logical_and(x_data >= pardict["xfit_min"][0], x_data <= pardict["xfit_max"][0]))[0]).astype(
+                int
+            ),
+            (np.where(np.logical_and(x_data >= pardict["xfit_min"][1], x_data <= pardict["xfit_max"][1]))[0]).astype(
+                int
+            ),
+            (np.where(np.logical_and(x_data >= pardict["xfit_min"][2], x_data <= pardict["xfit_max"][2]))[0]).astype(
+                int
+            ),
+        ]
+        x_data = [data[fitmask[0], 0], data[fitmask[1], 0], data[fitmask[2], 0]]
+        if pardict["do_hex"]:
+            fit_data = np.concatenate([data[fitmask[0], 1], data[fitmask[1], 2], data[fitmask[2], 3]])
+        else:
+            fit_data = np.concatenate([data[fitmask[0], 1], data[fitmask[1], 2]])
+
+        # Read in, reshape and mask the covariance matrix
+        cov_flat = np.array(pd.read_csv(pardict["covfile"], delim_whitespace=True, header=None))
+        nin = len(data[:, 0])
+        cov_input = cov_flat[:, 2].reshape((3 * nin, 3 * nin))
+        nx0, nx2 = len(x_data[0]), len(x_data[1])
+        nx4 = len(x_data[2]) if pardict["do_hex"] else 0
+        mask0, mask2, mask4 = fitmask[0][:, None], fitmask[1][:, None], fitmask[2][:, None]
+        cov = np.zeros((nx0 + nx2 + nx4, nx0 + nx2 + nx4))
+        cov[:nx0, :nx0] = cov_input[mask0, mask0.T]
+        cov[:nx0, nx0 : nx0 + nx2] = cov_input[mask0, nin + mask2.T]
+        cov[nx0 : nx0 + nx2, :nx0] = cov_input[nin + mask2, mask0.T]
+        cov[nx0 : nx0 + nx2, nx0 : nx0 + nx2] = cov_input[nin + mask0, nin + mask2.T]
+        if pardict["do_hex"]:
+            cov[:nx0, nx0 + nx2 :] = cov_input[mask0, 2 * nin + mask4.T]
+            cov[nx0 + nx2 :, :nx0] = cov_input[2 * nin + mask4, mask0.T]
+            cov[nx0 : nx0 + nx2, nx0 + nx2 :] = cov_input[nin + mask2, 2 * nin + mask4.T]
+            cov[nx0 + nx2 :, nx0 : nx0 + nx2] = cov_input[2 * nin + mask4, nin + mask2.T]
+            cov[nx0 + nx2 :, nx0 + nx2 :] = cov_input[2 * nin + mask4, 2 * nin + mask4.T]
 
         # Invert the covariance matrix
-        identity = np.eye(Nl * nx)
+        identity = np.eye(nx0 + nx2 + nx4)
         cov_lu, pivots, cov_inv, info = lapack.dgesv(cov, identity)
 
         chi2data = np.dot(fit_data, np.dot(cov_inv, fit_data))
@@ -661,22 +587,25 @@ class FittingData:
 
 def create_plot(pardict, fittingdata):
 
-    x_data = fittingdata.data["x_data"]
+    if pardict["do_hex"]:
+        x_data = fittingdata.data["x_data"]
+        nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), len(x_data[2])
+    else:
+        x_data = fittingdata.data["x_data"][:2, :]
+        nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
     fit_data = fittingdata.data["fit_data"]
     cov = fittingdata.data["cov"]
 
-    Nl = 3 if pardict["do_hex"] else 2
-    nx = len(x_data)
-    plt_data = np.tile(x_data ** 2, Nl) * fit_data if pardict["do_corr"] else np.tile(x_data, Nl) * fit_data
+    plt_data = np.concatenate(x_data) ** 2 * fit_data if pardict["do_corr"] else np.concatenate(x_data) * fit_data
     if pardict["do_corr"]:
-        plt_err = np.tile(x_data ** 2, Nl) * np.sqrt(cov[np.diag_indices(Nl * nx)])
+        plt_err = np.concatenate(x_data) ** 2 * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
     else:
-        plt_err = np.tile(x_data, Nl) * np.sqrt(cov[np.diag_indices(Nl * nx)])
+        plt_err = np.concatenate(x_data) * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
 
     plt.errorbar(
-        x_data,
-        plt_data[:nx],
-        yerr=plt_err[:nx],
+        x_data[0],
+        plt_data[:nx0],
+        yerr=plt_err[:nx0],
         marker="o",
         markerfacecolor="r",
         markeredgecolor="k",
@@ -686,9 +615,9 @@ def create_plot(pardict, fittingdata):
         zorder=5,
     )
     plt.errorbar(
-        x_data,
-        plt_data[nx : 2 * nx],
-        yerr=plt_err[nx : 2 * nx],
+        x_data[1],
+        plt_data[nx0 : nx0 + nx2],
+        yerr=plt_err[nx0 : nx0 + nx2],
         marker="o",
         markerfacecolor="b",
         markeredgecolor="k",
@@ -699,9 +628,9 @@ def create_plot(pardict, fittingdata):
     )
     if pardict["do_hex"]:
         plt.errorbar(
-            x_data,
-            plt_data[2 * nx :],
-            yerr=plt_err[2 * nx :],
+            x_data[2],
+            plt_data[nx0 + nx2 :],
+            yerr=plt_err[nx0 + nx2 :],
             marker="o",
             markerfacecolor="g",
             markeredgecolor="k",
@@ -711,7 +640,7 @@ def create_plot(pardict, fittingdata):
             zorder=5,
         )
 
-    plt.xlim(0.0, pardict["xfit_max"] * 1.05)
+    plt.xlim(0.0, np.amax(pardict["xfit_max"]) * 1.05)
     if pardict["do_corr"]:
         plt.xlabel(r"$s\,(h^{-1}\,\mathrm{Mpc})$", fontsize=16)
         plt.ylabel(r"$s^{2}\xi(s)$", fontsize=16, labelpad=5)
@@ -736,17 +665,22 @@ def create_plot(pardict, fittingdata):
 
 def update_plot(pardict, x_data, P_model, plt, keep=False):
 
-    Nl = 3 if pardict["do_hex"] else 2
-    nx = len(x_data)
-    plt_data = np.tile(x_data ** 2, Nl) * P_model if pardict["do_corr"] else np.tile(x_data, Nl) * P_model
+    if pardict["do_hex"]:
+        nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), len(x_data[2])
+    else:
+        x_data = x_data[:2, :]
+        nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
+    plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) * P_model
 
-    plt10 = plt.errorbar(x_data, plt_data[:nx], marker="None", color="r", linestyle="-", markeredgewidth=1.3, zorder=0,)
+    plt10 = plt.errorbar(
+        x_data[0], plt_data[:nx0], marker="None", color="r", linestyle="-", markeredgewidth=1.3, zorder=0,
+    )
     plt11 = plt.errorbar(
-        x_data, plt_data[nx : 2 * nx], marker="None", color="b", linestyle="-", markeredgewidth=1.3, zorder=0,
+        x_data[1], plt_data[nx0 : nx0 + nx2], marker="None", color="b", linestyle="-", markeredgewidth=1.3, zorder=0,
     )
     if pardict["do_hex"]:
         plt12 = plt.errorbar(
-            x_data, plt_data[2 * nx :], marker="None", color="g", linestyle="-", markeredgewidth=1.3, zorder=0,
+            x_data[2], plt_data[nx0 + nx2 :], marker="None", color="g", linestyle="-", markeredgewidth=1.3, zorder=0,
         )
 
     if keep:
@@ -769,8 +703,8 @@ def format_pardict(pardict):
     pardict["do_marg"] = int(pardict["do_marg"])
     pardict["do_hex"] = int(pardict["do_hex"])
     pardict["taylor_order"] = int(pardict["taylor_order"])
-    pardict["xfit_min"] = float(pardict["xfit_min"])
-    pardict["xfit_max"] = float(pardict["xfit_max"])
+    pardict["xfit_min"] = np.array(pardict["xfit_min"]).astype(float)
+    pardict["xfit_max"] = np.array(pardict["xfit_max"]).astype(float)
     pardict["order"] = int(pardict["order"])
     pardict["template_order"] = int(pardict["template_order"])
 
