@@ -67,8 +67,8 @@ if __name__ == "__main__":
         ):
             continue
         Om, Da, Hz, f, sigma8, sigma12, r_d = birdmodel.compute_params([ln10As, h, omega_cdm, omega_b])
-        alpha_perp = (Da / h) * (float(pardict["h"]) / Da_fid) * (r_d_fid * float(pardict["h"]) / (r_d * h))
-        alpha_par = (float(pardict["h"]) * Hz_fid) / (h * Hz) * (r_d_fid * float(pardict["h"]) / (r_d * h))
+        alpha_perp = (Da / h) * (float(pardict["h"]) / Da_fid) * (r_d_fid / (r_d))
+        alpha_par = (float(pardict["h"]) * Hz_fid) / (h * Hz) * (r_d_fid / (r_d))
         chainvals.append(
             (
                 alpha_perp,

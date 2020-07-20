@@ -28,20 +28,20 @@ if __name__ == "__main__":
         _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_class(pardict)
 
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_hex_marg_converted.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_hex_marg_converted.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_nohex_marg_converted.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_3order_nohex_marg_template.hdf5",
+        # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_nohex_marg_converted.dat",
+        # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_nohex_marg_template.hdf5",
     ]
     templates = [False, True, False, True]
     figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_grid_hex_marg_converted_vs_template.pdf"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_3order_nohex_marg_converted_vs_template.pdf"
     ]
     names = [
         r"$P(k);\,\mathrm{0.00-0.30}h\mathrm{Mpc^{-1}}\,\mathrm{COSMO}$",
         r"$P(k);\,\mathrm{0.00-0.30}h\mathrm{Mpc^{-1}}\,\mathrm{TEMPLATE}$",
-        r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}\,\mathrm{COSMO}$",
-        r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}\,\mathrm{TEMPLATE}$",
+        # r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}\,\mathrm{COSMO}$",
+        # r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}\,\mathrm{TEMPLATE}$",
     ]
 
     truths = {
@@ -60,6 +60,8 @@ if __name__ == "__main__":
     paramnames = [
         r"$\alpha_{\perp}$",
         r"$\alpha_{||}$",
+        r"$D_{A}(z)$",
+        r"$H(z)$",
         r"$f\sigma_{8}$",
     ]
     for chaini, (chainfile, template) in enumerate(zip(chainfiles, templates)):
@@ -70,12 +72,12 @@ if __name__ == "__main__":
             Da = 2997.92458 * Da_fid / float(pardict["h"]) * burntin[:, 0]
             Hz = 100.0 * float(pardict["h"]) * Hz_fid / burntin[:, 1]
             burntin = np.hstack((burntin, Da[:, None], Hz[:, None]))
-            c.add_chain(burntin[:, [0, 1, 2]], parameters=paramnames, name=names[chaini], posterior=like)
+            c.add_chain(burntin[:, [0, 1, -2, -1, 2]], parameters=paramnames, name=names[chaini], posterior=like)
         else:
             burntin = np.array(pd.read_csv(chainfile, delim_whitespace=True, header=None))
             like = burntin[:, -1]
             bestfit = burntin[np.argmax(burntin[:, -1]), :-1]
-            c.add_chain(burntin[:, [0, 1, 5]], parameters=paramnames, name=names[chaini], posterior=like)
+            c.add_chain(burntin[:, [0, 1, 3, 4, 5]], parameters=paramnames, name=names[chaini], posterior=like)
         bestfits.append(bestfit)
 
     print(bestfits)
