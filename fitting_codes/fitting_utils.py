@@ -298,25 +298,25 @@ class BirdModel:
 
             ploop0, ploop2, ploop4 = ploop
 
-            Pb3 = np.array(
+            Pb3 = np.concatenate(
                 [
                     splev(x_data[0], splrep(self.kin, ploop0[3] + b1 * ploop0[7])),
                     splev(x_data[1], splrep(self.kin, ploop2[3] + b1 * ploop2[7])),
                 ]
             )
-            Pcct = np.array(
+            Pcct = np.concatenate(
                 [
                     splev(x_data[0], splrep(self.kin, ploop0[15] + b1 * ploop0[12])),
                     splev(x_data[1], splrep(self.kin, ploop2[15] + b1 * ploop2[12])),
                 ]
             )
-            Pcr1 = np.array(
+            Pcr1 = np.concatenate(
                 [
                     splev(x_data[0], splrep(self.kin, ploop0[16] + b1 * ploop0[13])),
                     splev(x_data[1], splrep(self.kin, ploop2[16] + b1 * ploop2[13])),
                 ]
             )
-            Pcr2 = np.array(
+            Pcr2 = np.concatenate(
                 [
                     splev(x_data[0], splrep(self.kin, ploop0[17] + b1 * ploop0[14])),
                     splev(x_data[1], splrep(self.kin, ploop2[17] + b1 * ploop2[14])),
@@ -325,20 +325,20 @@ class BirdModel:
 
             if self.pardict["do_hex"]:
 
-                Pb3 = np.vstack([Pb3, splev(x_data[2], splrep(self.kin, ploop4[3] + b1 * ploop4[7]))])
-                Pcct = np.vstack([Pcct, splev(x_data[2], splrep(self.kin, ploop4[15] + b1 * ploop4[12]))])
-                Pcr1 = np.vstack([Pcr1, splev(x_data[2], splrep(self.kin, ploop4[16] + b1 * ploop4[13]))])
-                Pcr2 = np.vstack([Pcr2, splev(x_data[2], splrep(self.kin, ploop4[17] + b1 * ploop4[14]))])
+                Pb3 = np.concatenate([Pb3, splev(x_data[2], splrep(self.kin, ploop4[3] + b1 * ploop4[7]))])
+                Pcct = np.concatenate([Pcct, splev(x_data[2], splrep(self.kin, ploop4[15] + b1 * ploop4[12]))])
+                Pcr1 = np.concatenate([Pcr1, splev(x_data[2], splrep(self.kin, ploop4[16] + b1 * ploop4[13]))])
+                Pcr2 = np.concatenate([Pcr2, splev(x_data[2], splrep(self.kin, ploop4[17] + b1 * ploop4[14]))])
 
             if self.pardict["do_corr"]:
 
-                C0 = np.array(
+                C0 = np.concatenate(
                     [np.exp(-self.k_m * x_data[0]) / (4.0 * np.pi * x_data[0]), np.zeros(len(x_data[1]))]
                 )  # shot-noise mono
-                C1 = np.array(
+                C1 = np.concatenate(
                     [-np.exp(-self.k_m * x_data[0]) / (4.0 * np.pi * x_data[0] ** 2), np.zeros(len(x_data[1]))]
                 )  # k^2 mono
-                C2 = np.array(
+                C2 = np.concatenate(
                     [
                         np.zeros(len(x_data[0])),
                         np.exp(-self.k_m * x_data[1])
@@ -348,9 +348,9 @@ class BirdModel:
                 )  # k^2 quad
 
                 if self.pardict["do_hex"]:
-                    C0 = np.vstack([C0, np.zeros(len(x_data[2]))])  # shot-noise mono
-                    C1 = np.vstack([C1, np.zeros(len(x_data[2]))])  # k^2 mono
-                    C2 = np.vstack([C2, np.zeros(len(x_data[2]))])  # k^2 quad
+                    C0 = np.concatenate([C0, np.zeros(len(x_data[2]))])  # shot-noise mono
+                    C1 = np.concatenate([C1, np.zeros(len(x_data[2]))])  # k^2 mono
+                    C2 = np.concatenate([C2, np.zeros(len(x_data[2]))])  # k^2 quad
 
                 Pi = np.array(
                     [
@@ -366,14 +366,14 @@ class BirdModel:
 
             else:
 
-                Onel0 = np.array([np.ones(len(x_data[0])), np.zeros(len(x_data[1]))])  # shot-noise mono
-                kl0 = np.array([x_data[0], np.zeros(len(x_data[1]))])  # k^2 mono
-                kl2 = np.array([np.zeros(len(x_data[0])), x_data[1]])  # k^2 quad
+                Onel0 = np.concatenate([np.ones(len(x_data[0])), np.zeros(len(x_data[1]))])  # shot-noise mono
+                kl0 = np.concatenate([x_data[0], np.zeros(len(x_data[1]))])  # k^2 mono
+                kl2 = np.concatenate([np.zeros(len(x_data[0])), x_data[1]])  # k^2 quad
 
                 if self.pardict["do_hex"]:
-                    Onel0 = np.vstack([Onel0, np.zeros(len(x_data[2]))])  # shot-noise mono
-                    kl0 = np.vstack([kl0, np.zeros(len(x_data[2]))])  # k^2 mono
-                    kl2 = np.vstack([kl2, np.zeros(len(x_data[2]))])  # k^2 quad
+                    Onel0 = np.concatenate([Onel0, np.zeros(len(x_data[2]))])  # shot-noise mono
+                    kl0 = np.concatenate([kl0, np.zeros(len(x_data[2]))])  # k^2 mono
+                    kl2 = np.concatenate([kl2, np.zeros(len(x_data[2]))])  # k^2 quad
 
                 Pi = np.array(
                     [
@@ -386,8 +386,6 @@ class BirdModel:
                         kl2 ** 2 / self.k_m ** 2 * shot_noise,  # *cequad
                     ]
                 )
-
-            Pi = Pi.reshape((Pi.shape[0], -1))
 
         else:
 
