@@ -227,10 +227,10 @@ if __name__ == "__main__":
     if pardict["do_marg"]:
         start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.3, 1.0, 1.0])
     else:
-        start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,])
+        start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
 
     # Does an optimization
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)

@@ -393,6 +393,15 @@ class BirdModel:
 
         return Pi
 
+    def compute_bestfit_analytic(self, Pi, data):
+
+        Covbi = np.dot(Pi, np.dot(data["cov_inv"], Pi.T))
+        Covbi += self.priormat
+        Cinvbi = np.linalg.inv(Covbi)
+        vectorbi = Pi @ data["cov_inv"] @ data["fit_data"]
+
+        return Cinvbi @ vectorbi
+
     def get_components(self, coords, cvals, shotnoise=None):
 
         plin, ploop = self.compute_pk(coords)
