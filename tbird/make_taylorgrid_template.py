@@ -25,9 +25,7 @@ if __name__ == "__main__":
 
     datapk = np.array(
         pd.read_csv(
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/input_data/Pk_Planck15_Table4.txt",
-            delim_whitespace=True,
-            header=None,
+            "/home/uqchowl1/cBIRD/UNIT_output_files/Pk_Planck15_Table4.txt", delim_whitespace=True, header=None,
         )
     )
     datapk[:, 1] *= sigma8_fid ** 2 / 0.8147 ** 2
