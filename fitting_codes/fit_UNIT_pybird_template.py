@@ -190,7 +190,7 @@ def lnlike(params, birdmodel, fittingdata, plt):
 
     Plin, Ploop = birdmodel.compute_pk([alpha_perp, alpha_par, f, birdmodel.valueref[3]])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
-    Pi = birdmodel.get_Pi_for_marg(Plin, Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
+    Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
 
     chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
 

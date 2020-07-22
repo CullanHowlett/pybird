@@ -296,11 +296,10 @@ class BirdModel:
         return chi_squared
 
     # Ignore names, works for both power spectrum and correlation function
-    def get_Pi_for_marg(self, plin, ploop, b1, shot_noise, x_data):
+    def get_Pi_for_marg(self, ploop, b1, shot_noise, x_data):
 
         if self.pardict["do_marg"]:
 
-            plin0, plin2, plin4 = plin
             ploop0, ploop2, ploop4 = ploop
 
             Pb3 = np.concatenate(
