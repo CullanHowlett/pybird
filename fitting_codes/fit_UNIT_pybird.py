@@ -27,7 +27,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s.hdf5"
+    fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s.hdf5"
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -35,8 +35,8 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
         % (
             birdmodel.pardict["fitfile"],
             dat_str,
-            birdmodel.pardict["xfit_min"],
-            birdmodel.pardict["xfit_max"],
+            birdmodel.pardict["xfit_max"][0],
+            birdmodel.pardict["xfit_max"][2],
             taylor_strs[pardict["taylor_order"]],
             hex_str,
             marg_str,
@@ -105,8 +105,7 @@ def lnprior(params, birdmodel):
         else:
             b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad = params[-10:]
 
-    ln10As, h, omega_cdm = params[:3]
-    omega_b = birdmodel.valueref[3]
+    ln10As, h, omega_cdm, omega_b = params[:4]
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
 
@@ -115,6 +114,9 @@ def lnprior(params, birdmodel):
         np.greater([ln10As, h, omega_cdm, omega_b], upper_bounds)
     ):
         return -np.inf
+
+    # BBN (D/H) inspired prior on omega_b
+    omega_b_prior = -0.5 * (omega_b - birdmodel.valueref[3]) ** 2 / 0.00037 ** 2
 
     # Flat prior for b1
     if b1 < 0.0 or b1 > 3.0:
@@ -129,7 +131,7 @@ def lnprior(params, birdmodel):
 
     if birdmodel.pardict["do_marg"]:
 
-        return c4_prior
+        return omega_b_prior + c4_prior
 
     else:
         # Gaussian prior for b3 of width 2 centred on 0
@@ -153,7 +155,17 @@ def lnprior(params, birdmodel):
         # Gaussian prior for cequad of width 2 centred on 0
         cequad_prior = -0.5 * 0.25 * cequad ** 2
 
-        return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
+        return (
+            omega_b_prior
+            + c4_prior
+            + b3_prior
+            + cct_prior
+            + cr1_prior
+            + cr2_prior
+            + ce1_prior
+            + cemono_prior
+            + cequad_prior
+        )
 
 
 def lnlike(params, birdmodel, fittingdata, plt):
@@ -179,8 +191,7 @@ def lnlike(params, birdmodel, fittingdata, plt):
         ]
 
     # Get the bird model
-    ln10As, h, omega_cdm = params[:3]
-    omega_b = birdmodel.valueref[3]
+    ln10As, h, omega_cdm, omega_b = params[:4]
 
     Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
@@ -219,12 +230,12 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     if birdmodel.pardict["do_marg"]:
-        start = np.concatenate([birdmodel.valueref[:3], [1.0, 1.0, 1.0]])
+        start = np.concatenate([birdmodel.valueref[:4], [1.0, 1.0, 1.0]])
     else:
-        start = np.concatenate([birdmodel.valueref[:3], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]])
+        start = np.concatenate([birdmodel.valueref[:4], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]])
 
     # Does an optimization
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)

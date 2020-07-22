@@ -205,7 +205,10 @@ class BirdModel:
         plin0, plin2, plin4 = plin
         ploop0, ploop2, ploop4 = ploop
 
-        b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
+        if self.pardict["do_corr"]:
+            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
+        else:
+            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
 
         # the columns of the Ploop data files.
         cvals = np.array(
@@ -249,6 +252,7 @@ class BirdModel:
                 * (3.0 + 3.0 * self.k_m * x_data[1] + self.k_m ** 2 * x_data[1] ** 2)
                 / (4.0 * np.pi * x_data[1] ** 3)
             )
+
             P0_interp += ce1 * C0 + cemono * C1
             P2_interp += cequad * C2
         else:
@@ -292,10 +296,11 @@ class BirdModel:
         return chi_squared
 
     # Ignore names, works for both power spectrum and correlation function
-    def get_Pi_for_marg(self, ploop, b1, shot_noise, x_data):
+    def get_Pi_for_marg(self, plin, ploop, b1, shot_noise, x_data):
 
         if self.pardict["do_marg"]:
 
+            plin0, plin2, plin4 = plin
             ploop0, ploop2, ploop4 = ploop
 
             Pb3 = np.concatenate(
@@ -603,11 +608,13 @@ def create_plot(pardict, fittingdata):
     fit_data = fittingdata.data["fit_data"]
     cov = fittingdata.data["cov"]
 
-    plt_data = np.concatenate(x_data) ** 2 * fit_data if pardict["do_corr"] else np.concatenate(x_data) * fit_data
+    plt_data = (
+        np.concatenate(x_data) ** 2 * fit_data if pardict["do_corr"] else np.concatenate(x_data) ** 1.5 * fit_data
+    )
     if pardict["do_corr"]:
         plt_err = np.concatenate(x_data) ** 2 * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
     else:
-        plt_err = np.concatenate(x_data) * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
+        plt_err = np.concatenate(x_data) ** 1.5 * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
 
     plt.errorbar(
         x_data[0],
@@ -677,7 +684,7 @@ def update_plot(pardict, x_data, P_model, plt, keep=False):
     else:
         x_data = x_data[:2, :]
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
-    plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) * P_model
+    plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) ** 1.5 * P_model
 
     plt10 = plt.errorbar(
         x_data[0], plt_data[:nx0], marker="None", color="r", linestyle="-", markeredgewidth=1.3, zorder=0,
