@@ -29,20 +29,20 @@ if __name__ == "__main__":
 
     # Set the chainfiles and names for each chain
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.10hex0.10_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.15hex0.15_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.20hex0.20_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.15_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.20_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.25_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.15_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.20_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.25_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.30_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.15_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.20_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.25_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.40_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.10hex0.10_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.15hex0.15_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.20hex0.20_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.15_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.20_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.25_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.15_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.20_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.25_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.30_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.15_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.20_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.25_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.40_2order_hex_marg_template.hdf5",
     ]
 
     root_names = [
@@ -70,8 +70,31 @@ if __name__ == "__main__":
         burntin[:, 3] *= sigma8_fid
         c.add_chain(burntin[:, :4], parameters=paramnames, posterior=like)
         marginalised = c.analysis.get_summary()
-        print(marginalised[r"$\alpha_{\perp}$"])
-
-        # np.savetxt(root_name + ".txt", burntin[:, :4])
-        # np.savetxt(root_name + ".paramnames", paramnames.T)
-        # np.savetxt(root_name + ".marginalised", burntin[:, :4])
+        alphaperp = [
+            marginalised[r"$\alpha_{\perp}$"][1],
+            marginalised[r"$\alpha_{\perp}$"][1] - marginalised[r"$\alpha_{\perp}$"][0],
+            marginalised[r"$\alpha_{\perp}$"][2] - marginalised[r"$\alpha_{\perp}$"][1],
+        ]
+        alphapar = [
+            marginalised[r"$\alpha_{||}$"][1],
+            marginalised[r"$\alpha_{||}$"][1] - marginalised[r"$\alpha_{||}$"][0],
+            marginalised[r"$\alpha_{||}$"][2] - marginalised[r"$\alpha_{||}$"][1],
+        ]
+        fsigma8 = [
+            marginalised[r"$f\sigma_{8}$"][1],
+            marginalised[r"$f\sigma_{8}$"][1] - marginalised[r"$f\sigma_{8}$"][0],
+            marginalised[r"$f\sigma_{8}$"][2] - marginalised[r"$f\sigma_{8}$"][1],
+        ]
+        b1sigma8 = [
+            marginalised[r"$b_{1}\sigma_{8}$"][1],
+            marginalised[r"$b_{1}\sigma_{8}$"][1] - marginalised[r"$b_{1}\sigma_{8}$"][0],
+            marginalised[r"$b_{1}\sigma_{8}$"][2] - marginalised[r"$b_{1}\sigma_{8}$"][1],
+        ]
+        np.savetxt(root_name + ".txt", burntin[:, :4])
+        np.savetxt(root_name + ".paramnames", np.c_[paramnames], fmt="%s")
+        np.savetxt(
+            root_name + ".marginalised",
+            np.c_[alphaperp, alphapar, fsigma8, b1sigma8].T,
+            header="MLE   68% Lower Bound   68% Upper Bound",
+            fmt="%12.6lf %12.6lf %12.6lf",
+        )

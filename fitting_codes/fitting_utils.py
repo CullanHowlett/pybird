@@ -659,7 +659,7 @@ def create_plot(pardict, fittingdata):
         plt.ylabel(r"$s^{2}\xi(s)$", fontsize=16, labelpad=5)
     else:
         plt.xlabel(r"$k\,(h\,\mathrm{Mpc}^{-1})$", fontsize=16)
-        plt.ylabel(r"$kP(k)\,(h^{-3}\,\mathrm{Mpc}^3)$", fontsize=16, labelpad=5)
+        plt.ylabel(r"$k^{3/2}P(k)\,(h^{-3/2}\,\mathrm{Mpc}^{3/2})$", fontsize=16, labelpad=5)
     plt.tick_params(width=1.3)
     plt.tick_params("both", length=10, which="major")
     plt.tick_params("both", length=5, which="minor")

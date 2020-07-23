@@ -29,25 +29,49 @@ if __name__ == "__main__":
 
     # Set the chainfiles and names for each chain
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_hex_marg.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_25_200_grid_hex_marg.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_20_200_grid_hex_marg.hdf5",
+        # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.10hex0.10_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.15hex0.15_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.20hex0.20_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.15_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.20_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.25_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.15_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.20_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.25_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.30_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.15_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.20_2order_hex_marg.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.25_2order_hex_marg.hdf5",
+        # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.40_2order_hex_marg.hdf5",
     ]
     figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_grid_hex_marg.pdf"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_2order_hex_marg.pdf",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_2order_hex_marg_1d.pdf",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_2order_hex_marg_summary.pdf",
     ]
     names = [
-        r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
-        r"$\xi(s);\,\mathrm{25-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
-        r"$\xi(s);\,\mathrm{20-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
+        # r"$k_{\mathrm{max}}=0.10\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.10}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.15\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.20\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.30}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
+        r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
+        # r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.40}\,h\mathrm{Mpc^{-1}}$",
     ]
 
     truths = {
         r"$A_{s}\times 10^{9}$": np.exp(float(pardict["ln10^{10}A_s"])) / 1.0e1,
         r"$h$": float(pardict["h"]),
-        # r"$\Omega_{m}$": Om_fid,
+        r"$\Omega_{m}$": Om_fid,
         r"$\omega_{cdm}$": float(pardict["omega_cdm"]),
-        # r"$\omega_{b}$": float(pardict["omega_b"]),
+        r"$\omega_{b}$": float(pardict["omega_b"]),
     }
 
     # Output name for the figure
@@ -59,17 +83,23 @@ if __name__ == "__main__":
 
         burntin, bestfit, like = read_chain_backend(chainfile)
         burntin[:, 0] = np.exp(burntin[:, 0]) / 1.0e1
-        # burntin[:, 2] = (burntin[:, 2] + float(pardict["omega_b"]) + (0.06 / 93.14)) / burntin[:, 1] ** 2
-        paramnames = [r"$A_{s}\times 10^{9}$", r"$h$", r"$\omega_{cdm}$", r"$b_{1}$"]
-        c.add_chain(burntin[:, :4], parameters=paramnames, name=names[chaini], posterior=like)
+        # burntin[:, 2] = (burntin[:, 2] + burntin[:, 3] + (0.06 / 93.14)) / burntin[:, 1] ** 2
+        paramnames = [r"$A_{s}\times 10^{9}$", r"$h$", r"$\omega_{cdm}$", r"$\omega_{b}$", r"$b_{1}$"]
+        c.add_chain(burntin[:, :5], parameters=paramnames, name=names[chaini], posterior=like)
         bestfits.append(bestfit)
 
     print(bestfits)
-    fig = c.plotter.plot(figsize="column", filename=figfile, truth=truths, display=True)
+    fig = c.plotter.plot(filename=figfile[0], truth=truths, display=False)
+    fig = c.plotter.plot_summary(filename=figfile[1], truth=truths, display=False)
+    fig = c.plotter.plot_summary(errorbar=True, filename=figfile[2], truth=truths, display=False)
     print(c.analysis.get_summary())
 
     # Get the bestfit bird model
     if True:
+
+        import matplotlib.pyplot as plt
+
+        fig = plt.figure()
         params = bestfits[1]
         fittingdata = FittingData(pardict, shot_noise=float(pardict["shot_noise"]))
 
@@ -99,15 +129,38 @@ if __name__ == "__main__":
                 params[-2] * fittingdata.data["shot_noise"],
                 params[-1] * fittingdata.data["shot_noise"],
             ]
+
         ln10As, h, omega_cdm = params[:3]
         omega_b = birdmodel.valueref[3]
+
         Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
         P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
         Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
-
         chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
-        update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt, keep=True)
+
+        if birdmodel.pardict["do_marg"]:
+            bs_analytic = birdmodel.compute_bestfit_analytic(Pi, fittingdata.data)
+            print(bs_analytic)
+            pardict["do_marg"] = 0
+            b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
+            b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
+            bs = [
+                params[-3],
+                b2,
+                bs_analytic[0],
+                b4,
+                bs_analytic[1],
+                bs_analytic[2],
+                bs_analytic[3],
+                bs_analytic[4],
+                bs_analytic[5],
+                bs_analytic[6],
+            ]
+            P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
+            chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
         print(params, chi_squared)
+
+        update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt, keep=True)
 
         """np.savetxt(
             "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30-200_varyh_nohex_all_bestfit.dat",
