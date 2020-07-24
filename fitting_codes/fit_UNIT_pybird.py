@@ -28,6 +28,8 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
     fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s.hdf5"
+    fitlim = birdmodel.pardict["xfit_min"][0] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][0]
+    fitlimhex = birdmodel.pardict["xfit_min"][2] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][2]
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -35,8 +37,8 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
         % (
             birdmodel.pardict["fitfile"],
             dat_str,
-            birdmodel.pardict["xfit_max"][0],
-            birdmodel.pardict["xfit_max"][2],
+            fitlim,
+            fitlimhex,
             taylor_strs[pardict["taylor_order"]],
             hex_str,
             marg_str,

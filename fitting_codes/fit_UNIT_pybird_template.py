@@ -32,6 +32,8 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
         if pardict["do_corr"]
         else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s_template.hdf5"
     )
+    fitlim = birdmodel.pardict["xfit_min"][0] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][0]
+    fitlimhex = birdmodel.pardict["xfit_min"][2] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][2]
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -39,13 +41,14 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
         % (
             birdmodel.pardict["fitfile"],
             dat_str,
-            birdmodel.pardict["xfit_max"][0],
-            birdmodel.pardict["xfit_max"][2],
+            fitlim,
+            fitlimhex,
             taylor_strs[pardict["taylor_order"]],
             hex_str,
             marg_str,
         )
     )
+    print(chainfile)
 
     # Set up the backend
     backend = emcee.backends.HDFBackend(chainfile)
@@ -230,7 +233,7 @@ if __name__ == "__main__":
         start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
