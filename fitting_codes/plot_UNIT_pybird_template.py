@@ -28,43 +28,78 @@ if __name__ == "__main__":
         _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_class(pardict)
 
     # Set the chainfiles and names for each chain
-    chainfiles = [
-        # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.10hex0.10_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.15hex0.15_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.20hex0.20_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.15_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.20_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.25_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.15_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.20_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.25_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.30_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.15_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.20_grid_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.25_grid_hex_marg_template.hdf5",
-        # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.40_grid_hex_marg_template.hdf5",
-    ]
-    figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_grid_hex_marg_template.pdf",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_grid_hex_marg_template_1d.pdf",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_grid_hex_marg_template_summary.pdf",
-    ]
-    names = [
-        # r"$k_{\mathrm{max}}=0.10\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.10}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.15\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.20\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.30}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
-        r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
-        # r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.40}\,h\mathrm{Mpc^{-1}}$",
-    ]
+    if pardict["do_corr"]:
+        chainfiles = [
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_35hex35_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_30hex30_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_25hex25_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_20hex25_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_20hex20_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_15hex25_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_15hex20_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_15hex15_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_10hex25_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_10hex20_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_10hex15_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_10hex10_2order_hex_marg_template.hdf5",
+        ]
+        figfile = [
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_2order_hex_marg_template.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_2order_hex_marg_template_1d.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_2order_hex_marg_template_summary.pdf",
+        ]
+        names = [
+            r"$s_{\mathrm{min}}=35\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{35}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=30\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{30}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=25\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{25}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=20\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{25}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=20\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{20}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=15\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{25}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=15\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{20}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=15\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{15}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=10\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{25}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=10\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{20}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=10\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{15}\,h\mathrm{Mpc^{-1}}$",
+            r"$s_{\mathrm{min}}=10\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{10}\,h\mathrm{Mpc^{-1}}$",
+        ]
+    else:
+        chainfiles = [
+            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.10hex0.10_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.15hex0.15_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.20hex0.20_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.15_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.20_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.25_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.15_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.20_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.25_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.30hex0.30_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.15_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.20_2order_hex_marg_template.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.25_2order_hex_marg_template.hdf5",
+            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.40_2order_hex_marg_template.hdf5",
+        ]
+        figfile = [
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_2order_hex_marg_template.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_2order_hex_marg_template_1d.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_2order_hex_marg_template_summary.pdf",
+        ]
+        names = [
+            # r"$k_{\mathrm{max}}=0.10\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.10}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.15\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.20\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.25\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.30\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.30}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.15}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.20}\,h\mathrm{Mpc^{-1}}$",
+            r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.25}\,h\mathrm{Mpc^{-1}}$",
+            # r"$k_{\mathrm{max}}=0.40\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.40}\,h\mathrm{Mpc^{-1}}$",
+        ]
 
     truths = {
         r"$\alpha_{\perp}$": 1.0,
@@ -82,19 +117,19 @@ if __name__ == "__main__":
         print(chainfile)
         burntin, bestfit, like = read_chain_backend(chainfile)
         burntin[:, 3] *= sigma8_fid
-        paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
-        c.add_chain(burntin[:, :4], parameters=paramnames, name=names[chaini], posterior=like)
+        paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$"]
+        c.add_chain(burntin[:, :3], parameters=paramnames, name=names[chaini], posterior=like)
         bestfits.append(bestfit)
 
     print(bestfits)
-    fig = c.plotter.plot(filename=figfile[0], truth=truths, display=False)
+    extents = [(0.985, 1.008), (0.978, 1.024), (0.415, 0.465)]
+    c.configure(bar_shade=True)
     fig = c.plotter.plot_summary(filename=figfile[1], truth=truths, display=False)
-    fig = c.plotter.plot_summary(errorbar=True, filename=figfile[2], truth=truths, display=False)
     print(c.analysis.get_summary())
 
     # Get the bestfit bird model. For do_marg, we get the analytically marginalised best-fit parameters using
     # least-squares at the maximum likelihood value from the chain
-    if True:
+    if False:
 
         import matplotlib.pyplot as plt
 
@@ -162,7 +197,7 @@ if __name__ == "__main__":
         update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt, keep=True)
 
         # np.savetxt(
-        #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_nohex_all_bestfit_template.dat",
+        #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_0.00_0.30_nohex_all_bestfit_template.dat",
         #    np.c_[
         #        fittingdata.data["x_data"],
         #        P_model[: len(fittingdata.data["x_data"])],
