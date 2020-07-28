@@ -49,37 +49,59 @@ class BirdModel:
 
         # Prepare the model
         if self.direct:
-            Exception("Direct not currently supported :(")
-            self.common, self.nonlinear, self.resum, self.projection = self.setup_pybird()
-            self.kin = self.projection.kout
+            print("Direct not currently supported :(")
+            exit()
+            if self.template:
+                self.correlator, self.bird = self.setup_pybird()
+                self.kin = self.correlator.projection.xout
+            else:
+                self.correlator, self.bird = self.setup_pybird()
+                self.kin = self.correlator.projection.xout
         else:
             self.kin, self.paramsmod, self.linmod, self.loopmod = self.load_model()
 
     def setup_pybird(self):
 
+        from pybird_dev.pybird import Correlator
+        from pybird_dev.bird import Bird
+
+        Nl = 3 if self.pardict["do_hex"] else 2
+        optiresum = True if self.pardict["do_corr"] else False
+        output = "bCf" if self.pardict["do_corr"] else "bPk"
+        z_pk = float(self.pardict["z_pk"])
+        correlator = Correlator()
+
         # Set up pybird
-        if self.pardict["do_corr"]:
-            common = pybird.Common(Nl=self.Nl, smax=1000)
-        else:
-            common = pybird.Common(Nl=self.Nl, kmax=0.5, optiresum=False)
-        nonlinear = pybird.NonLinear(load=False, save=False, co=common)
-        resum = pybird.Resum(co=common)
+        correlator.set(
+            {
+                "output": output,
+                "multipole": Nl,
+                "z": z_pk,
+                "optiresum": optiresum,
+                "with_bias": False,
+                "with_exact_time": False,
+                "with_time": False,
+                "kmax": 0.5,
+                "with_AP": True,
+                "DA_AP": self.Da,
+                "H_AP": self.Hz,
+            }
+        )
 
-        # Set up the window function and projection effects. No window at the moment for the UNIT sims,
-        # so we'll create an identity matrix for this. I'm also assuming that the fiducial cosmology
-        # used to make the measurements is the same as Grid centre
-        if self.pardict["do_corr"]:
-            projection = pybird.Projection(common.s, self.Da, self.Hz, co=common, cf=True)
-        else:
-            kout, nkout = common.k, len(common.k)
-            projection = pybird.Projection(kout, self.Da, self.Hz, co=common)
-            projection.p = kout
-            window = np.zeros((self.Nl, self.Nl, nkout, nkout))
-            for i in range(self.Nl):
-                window[i, i, :, :] = np.eye(nkout)
-            projection.Waldk = window
+        correlator.read_cosmo({"k11": self.kmod, "P11": self.Pmod, "z": z_pk, "Omega0_m": self.Om})
 
-        return common, nonlinear, resum, projection
+        bird = Bird(
+            correlator.cosmo,
+            with_bias=correlator.config["with_bias"],
+            with_stoch=correlator.config["with_stoch"],
+            with_nlo_bias=correlator.config["with_nlo_bias"],
+            with_assembly_bias=correlator.config["with_assembly_bias"],
+            co=correlator.co,
+        )
+        correlator.nonlinear.PsCf(bird)
+        bird.setPsCfl()
+
+        return correlator, bird
 
     def load_model(self):
 
@@ -161,44 +183,60 @@ class BirdModel:
 
     def compute_model_direct(self, coords, bs, x_data):
 
-        parameters = copy.deepcopy(self.pardict)
-        for k, var in enumerate(self.pardict["freepar"]):
-            parameters[var] = coords[k]
-        if self.pardict["code"] == "CAMB":
-            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
-        else:
-            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(parameters)
+        bias = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5], "cr2": bs[6]}
+        ce1, cemono, cequad = bs[-3:]
+        self.bird.f = coords[2]
 
-        # Get non-linear power spectrum from pybird
-        bird = pybird.Bird(kin, Pin, fN, DA=Da, H=Hz, z=self.pardict["z_pk"], which="all", co=self.common)
-        self.nonlinear.PsCf(bird)
-        bird.setPsCfl()
-        self.resum.PsCf(bird)
-        self.projection.AP(bird)
         if self.pardict["do_corr"]:
-            bird.setreduceCflb(bs)
-            P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.s, bird.fullCf[0]))
-            P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.s, bird.fullCf[1]))
+            self.correlator.resum.PsCf(self.bird)
+            self.bird.setreduceCflb(bias)
+            self.correlator.projection.AP(bird=self.bird, q=coords[:2])
+            plin, ploop = self.bird.formatTaylorCf()
             if self.pardict["do_hex"]:
-                P4 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.projection.kout, bird.fullCf[2]))
-            plin, ploop = bird.formatTaylorCf(sdata=self.projection.kout)
+                P0, P2, P4 = self.bird.fullCf
+            else:
+                P0, P2 = self.bird.fullCf
         else:
-            self.projection.Window(bird)
-            bird.setreducePslb(bs[:-3])
-            P0 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.k, bird.fullPs[0]))
-            P2 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.k, bird.fullPs[1]))
+            self.correlator.resum.Ps(self.bird)
+            self.bird.setreducePslb(bias)
+            self.correlator.projection.AP(bird=self.bird, q=coords[:2])
+            plin, ploop = self.bird.formatTaylorPs()
             if self.pardict["do_hex"]:
-                P4 = sp.interpolate.splev(x_data, sp.interpolate.splrep(self.common.k, bird.fullPs[2]))
-            plin, ploop = bird.formatTaylorPs(kdata=self.projection.kout)
-            P0 += bs[-3] + bs[-2] * x_data ** 2 / self.k_m ** 2
-            P2 += bs[-1] * x_data ** 2 / self.k_m ** 2
+                P0, P2, P4 = self.bird.fullPs
+            else:
+                P0, P2 = self.bird.fullPs
+
+        P0_interp = sp.interpolate.splev(x_data[0], sp.interpolate.splrep(self.kin, P0))
+        P2_interp = sp.interpolate.splev(x_data[1], sp.interpolate.splrep(self.kin, P2))
+        if self.pardict["do_hex"]:
+            P4_interp = sp.interpolate.splev(x_data[2], sp.interpolate.splrep(self.kin, P4))
+
+        if self.pardict["do_corr"]:
+            C0 = np.exp(-self.k_m * x_data[0]) * self.k_m ** 2 / (4.0 * np.pi * x_data[0])
+            C1 = -self.k_m ** 2 * np.exp(-self.k_m * x_data[0]) / (4.0 * np.pi * x_data[0] ** 2)
+            C2 = (
+                np.exp(-self.k_m * x_data[1])
+                * (3.0 + 3.0 * self.k_m * x_data[1] + self.k_m ** 2 * x_data[1] ** 2)
+                / (4.0 * np.pi * x_data[1] ** 3)
+            )
+
+            P0_interp += ce1 * C0 + cemono * C1
+            P2_interp += cequad * C2
+        else:
+            P0_interp += ce1 + cemono * x_data[0] ** 2 / self.k_m ** 2
+            P2_interp += cequad * x_data[1] ** 2 / self.k_m ** 2
 
         if self.pardict["do_hex"]:
             P_model = np.concatenate([P0, P2, P4])
+            P_model_interp = np.concatenate([P0_interp, P2_interp, P4_interp])
         else:
             P_model = np.concatenate([P0, P2])
+            P_model_interp = np.concatenate([P0_interp, P2_interp])
 
-        return P_model, ploop
+        ploop = ploop.reshape((3, ploop.shape[0] // 3, ploop.shape[1]))
+        ploop = np.swapaxes(ploop, axis1=1, axis2=2)[:, 1:, :]
+
+        return P_model, P_model_interp, ploop
 
     def compute_model(self, cvals, plin, ploop, x_data):
 
@@ -737,8 +775,8 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
         minimizer_kwargs={
             "args": (birdmodel, fittingdata, plt),
             "method": "Nelder-Mead",
-            "tol": 1.0e-3,
-            "options": {"maxiter": 40000},
+            "tol": 1.0e-4,
+            "options": {"maxiter": 40000, "xatol": 1.0e-4, "fatol": 1.0e-4},
         },
     )
     print("#-------------- Best-fit----------------")

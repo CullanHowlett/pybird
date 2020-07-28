@@ -298,7 +298,7 @@ class Correlator(object):
         if module is "class":
             cosmo_dict = self.setcosmo(cosmo_dict, module="class")
 
-        self.__read_cosmo(cosmo_dict)
+        self.read_cosmo(cosmo_dict)
         self.__is_cosmo_conflict()
 
         if self.config["skycut"] == 1:
@@ -490,7 +490,7 @@ class Correlator(object):
 
     def setcache(self, correlator_cache, as_dict=True):
 
-        self.__read_cosmo({})
+        self.read_cosmo({})
 
         if self.config["skycut"] == 1:
 
@@ -784,7 +784,7 @@ class Correlator(object):
                             )
                         )
 
-    def __read_cosmo(self, cosmo_dict):
+    def read_cosmo(self, cosmo_dict):
 
         # Checking if the inputs are consistent with the options
         for (name, cosmo) in zip(self.cosmo_catalog, self.cosmo_catalog.values()):
