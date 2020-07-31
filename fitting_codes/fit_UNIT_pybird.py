@@ -22,7 +22,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     nparams = len(start)
     nwalkers = nparams * 8
 
-    begin = [[(0.1 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)]
+    begin = [[(0.01 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)]
 
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
@@ -44,6 +44,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
             marg_str,
         )
     )
+    print(chainfile)
 
     # Set up the backend
     backend = emcee.backends.HDFBackend(chainfile)
@@ -237,7 +238,7 @@ if __name__ == "__main__":
         start = np.concatenate([birdmodel.valueref[:4], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]])
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    do_emcee(lnpost, start, birdmodel, fittingdata, plt)

@@ -640,7 +640,8 @@ def create_plot(pardict, fittingdata):
         x_data = fittingdata.data["x_data"]
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), len(x_data[2])
     else:
-        x_data = fittingdata.data["x_data"][:2, :]
+        print(fittingdata.data["x_data"][:2])
+        x_data = fittingdata.data["x_data"][:2]
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
     fit_data = fittingdata.data["fit_data"]
     cov = fittingdata.data["cov"]
@@ -653,7 +654,7 @@ def create_plot(pardict, fittingdata):
     else:
         plt_err = np.concatenate(x_data) ** 1.5 * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
 
-    plt.errorbar(
+    """plt.errorbar(
         x_data[0],
         plt_data[:nx0],
         yerr=plt_err[:nx0],
@@ -689,9 +690,11 @@ def create_plot(pardict, fittingdata):
             linestyle="None",
             markeredgewidth=1.3,
             zorder=5,
-        )
+        )"""
 
     plt.xlim(0.0, np.amax(pardict["xfit_max"]) * 1.05)
+    plt.ylim(-2.0, 2.0)
+
     if pardict["do_corr"]:
         plt.xlabel(r"$s\,(h^{-1}\,\mathrm{Mpc})$", fontsize=16)
         plt.ylabel(r"$s^{2}\xi(s)$", fontsize=16, labelpad=5)
@@ -714,14 +717,19 @@ def create_plot(pardict, fittingdata):
     return plt
 
 
-def update_plot(pardict, x_data, P_model, plt, keep=False):
+def update_plot(pardict, fittingdata, x_data, P_model, plt, keep=False):
 
     if pardict["do_hex"]:
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), len(x_data[2])
     else:
-        x_data = x_data[:2, :]
+        x_data = x_data[:2]
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
-    plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) ** 1.5 * P_model
+    plt_data = (
+        (P_model - fittingdata.data["fit_data"]) / np.sqrt(fittingdata.data["cov"][np.diag_indices(nx0 + nx2 + nx4)])
+        if pardict["do_corr"]
+        else (P_model - fittingdata.data["fit_data"])
+        / np.sqrt(fittingdata.data["cov"][np.diag_indices(nx0 + nx2 + nx4)])
+    )
 
     plt10 = plt.errorbar(
         x_data[0], plt_data[:nx0], marker="None", color="r", linestyle="-", markeredgewidth=1.3, zorder=0,
@@ -771,7 +779,7 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
         start,
         niter_success=10,
         niter=100,
-        stepsize=0.1,
+        stepsize=0.05,
         minimizer_kwargs={
             "args": (birdmodel, fittingdata, plt),
             "method": "Nelder-Mead",

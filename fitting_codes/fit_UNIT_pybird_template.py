@@ -22,7 +22,7 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     nparams = len(start)
     nwalkers = nparams * 8
 
-    begin = [[(0.1 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)]
+    begin = [[(0.01 * (np.random.rand() - 0.5) + 1.0) * start[j] for j in range(len(start))] for i in range(nwalkers)]
 
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
@@ -115,8 +115,9 @@ def lnprior(params, birdmodel):
     lower_bounds = birdmodel.valueref - birdmodel.pardict["template_order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["template_order"] * birdmodel.delta
 
-    alpha_perp, alpha_par, fsigma8 = params[:3]
-    f = fsigma8 / birdmodel.valueref[3]
+    # alpha_perp, alpha_par, fsigma8 = params[:3]
+    # f = fsigma8 / birdmodel.valueref[3]
+    alpha_perp, alpha_par, f = birdmodel.valueref[:3]
 
     # Flat priors for alpha_perp, alpha_par f and sigma8
     if np.any(np.less([alpha_perp, alpha_par, f, birdmodel.valueref[3]], lower_bounds)) or np.any(
@@ -133,7 +134,7 @@ def lnprior(params, birdmodel):
         return -np.inf
 
     # Gaussian prior for c4
-    c4_prior = -0.5 * 0.25 * c4 ** 2
+    c4_prior = -0.5 * c4 ** 2
 
     if birdmodel.pardict["do_marg"]:
 
@@ -142,25 +143,25 @@ def lnprior(params, birdmodel):
     else:
 
         # Gaussian prior for b3 of width 2 centred on 0
-        b3_prior = -0.5 * 0.25 * b3 ** 2
+        b3_prior = -0.5 * b3 ** 2
 
         # Gaussian prior for cct of width 2 centred on 0
-        cct_prior = -0.5 * 0.25 * cct ** 2
+        cct_prior = -0.5 * cct ** 2
 
         # Gaussian prior for cr1 of width 4 centred on 0
-        cr1_prior = -0.5 * 0.0625 * cr1 ** 2
+        cr1_prior = -0.5 * cr1 ** 2
 
         # Gaussian prior for cr1 of width 4 centred on 0
-        cr2_prior = -0.5 * 0.0625 * cr2 ** 2
+        cr2_prior = -0.5 * cr2 ** 2
 
         # Gaussian prior for ce1 of width 2 centred on 0
-        ce1_prior = -0.5 * 0.25 * ce1 ** 2
+        ce1_prior = -0.5 * ce1 ** 2
 
         # Gaussian prior for cemono of width 2 centred on 0
-        cemono_prior = -0.5 * 0.25 * cemono ** 2
+        cemono_prior = -0.5 * cemono ** 2
 
         # Gaussian prior for cequad of width 2 centred on 0
-        cequad_prior = -0.5 * 0.25 * cequad ** 2
+        cequad_prior = -0.5 * cequad ** 2
 
         return c4_prior + b3_prior + cct_prior + cr1_prior + cr2_prior + ce1_prior + cemono_prior + cequad_prior
 
@@ -188,8 +189,9 @@ def lnlike(params, birdmodel, fittingdata, plt):
         ]
 
     # Get the bird model
-    alpha_perp, alpha_par, fsigma8 = params[:3]
-    f = fsigma8 / birdmodel.valueref[3]
+    # alpha_perp, alpha_par, fsigma8 = params[:3]
+    # f = fsigma8 / birdmodel.valueref[3]
+    alpha_perp, alpha_par, f = birdmodel.valueref[:3]
 
     Plin, Ploop = birdmodel.compute_pk([alpha_perp, alpha_par, f, birdmodel.valueref[3]])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
@@ -198,7 +200,7 @@ def lnlike(params, birdmodel, fittingdata, plt):
     chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
 
     if plt is not None:
-        update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt)
+        update_plot(pardict, fittingdata, fittingdata.data["x_data"], P_model_interp, plt)
         if np.random.rand() < 0.1:
             print(params, chi_squared)
 
@@ -228,12 +230,12 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     if pardict["do_marg"]:
-        start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.3, 1.0, 1.0])
+        start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.0, 1.0, 1.0])
     else:
-        start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, 1.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+        start = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
 
     # Does an optimization
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
