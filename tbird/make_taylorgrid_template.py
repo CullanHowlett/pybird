@@ -32,7 +32,9 @@ if __name__ == "__main__":
     print(start, final, arrayred)
 
     kin, Pin = np.array(
-        pd.read_csv("/home/uqchowl1/UNIT_output_files/Pk_Planck15_Table4.txt", delim_whitespace=True, header=None,)
+        pd.read_csv(
+            "/home/uqchowl1/cBIRD/UNIT_output_files/Pk_Planck15_Table4.txt", delim_whitespace=True, header=None,
+        )
     ).T
     Pin *= (sigma8_fid / 0.8147) ** 2
 
