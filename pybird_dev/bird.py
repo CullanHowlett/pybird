@@ -917,7 +917,11 @@ class Bird(object):
         Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Ploopl), axis=0)
         Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), self.Pctl)
         Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
-        Ploop = np.hstack((allk, Ploop1, Ploop2))
+        if self.with_nlo_bias:
+            Ploop3 = np.concatenate(np.einsum("lnk->lkn", self.Pnlol), axis=0)
+            Ploop = np.hstack((allk, Ploop1, Ploop2, Ploop3))
+        else:
+            Ploop = np.hstack((allk, Ploop1, Ploop2))
         return Plin, Ploop
 
     def formatTaylorCf(self, sdata=None):
@@ -933,6 +937,11 @@ class Bird(object):
         Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), self.Cctl)
         Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
         Ploop = np.hstack((allk, Ploop1, Ploop2))
+        if self.with_nlo_bias:
+            Ploop3 = np.concatenate(np.einsum("lnk->lkn", self.Cnlol), axis=0)
+            Ploop = np.hstack((allk, Ploop1, Ploop2, Ploop3))
+        else:
+            Ploop = np.hstack((allk, Ploop1, Ploop2))
         return Plin, Ploop
 
     def setIRPs(self, Q=None):

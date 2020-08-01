@@ -31,6 +31,11 @@ if __name__ == "__main__":
     arrayred = flattenedgrid[start:final]
     print(start, final, arrayred)
 
+    kin, Pin = np.array(
+        pd.read_csv("/home/uqchowl1/UNIT_output_files/Pk_Planck15_Table4.txt", delim_whitespace=True, header=None,)
+    ).T
+    Pin *= (sigma8_fid / 0.8147) ** 2
+
     # Set up pybird
     Nl = 3
     z_pk = float(pardict["z_pk"])
@@ -44,6 +49,7 @@ if __name__ == "__main__":
             "z": z_pk,
             "optiresum": False,
             "with_bias": False,
+            "with_nlo_bias": True,
             "with_exact_time": True,
             "kmax": 0.5,
             "with_AP": True,
@@ -58,6 +64,7 @@ if __name__ == "__main__":
             "z": z_pk,
             "optiresum": False,
             "with_bias": False,
+            "with_nlo_bias": True,
             "with_exact_time": True,
             "with_AP": True,
             "DA_AP": Da_fid,

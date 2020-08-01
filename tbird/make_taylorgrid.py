@@ -25,9 +25,9 @@ if __name__ == "__main__":
 
     # Get some cosmological values at the grid centre
     if pardict["code"] == "CAMB":
-        kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(pardict)
+        kin, Pin, Om, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12, r_d = run_camb(pardict)
     else:
-        kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(pardict)
+        kin, Pin, Om, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12, r_d = run_class(pardict)
 
     # Set up pybird
     Nl = 3
@@ -42,11 +42,12 @@ if __name__ == "__main__":
             "z": z_pk,
             "optiresum": False,
             "with_bias": False,
-            "with_exact_time": False,
+            "with_nlo_bias": True,
+            "with_exact_time": True,
             "kmax": 0.5,
             "with_AP": True,
-            "DA_AP": Da,
-            "H_AP": Hz,
+            "DA_AP": Da_fid,
+            "H_AP": Hz_fid,
         }
     )
     correlatorcf.set(
@@ -54,13 +55,13 @@ if __name__ == "__main__":
             "output": "bCf",
             "multipole": Nl,
             "z": z_pk,
-            "optiresum": True,
+            "optiresum": False,
             "with_bias": False,
-            "with_exact_time": False,
-            "kmax": 0.5,
+            "with_nlo_bias": True,
+            "with_exact_time": True,
             "with_AP": True,
-            "DA_AP": Da,
-            "H_AP": Hz,
+            "DA_AP": Da_fid,
+            "H_AP": Hz_fid,
         }
     )
 

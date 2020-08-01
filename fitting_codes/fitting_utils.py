@@ -580,12 +580,31 @@ class FittingData:
 
     def read_data(self, pardict):
 
-        # Read in the data
+        # Read in the first mock to allocate the arrays
+        skiprows = 0
+        nmocks = 1000
+        inputbase = "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/input_data/EZmock_xil_v2"
+        inputfile = str("%s/2PCF_20200514-unit-elg-3gpc-001.dat" % inputbase)
+        data = np.array(pd.read_csv(inputfile, delim_whitespace=True, dtype=float, header=None, skiprows=skiprows))
+        sdata = data[:, 0]
+
+        xi = np.empty((nmocks, 4 * len(sdata)))
+        for i in range(nmocks):
+            inputfile = str("%s/2PCF_20200514-unit-elg-3gpc-%.3d.dat" % (inputbase, i))
+            data = np.array(pd.read_csv(inputfile, delim_whitespace=True, dtype=float, header=None, skiprows=skiprows))
+            xi[i] = np.concatenate([data[:, 0], data[:, 1], data[:, 2], data[:, 3]])
+
+        data = np.mean(xi, axis=0)
+        data = data.reshape((4, len(sdata))).T
+        cov_input = np.cov(xi[:, len(data[:, 0]) :].T)
+        print(cov_input)
+
+        """"# Read in the data
         print(pardict["datafile"])
         if pardict["do_corr"]:
             data = np.array(pd.read_csv(pardict["datafile"], delim_whitespace=True, header=None))
         else:
-            data = self.read_pk(pardict["datafile"], 1)
+            data = self.read_pk(pardict["datafile"], 1)"""
 
         x_data = data[:, 0]
         fitmask = [
@@ -604,11 +623,12 @@ class FittingData:
             fit_data = np.concatenate([data[fitmask[0], 1], data[fitmask[1], 2], data[fitmask[2], 3]])
         else:
             fit_data = np.concatenate([data[fitmask[0], 1], data[fitmask[1], 2]])
+        print(np.shape(x_data), np.shape(fit_data))
 
         # Read in, reshape and mask the covariance matrix
-        cov_flat = np.array(pd.read_csv(pardict["covfile"], delim_whitespace=True, header=None))
+        # cov_flat = np.array(pd.read_csv(pardict["covfile"], delim_whitespace=True, header=None))
         nin = len(data[:, 0])
-        cov_input = cov_flat[:, 2].reshape((3 * nin, 3 * nin))
+        # cov_input = cov_flat[:, 2].reshape((3 * nin, 3 * nin))
         nx0, nx2 = len(x_data[0]), len(x_data[1])
         nx4 = len(x_data[2]) if pardict["do_hex"] else 0
         mask0, mask2, mask4 = fitmask[0][:, None], fitmask[1][:, None], fitmask[2][:, None]
@@ -616,7 +636,7 @@ class FittingData:
         cov[:nx0, :nx0] = cov_input[mask0, mask0.T]
         cov[:nx0, nx0 : nx0 + nx2] = cov_input[mask0, nin + mask2.T]
         cov[nx0 : nx0 + nx2, :nx0] = cov_input[nin + mask2, mask0.T]
-        cov[nx0 : nx0 + nx2, nx0 : nx0 + nx2] = cov_input[nin + mask0, nin + mask2.T]
+        cov[nx0 : nx0 + nx2, nx0 : nx0 + nx2] = cov_input[nin + mask2, nin + mask2.T]
         if pardict["do_hex"]:
             cov[:nx0, nx0 + nx2 :] = cov_input[mask0, 2 * nin + mask4.T]
             cov[nx0 + nx2 :, :nx0] = cov_input[2 * nin + mask4, mask0.T]
@@ -654,7 +674,7 @@ def create_plot(pardict, fittingdata):
     else:
         plt_err = np.concatenate(x_data) ** 1.5 * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
 
-    """plt.errorbar(
+    plt.errorbar(
         x_data[0],
         plt_data[:nx0],
         yerr=plt_err[:nx0],
@@ -690,11 +710,9 @@ def create_plot(pardict, fittingdata):
             linestyle="None",
             markeredgewidth=1.3,
             zorder=5,
-        )"""
+        )
 
     plt.xlim(0.0, np.amax(pardict["xfit_max"]) * 1.05)
-    plt.ylim(-2.0, 2.0)
-
     if pardict["do_corr"]:
         plt.xlabel(r"$s\,(h^{-1}\,\mathrm{Mpc})$", fontsize=16)
         plt.ylabel(r"$s^{2}\xi(s)$", fontsize=16, labelpad=5)
@@ -724,12 +742,7 @@ def update_plot(pardict, fittingdata, x_data, P_model, plt, keep=False):
     else:
         x_data = x_data[:2]
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
-    plt_data = (
-        (P_model - fittingdata.data["fit_data"]) / np.sqrt(fittingdata.data["cov"][np.diag_indices(nx0 + nx2 + nx4)])
-        if pardict["do_corr"]
-        else (P_model - fittingdata.data["fit_data"])
-        / np.sqrt(fittingdata.data["cov"][np.diag_indices(nx0 + nx2 + nx4)])
-    )
+    plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) ** 1.5 * P_model
 
     plt10 = plt.errorbar(
         x_data[0], plt_data[:nx0], marker="None", color="r", linestyle="-", markeredgewidth=1.3, zorder=0,
