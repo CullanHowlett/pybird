@@ -25,6 +25,7 @@ def get_template_grids(parref, nmult=3, nout=3, pad=True, cf=False):
         plin = np.load(os.path.join(outgrid, "TableClin_%s_template.npy" % name))
     else:
         plin = np.load(os.path.join(outgrid, "TablePlin_%s_template.npy" % name))
+    print(np.shape(plin))
     plin = plin.reshape((*shapecrd[1:], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
     if pad:
         plin = np.pad(plin, padshape + [(0, 0)] * 3, "constant", constant_values=0)
@@ -33,6 +34,7 @@ def get_template_grids(parref, nmult=3, nout=3, pad=True, cf=False):
         ploop = np.load(os.path.join(outgrid, "TableCloop_%s_template.npy" % name))
     else:
         ploop = np.load(os.path.join(outgrid, "TablePloop_%s_template.npy" % name))
+    print(np.shape(ploop))
     ploop = ploop.reshape((*shapecrd[1:], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
     if pad:
         ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)

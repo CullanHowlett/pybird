@@ -31,9 +31,16 @@ if __name__ == "__main__":
     arrayred = flattenedgrid[start:final]
     print(start, final, arrayred)
 
+    # kin, Pin = np.array(
+    #    pd.read_csv(
+    #        "/home/uqchowl1/cBIRD/UNIT_output_files/Pk_Planck15_Table4.txt", delim_whitespace=True, header=None,
+    #    )
+    # ).T
     kin, Pin = np.array(
         pd.read_csv(
-            "/home/uqchowl1/cBIRD/UNIT_output_files/Pk_Planck15_Table4.txt", delim_whitespace=True, header=None,
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/input_data/Pk_Planck15_Table4.txt",
+            delim_whitespace=True,
+            header=None,
         )
     ).T
     Pin *= (sigma8_fid / 0.8147) ** 2
@@ -101,12 +108,14 @@ if __name__ == "__main__":
 
         Plin, Ploop = correlator.bird.formatTaylorPs()
         Clin, Cloop = correlatorcf.bird.formatTaylorCf()
+        print(np.shape(Ploop), np.shape(Cloop))
         idxcol = np.full([Plin.shape[0], 1], idx)
         allPlin.append(np.hstack([Plin, idxcol]))
         allPloop.append(np.hstack([Ploop, idxcol]))
         idxcol = np.full([Clin.shape[0], 1], idx)
         allClin.append(np.hstack([Clin, idxcol]))
         allCloop.append(np.hstack([Cloop, idxcol]))
+        print(np.shape(allPloop), np.shape(allCloop))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
         np.save(os.path.join(pardict["outpk"], "Plin_run%s_template.npy" % (str(job_no))), np.array(allPlin))

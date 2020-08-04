@@ -27,7 +27,7 @@ class BirdModel:
 
         # Some constants for the EFT model
         self.k_m, self.k_nl = 0.7, 0.7
-        self.eft_priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0])
+        self.eft_priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0, 2.0])
         self.priormat = np.diagflat(1.0 / self.eft_priors ** 2)
 
         # Get some values at the grid centre
@@ -243,10 +243,7 @@ class BirdModel:
         plin0, plin2, plin4 = plin
         ploop0, ploop2, ploop4 = ploop
 
-        if self.pardict["do_corr"]:
-            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
-        else:
-            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
+        b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = cvals
 
         # the columns of the Ploop data files.
         cvals = np.array(
@@ -269,6 +266,7 @@ class BirdModel:
                 cct / self.k_nl ** 2,
                 cr1 / self.k_m ** 2,
                 cr2 / self.k_m ** 2,
+                2.0 * b1 ** 2 * bnlo / self.k_m ** 4,
             ]
         )
 
@@ -364,6 +362,12 @@ class BirdModel:
                     splev(x_data[1], splrep(self.kin, ploop2[17] + b1 * ploop2[14])),
                 ]
             )
+            Pnlo = np.concatenate(
+                [
+                    splev(x_data[0], splrep(self.kin, b1 ** 2 * ploop0[18])),
+                    splev(x_data[1], splrep(self.kin, b1 ** 2 * ploop2[18])),
+                ]
+            )
 
             if self.pardict["do_hex"]:
 
@@ -371,6 +375,7 @@ class BirdModel:
                 Pcct = np.concatenate([Pcct, splev(x_data[2], splrep(self.kin, ploop4[15] + b1 * ploop4[12]))])
                 Pcr1 = np.concatenate([Pcr1, splev(x_data[2], splrep(self.kin, ploop4[16] + b1 * ploop4[13]))])
                 Pcr2 = np.concatenate([Pcr2, splev(x_data[2], splrep(self.kin, ploop4[17] + b1 * ploop4[14]))])
+                Pnlo = np.concatenate([Pnlo, splev(x_data[2], splrep(self.kin, b1 ** 2 * ploop4[18]))])
 
             if self.pardict["do_corr"]:
 
@@ -403,6 +408,7 @@ class BirdModel:
                         C0 * self.k_m ** 2 * shot_noise,  # ce1
                         C1 * self.k_m ** 2 * shot_noise,  # cemono
                         C2 * shot_noise,  # cequad
+                        2.0 * Pnlo / self.k_m ** 4,  # bnlo
                     ]
                 )
 
@@ -426,6 +432,7 @@ class BirdModel:
                         Onel0 * shot_noise,  # *ce1
                         kl0 ** 2 / self.k_m ** 2 * shot_noise,  # *cemono
                         kl2 ** 2 / self.k_m ** 2 * shot_noise,  # *cequad
+                        2.0 * Pnlo / self.k_m ** 4,  # bnlo
                     ]
                 )
 
@@ -534,12 +541,12 @@ class FittingData:
             print("Error: Covariance matrix not positive-definite!")
             exit(0)
 
-    def read_pk(self, inputfile, step_size):
+    def read_pk(self, inputfile, step_size, skiprows):
 
         dataframe = pd.read_csv(
             inputfile,
             comment="#",
-            skiprows=10,
+            skiprows=skiprows,
             delim_whitespace=True,
             names=["k", "pk0", "pk1", "pk2", "pk3", "pk4", "nk"],
         )
@@ -580,7 +587,7 @@ class FittingData:
 
     def read_data(self, pardict):
 
-        # Read in the first mock to allocate the arrays
+        """# Read in the first mock to allocate the arrays
         skiprows = 0
         nmocks = 1000
         inputbase = "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/input_data/EZmock_xil_v2"
@@ -597,14 +604,14 @@ class FittingData:
         data = np.mean(xi, axis=0)
         data = data.reshape((4, len(sdata))).T
         cov_input = np.cov(xi[:, len(data[:, 0]) :].T)
-        print(cov_input)
+        print(cov_input)"""
 
-        """"# Read in the data
+        # Read in the data
         print(pardict["datafile"])
         if pardict["do_corr"]:
             data = np.array(pd.read_csv(pardict["datafile"], delim_whitespace=True, header=None))
         else:
-            data = self.read_pk(pardict["datafile"], 1)"""
+            data = self.read_pk(pardict["datafile"], 1, 10)
 
         x_data = data[:, 0]
         fitmask = [
@@ -623,12 +630,11 @@ class FittingData:
             fit_data = np.concatenate([data[fitmask[0], 1], data[fitmask[1], 2], data[fitmask[2], 3]])
         else:
             fit_data = np.concatenate([data[fitmask[0], 1], data[fitmask[1], 2]])
-        print(np.shape(x_data), np.shape(fit_data))
 
         # Read in, reshape and mask the covariance matrix
-        # cov_flat = np.array(pd.read_csv(pardict["covfile"], delim_whitespace=True, header=None))
+        cov_flat = np.array(pd.read_csv(pardict["covfile"], delim_whitespace=True, header=None))
         nin = len(data[:, 0])
-        # cov_input = cov_flat[:, 2].reshape((3 * nin, 3 * nin))
+        cov_input = cov_flat[:, 2].reshape((3 * nin, 3 * nin))
         nx0, nx2 = len(x_data[0]), len(x_data[1])
         nx4 = len(x_data[2]) if pardict["do_hex"] else 0
         mask0, mask2, mask4 = fitmask[0][:, None], fitmask[1][:, None], fitmask[2][:, None]
@@ -735,7 +741,7 @@ def create_plot(pardict, fittingdata):
     return plt
 
 
-def update_plot(pardict, fittingdata, x_data, P_model, plt, keep=False):
+def update_plot(pardict, x_data, P_model, plt, keep=False):
 
     if pardict["do_hex"]:
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), len(x_data[2])
@@ -792,7 +798,7 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
         start,
         niter_success=10,
         niter=100,
-        stepsize=0.05,
+        stepsize=0.01,
         minimizer_kwargs={
             "args": (birdmodel, fittingdata, plt),
             "method": "Nelder-Mead",
