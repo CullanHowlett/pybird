@@ -6,14 +6,7 @@ from chainconsumer import ChainConsumer
 
 sys.path.append("../")
 from tbird.Grid import run_camb, run_class
-from fitting_codes.fitting_utils import (
-    read_chain_backend,
-    BirdModel,
-    FittingData,
-    create_plot,
-    update_plot,
-    format_pardict,
-)
+from fitting_codes.fitting_utils import read_chain_backend, format_pardict
 
 
 if __name__ == "__main__":
@@ -31,6 +24,7 @@ if __name__ == "__main__":
     chainfiles = [
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.10hex0.10_2order_hex_marg_template.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.15hex0.15_2order_hex_marg_template.hdf5",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.20hex0.15_2order_hex_marg_template.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.20hex0.20_2order_hex_marg_template.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.15_2order_hex_marg_template.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.25hex0.20_2order_hex_marg_template.hdf5",
@@ -42,12 +36,13 @@ if __name__ == "__main__":
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.15_2order_hex_marg_template.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.20_2order_hex_marg_template.hdf5",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.25_2order_hex_marg_template.hdf5",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.40_2order_hex_marg_template.hdf5",
+        # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pk_0.40hex0.40_2order_hex_marg_template.hdf5",
     ]
 
     root_names = [
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.10hex0.10_covStd_fitTemplate",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.15hex0.15_covStd_fitTemplate",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.20hex0.15_covStd_fitTemplate",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.20hex0.20_covStd_fitTemplate",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.25hex0.15_covStd_fitTemplate",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.25hex0.20_covStd_fitTemplate",
@@ -59,7 +54,7 @@ if __name__ == "__main__":
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.40hex0.15_covStd_fitTemplate",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.40hex0.20_covStd_fitTemplate",
         "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.40hex0.25_covStd_fitTemplate",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.40hex0.40_covStd_fitTemplate",
+        # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/prepared/Queensland_CosmoUNIT_3Gpc_0.40hex0.40_covStd_fitTemplate",
     ]
 
     paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]

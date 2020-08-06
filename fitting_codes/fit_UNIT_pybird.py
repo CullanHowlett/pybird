@@ -105,8 +105,8 @@ def lnprior(params, birdmodel):
     else:
         b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = params[-11:]
 
-    ln10As, h, omega_cdm = params[:3]
-    omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
+    ln10As, h, omega_cdm, omega_b = params[:4]
+    # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
 
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
@@ -118,7 +118,7 @@ def lnprior(params, birdmodel):
         return -np.inf
 
     # BBN (D/H) inspired prior on omega_b
-    # omega_b_prior = -0.5 * (omega_b - birdmodel.valueref[3]) ** 2 / 0.00037 ** 2
+    omega_b_prior = -0.5 * (omega_b - birdmodel.valueref[3]) ** 2 / 0.00037 ** 2
 
     # Flat prior for b1
     if b1 < 0.0 or b1 > 3.0:
@@ -133,7 +133,7 @@ def lnprior(params, birdmodel):
 
     if birdmodel.pardict["do_marg"]:
 
-        return c4_prior
+        return omega_b_prior + c4_prior
 
     else:
         # Gaussian prior for b3 of width 2 centred on 0
@@ -161,7 +161,8 @@ def lnprior(params, birdmodel):
         bnlo_prior = -0.5 * 0.25 * bnlo ** 2
 
         return (
-            c4_prior
+            omega_b_prior
+            + c4_prior
             + b3_prior
             + cct_prior
             + cr1_prior
@@ -197,9 +198,8 @@ def lnlike(params, birdmodel, fittingdata, plt):
         ]
 
     # Get the bird model
-    ln10As, h, omega_cdm = params[:3]
-    omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
-
+    ln10As, h, omega_cdm, omega_b = params[:4]
+    # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
     Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
     Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
@@ -237,12 +237,12 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     if birdmodel.pardict["do_marg"]:
-        start = np.concatenate([birdmodel.valueref[:3], [1.3, 0.5, 0.5]])
+        start = np.concatenate([birdmodel.valueref[:4], [1.3, 0.5, 0.5]])
     else:
-        start = np.concatenate([birdmodel.valueref[:3], [1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]])
+        start = np.concatenate([birdmodel.valueref[:4], [1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]])
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
 
     # Does an MCMC
-    # do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
