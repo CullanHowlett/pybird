@@ -199,15 +199,17 @@ def run_class(pardict):
     M.compute()
 
     kin = np.logspace(np.log10(2.0e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
-    Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin])
+    # Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin])
+    Plin = np.array([M.pk_lin(ki * M.h(), 0.0) * M.h() ** 3 for ki in kin])
+    Plin *= (M.scale_independent_growth_factor(float(parlinear["z_pk"])) / M.scale_independent_growth_factor(0.0)) ** 2
 
     # Get some derived quantities
     Omega_m = M.Om_m(0.0)
     Da = M.angular_distance(float(parlinear["z_pk"])) * M.Hubble(0.0)
     H = M.Hubble(float(parlinear["z_pk"])) / M.Hubble(0.0)
     f = M.scale_independent_growth_factor_f(float(parlinear["z_pk"]))
-    sigma8 = M.sigma_cb(8.0 / M.h(), float(parlinear["z_pk"]))
-    sigma12 = M.sigma_cb(12.0, float(parlinear["z_pk"]))
+    sigma8 = M.sigma(8.0 / M.h(), float(parlinear["z_pk"]))
+    sigma12 = M.sigma(12.0, float(parlinear["z_pk"]))
     r_d = M.rs_drag()
 
     return kin, Plin, Omega_m, Da, H, f, sigma8, sigma12, r_d

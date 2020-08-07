@@ -105,8 +105,8 @@ def lnprior(params, birdmodel):
     else:
         b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = params[-11:]
 
-    ln10As, h, omega_cdm, omega_b = params[:4]
-    # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
+    ln10As, h, omega_cdm = params[:3]
+    omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
 
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
@@ -198,8 +198,9 @@ def lnlike(params, birdmodel, fittingdata, plt):
         ]
 
     # Get the bird model
-    ln10As, h, omega_cdm, omega_b = params[:4]
-    # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
+    ln10As, h, omega_cdm = params[:3]
+    omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
+
     Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
     Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
@@ -237,9 +238,9 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     if birdmodel.pardict["do_marg"]:
-        start = np.concatenate([birdmodel.valueref[:4], [1.3, 0.5, 0.5]])
+        start = np.concatenate([birdmodel.valueref[:3], [1.3, 0.5, 0.5]])
     else:
-        start = np.concatenate([birdmodel.valueref[:4], [1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]])
+        start = np.concatenate([birdmodel.valueref[:3], [1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]])
 
     # Does an optimization
     # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)

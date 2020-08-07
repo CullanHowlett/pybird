@@ -30,23 +30,23 @@ if __name__ == "__main__":
     # Set the chainfiles and names for each chain
     if pardict["do_corr"]:
         chainfiles = [
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_35hex35_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_30hex30_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_25hex25_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_20hex25_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_20hex20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_15hex25_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_15hex20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_15hex15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_10hex25_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_10hex20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_10hex15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_10hex10_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_35hex35_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_30hex30_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_25hex25_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_20hex25_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_20hex20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_15hex25_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_15hex20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_15hex15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_10hex25_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_10hex20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_10hex15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_10hex10_2order_hex_marg.hdf5",
         ]
         figfile = [
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_2order_hex_marg.pdf",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_2order_hex_marg_1d.pdf",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_xi_2order_hex_marg_summary.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_2order_hex_marg.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_2order_hex_marg_1d.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_xi_2order_hex_marg_summary.pdf",
         ]
         names = [
             r"$s_{\mathrm{min}}=35\,\&\,s^{\ell=4}_{\mathrm{min}}=\mathrm{35}\,h\mathrm{Mpc^{-1}}$",
@@ -64,26 +64,26 @@ if __name__ == "__main__":
         ]
     else:
         chainfiles = [
-            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.10hex0.10_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.15hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.20hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.20hex0.20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.25hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.25hex0.20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.25hex0.25_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.30hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.30hex0.20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.30hex0.25_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.30hex0.30_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.40hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.40hex0.20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.40hex0.25_2order_hex_marg.hdf5",
-            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_0.40hex0.40_2order_hex_marg.hdf5",
+            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.10hex0.10_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.15hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.20hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.20hex0.20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.25hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.25hex0.20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.25hex0.25_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.30hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.30hex0.20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.30hex0.25_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.30hex0.30_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.40hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.40hex0.20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.40hex0.25_2order_hex_marg.hdf5",
+            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.40hex0.40_2order_hex_marg.hdf5",
         ]
         figfile = [
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_2order_hex_marg.pdf",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_2order_hex_marg_1d.pdf",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_pk_2order_hex_marg_summary.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_2order_hex_marg.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_2order_hex_marg_1d.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_2order_hex_marg_summary.pdf",
         ]
         names = [
             # r"$k_{\mathrm{max}}=0.10\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.10}\,h\mathrm{Mpc^{-1}}$",
@@ -120,19 +120,21 @@ if __name__ == "__main__":
 
         burntin, bestfit, like = read_chain_backend(chainfile)
         burntin[:, 0] = np.exp(burntin[:, 0]) / 1.0e1
-        omega_b = float(pardict["omega_b"]) / float(pardict["omega_cdm"]) * burntin[:, 2]
+        # omega_b = float(pardict["omega_b"]) / float(pardict["omega_cdm"]) * burntin[:, 2]
+        omega_b = burntin[:, 3]
         print(omega_b)
         Omega_m = (burntin[:, 2] + omega_b + (0.06 / 93.14)) / burntin[:, 1] ** 2
-        paramnames = [r"$A_{s}\times 10^{9}$", r"$h$", r"$\omega_{cdm}$", r"$\Omega_{m}$"]
+        paramnames = [r"$A_{s}\times 10^{9}$", r"$h$", r"$\omega_{cdm}$", r"$\omega_{b}$", r"$\Omega_{m}$"]
         c.add_chain(
-            np.hstack([burntin[:, :3], Omega_m[:, None]]), parameters=paramnames, name=names[chaini], posterior=like
+            np.hstack([burntin[:, :4], Omega_m[:, None]]), parameters=paramnames, name=names[chaini], posterior=like
         )
         bestfits.append(bestfit)
 
     print(bestfits)
-    extents = [(1.95, 2.45), (0.66, 0.698), (0.108, 0.135), (0.28, 0.34)]
+    # extents = [(1.95, 2.45), (0.66, 0.698), (0.108, 0.132), (0.29, 0.33)]
+    extents = [(1.95, 2.45), (0.66, 0.698), (0.108, 0.132), (0.0205, 0.024), (0.29, 0.33)]
     c.configure(bar_shade=True)
-    fig = c.plotter.plot_summary(filename=figfile[1], truth=truths, display=False)
+    fig = c.plotter.plot_summary(filename=figfile[1], truth=truths, display=False, extents=extents)
     print(c.analysis.get_summary())
 
     # Get the bestfit bird model
@@ -174,7 +176,7 @@ if __name__ == "__main__":
         ln10As, h, omega_cdm = params[:3]
         omega_b = birdmodel.valueref[3]
 
-        Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
+        Plin, Ploop = birdmodel.compute_smallgrid_BBNprior_pk([ln10As, h, omega_cdm, omega_b])
         P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
         Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
         chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)

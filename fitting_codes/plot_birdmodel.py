@@ -12,8 +12,6 @@ from fitting_codes.fitting_utils import format_pardict, FittingData
 
 if __name__ == "__main__":
 
-    from classy import Class
-
     # Set up the data
     configfile = sys.argv[1]
     pardict = ConfigObj(configfile)
