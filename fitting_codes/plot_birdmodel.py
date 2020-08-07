@@ -27,11 +27,11 @@ if __name__ == "__main__":
             header=None,
         )
     )
-    datapk[:, 1] *= sigma8 ** 2 / 0.8147 ** 2
+    # datapk[:, 1] *= sigma8 ** 2 / 0.8147 ** 2
 
     # Plot power spectrum ratio. The two methods agree almost perfectly.
     plt.errorbar(datapk[:, 0], datapk[:, 1] / splev(datapk[:, 0], splrep(kin, Plin)) - 1.0, color="r", linestyle="-")
     plt.xlabel(r"$k\,(h\,\mathrm{Mpc}^{-1})$", fontsize=22)
     plt.ylabel(r"$P_{\mathrm{UNIT}}(k)/P_{\mathrm{Cullan}}(k)-1$", fontsize=22, labelpad=5)
-    # plt.ylim(-1.0e-5, 1.0e-5)
+    plt.xlim(0.0, 0.5)
     plt.show()

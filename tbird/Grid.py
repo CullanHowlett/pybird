@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import camb
 from classy import Class
+from scipy.special import hyp2f1
 
 
 def grid_properties(pardict):
@@ -201,10 +202,15 @@ def run_class(pardict):
     kin = np.logspace(np.log10(2.0e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
     # Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin])
     Plin = np.array([M.pk_lin(ki * M.h(), 0.0) * M.h() ** 3 for ki in kin])
-    Plin *= (M.scale_independent_growth_factor(float(parlinear["z_pk"])) / M.scale_independent_growth_factor(0.0)) ** 2
+    # Plin *= (M.scale_independent_growth_factor(float(parlinear["z_pk"])) / M.scale_independent_growth_factor(0.0)) ** 2
 
     # Get some derived quantities
     Omega_m = M.Om_m(0.0)
+    a_z = 1.0 / (1.0 + float(parlinear["z_pk"]))
+    growth_z = a_z * hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -(a_z ** 3) / Omega_m * (1.0 - Omega_m))
+    growth_0 = hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -1.0 / Omega_m * (1.0 - Omega_m))
+    Plin *= (growth_z / growth_0) ** 2
+
     Da = M.angular_distance(float(parlinear["z_pk"])) * M.Hubble(0.0)
     H = M.Hubble(float(parlinear["z_pk"])) / M.Hubble(0.0)
     f = M.scale_independent_growth_factor_f(float(parlinear["z_pk"]))
