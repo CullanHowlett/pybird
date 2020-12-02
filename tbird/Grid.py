@@ -209,6 +209,15 @@ def run_class(pardict):
     a_z = 1.0 / (1.0 + float(parlinear["z_pk"]))
     growth_z = a_z * hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -(a_z ** 3) / Omega_m * (1.0 - Omega_m))
     growth_0 = hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -1.0 / Omega_m * (1.0 - Omega_m))
+
+    print(growth_z / growth_0)
+
+    np.savetxt(
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/pkmodel_UNIT_cosmo_matter.dat",
+        np.c_[kin, Plin],
+        header="k    P_lin",
+    )
+
     Plin *= (growth_z / growth_0) ** 2
 
     Da = M.angular_distance(float(parlinear["z_pk"])) * M.Hubble(0.0)

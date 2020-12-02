@@ -11,7 +11,7 @@ from fitting_codes.fitting_utils import (
     BirdModel,
     FittingData,
     create_plot,
-    update_plot,
+    update_plot_components,
     format_pardict,
 )
 
@@ -64,26 +64,26 @@ if __name__ == "__main__":
         ]
     else:
         chainfiles = [
-            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.10hex0.10_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.15hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.20hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.20hex0.20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.25hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.25hex0.20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.25hex0.25_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.30hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.30hex0.20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.30hex0.25_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.30hex0.30_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.40hex0.15_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.40hex0.20_2order_hex_marg.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.40hex0.25_2order_hex_marg.hdf5",
-            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_0.40hex0.40_2order_hex_marg.hdf5",
+            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.10hex0.10_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.15hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.20hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.20hex0.20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.25hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.25hex0.20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.25hex0.25_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.30hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.30hex0.20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.30hex0.25_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.30hex0.30_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.40hex0.15_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.40hex0.20_2order_hex_marg.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.40hex0.25_2order_hex_marg.hdf5",
+            # "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_0.40hex0.40_2order_hex_marg.hdf5",
         ]
         figfile = [
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_2order_hex_marg.pdf",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_2order_hex_marg_1d.pdf",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_smallgrid_BBNprior_pk_2order_hex_marg_summary.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_2order_hex_marg.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_2order_hex_marg_1d.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/chain_UNIT_HODsnap97_ELGv1_3Gpc_Std_pm_pk_2order_hex_marg_summary.pdf",
         ]
         names = [
             # r"$k_{\mathrm{max}}=0.10\,\&\,k^{\ell=4}_{\mathrm{max}}=\mathrm{0.10}\,h\mathrm{Mpc^{-1}}$",
@@ -120,35 +120,37 @@ if __name__ == "__main__":
 
         burntin, bestfit, like = read_chain_backend(chainfile)
         burntin[:, 0] = np.exp(burntin[:, 0]) / 1.0e1
-        # omega_b = float(pardict["omega_b"]) / float(pardict["omega_cdm"]) * burntin[:, 2]
-        omega_b = burntin[:, 3]
-        print(omega_b)
+        omega_b = float(pardict["omega_b"]) / float(pardict["omega_cdm"]) * burntin[:, 2]
+        # omega_b = burntin[:, 3]
         Omega_m = (burntin[:, 2] + omega_b + (0.06 / 93.14)) / burntin[:, 1] ** 2
-        paramnames = [r"$A_{s}\times 10^{9}$", r"$h$", r"$\omega_{cdm}$", r"$\omega_{b}$", r"$\Omega_{m}$"]
+        paramnames = [r"$A_{s}\times 10^{9}$", r"$h$", r"$\omega_{cdm}$", r"$\Omega_{m}$"]
         c.add_chain(
-            np.hstack([burntin[:, :4], Omega_m[:, None]]), parameters=paramnames, name=names[chaini], posterior=like
+            np.hstack([burntin[:, :3], Omega_m[:, None]]), parameters=paramnames, name=names[chaini], posterior=like
         )
         bestfits.append(bestfit)
+        print(np.amax(like))
 
     print(bestfits)
-    # extents = [(1.95, 2.45), (0.66, 0.698), (0.108, 0.132), (0.29, 0.33)]
-    extents = [(1.95, 2.45), (0.66, 0.698), (0.108, 0.132), (0.0205, 0.024), (0.29, 0.33)]
-    c.configure(bar_shade=True)
-    fig = c.plotter.plot_summary(filename=figfile[1], truth=truths, display=False, extents=extents)
-    print(c.analysis.get_summary())
+    extents = [(1.95, 2.45), (0.66, 0.698), (0.108, 0.132), (0.29, 0.33)]
+    # extents = [(1.95, 2.45), (0.66, 0.698), (0.108, 0.132), (0.0205, 0.024), (0.29, 0.33)]
+    # c.configure(bar_shade=True)
+    # fig = c.plotter.plot_summary(filename=figfile[1], truth=truths, display=False, extents=extents)
+    # print(c.analysis.get_summary())
 
     # Get the bestfit bird model
-    if False:
+    if True:
 
         import matplotlib.pyplot as plt
 
         fig = plt.figure()
-        params = bestfits[1]
+        params = bestfits[2]
         fittingdata = FittingData(pardict, shot_noise=float(pardict["shot_noise"]))
 
         # Set up the BirdModel
         birdmodel = BirdModel(pardict)
+        birdmodel_direct = BirdModel(pardict, direct=True)
         print(birdmodel.valueref)
+        params = birdmodel.valueref
 
         # Plotting (for checking/debugging, should turn off for production runs)
         plt = create_plot(pardict, fittingdata)
@@ -156,34 +158,35 @@ if __name__ == "__main__":
         if birdmodel.pardict["do_marg"]:
             b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
             b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
-            bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            bs = [params[-3], b2, 0.0, b4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         else:
-            b2 = (params[-9] + params[-7]) / np.sqrt(2.0)
-            b4 = (params[-9] - params[-7]) / np.sqrt(2.0)
+            b2 = (params[-10] + params[-8]) / np.sqrt(2.0)
+            b4 = (params[-10] - params[-8]) / np.sqrt(2.0)
             bs = [
-                params[-10],
+                params[-11],
                 b2,
-                params[-8],
+                params[-9],
                 b4,
+                params[-7],
                 params[-6],
                 params[-5],
-                params[-4],
+                params[-4] * fittingdata.data["shot_noise"],
                 params[-3] * fittingdata.data["shot_noise"],
                 params[-2] * fittingdata.data["shot_noise"],
-                params[-1] * fittingdata.data["shot_noise"],
+                params[-1],
             ]
 
         ln10As, h, omega_cdm = params[:3]
-        omega_b = birdmodel.valueref[3]
+        omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
+        print(birdmodel.fN)
 
-        Plin, Ploop = birdmodel.compute_smallgrid_BBNprior_pk([ln10As, h, omega_cdm, omega_b])
+        Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
         P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
         Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
         chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
 
         if birdmodel.pardict["do_marg"]:
-            bs_analytic = birdmodel.compute_bestfit_analytic(Pi, fittingdata.data)
-            print(bs_analytic)
+            bs_analytic = birdmodel.compute_bestfit_analytic(Pi, fittingdata.data, P_model_interp)
             pardict["do_marg"] = 0
             b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
             b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
@@ -195,22 +198,133 @@ if __name__ == "__main__":
                 bs_analytic[1],
                 bs_analytic[2],
                 bs_analytic[3],
-                bs_analytic[4],
-                bs_analytic[5],
-                bs_analytic[6],
+                bs_analytic[4] * fittingdata.data["shot_noise"],
+                bs_analytic[5] * fittingdata.data["shot_noise"],
+                bs_analytic[6] * fittingdata.data["shot_noise"],
+                bs_analytic[7],
             ]
+            print(bs)
             P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
             chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
-        print(params, chi_squared)
 
-        update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt, keep=True)
+        bs = np.zeros(11)
+        bs = [1.347, 1.078, 0.315, -0.185, -0.741, -1.989, -1.106, 539, 170, -599, 0.909]
 
-        """np.savetxt(
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30-200_varyh_nohex_all_bestfit.dat",
+        components = birdmodel.get_components([ln10As, h, omega_cdm, omega_b], bs)
+        print(components[0][0] + components[1][0])
+
+        plin, ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
+        # plin, ploop = birdmodel_direct.compute_model_direct([ln10As, h, omega_cdm, omega_b])
+
+        ploop0, ploop2, ploop4 = ploop
+
+        update_plot_components(pardict, birdmodel.kin, components, plt, keep=True, comp_list=[True, True, True, True])
+
+        np.savetxt(
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/pkmodel_UNIT_cosmo_P0_bestfit.dat",
             np.c_[
-                fittingdata.data["x_data"],
-                P_model[: len(fittingdata.data["x_data"])],
-                P_model[len(fittingdata.data["x_data"]) :],
+                birdmodel.kin,
+                components[0][0],
+                components[1][0],
+                components[2][0],
+                ploop0[0, :],
+                ploop0[1, :],
+                ploop0[2, :],
+                ploop0[3, :],
+                ploop0[4, :],
+                ploop0[5, :],
+                ploop0[6, :],
+                ploop0[7, :],
+                ploop0[8, :],
+                ploop0[9, :],
+                ploop0[10, :],
+                ploop0[11, :],
+                # 2.0 * ploop0[12, :] / birdmodel.k_nl ** 2,
+                # 2.0 * ploop0[13, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop0[14, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop0[15, :] / birdmodel.k_nl ** 2,
+                # 2.0 * ploop0[16, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop0[17, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop0[18, :] / birdmodel.k_m ** 4,
+                ploop0[12, :],
+                ploop0[13, :],
+                ploop0[14, :],
+                ploop0[15, :],
+                ploop0[16, :],
+                ploop0[17, :],
+                ploop0[18, :],
             ],
-            header="k       P0          P2",
-        )"""
+            header="k    P_lin     P_loop     P_ct     1      b1    b2    b3    b4    b1 * b1    b1 * b2    b1 * b3    b1 * b4    b2 * b2    b2 * b4    b4 * b4    b1 * cct   b1 * cr1   b1 * cr2   cct    cr1    cr2    b1*b1*bnlo",
+        )
+        np.savetxt(
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/pkmodel_UNIT_cosmo_P2_bestfit.dat",
+            np.c_[
+                birdmodel.kin,
+                components[0][1],
+                components[1][1],
+                components[2][1],
+                ploop2[0, :],
+                ploop2[1, :],
+                ploop2[2, :],
+                ploop2[3, :],
+                ploop2[4, :],
+                ploop2[5, :],
+                ploop2[6, :],
+                ploop2[7, :],
+                ploop2[8, :],
+                ploop2[9, :],
+                ploop2[10, :],
+                ploop2[11, :],
+                # 2.0 * ploop2[12, :] / birdmodel.k_nl ** 2,
+                # 2.0 * ploop2[13, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop2[14, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop2[15, :] / birdmodel.k_nl ** 2,
+                # 2.0 * ploop2[16, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop2[17, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop2[18, :] / birdmodel.k_m ** 4,
+                ploop2[12, :],
+                ploop2[13, :],
+                ploop2[14, :],
+                ploop2[15, :],
+                ploop2[16, :],
+                ploop2[17, :],
+                ploop2[18, :],
+            ],
+            header="k    P_lin     P_loop     P_ct     1      b1    b2    b3    b4    b1 * b1    b1 * b2    b1 * b3    b1 * b4    b2 * b2    b2 * b4    b4 * b4    b1 * cct   b1 * cr1   b1 * cr2   cct    cr1    cr2    b1*b1*bnlo",
+        )
+        np.savetxt(
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/pkmodel_UNIT_cosmo_P4_bestfit.dat",
+            np.c_[
+                birdmodel.kin,
+                components[0][2],
+                components[1][2],
+                components[2][2],
+                ploop4[0, :],
+                ploop4[1, :],
+                ploop4[2, :],
+                ploop4[3, :],
+                ploop4[4, :],
+                ploop4[5, :],
+                ploop4[6, :],
+                ploop4[7, :],
+                ploop4[8, :],
+                ploop4[9, :],
+                ploop4[10, :],
+                ploop4[11, :],
+                # 2.0 * ploop4[12, :] / birdmodel.k_nl ** 2,
+                # 2.0 * ploop4[13, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop4[14, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop4[15, :] / birdmodel.k_nl ** 2,
+                # 2.0 * ploop4[16, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop4[17, :] / birdmodel.k_m ** 2,
+                # 2.0 * ploop4[18, :] / birdmodel.k_m ** 4,
+                ploop4[12, :],
+                ploop4[13, :],
+                ploop4[14, :],
+                ploop4[15, :],
+                ploop4[16, :],
+                ploop4[17, :],
+                ploop4[18, :],
+            ],
+            header="k    P_lin     P_loop     P_ct     1      b1    b2    b3    b4    b1 * b1    b1 * b2    b1 * b3    b1 * b4    b2 * b2    b2 * b4    b4 * b4    b1 * cct   b1 * cr1   b1 * cr2   cct    cr1    cr2    b1*b1*bnlo",
+        )

@@ -49,13 +49,13 @@ class BirdModel:
 
         # Prepare the model
         if self.direct:
-            print("Direct not currently supported :(")
-            exit()
+            # print("Direct not currently supported :(")
+            # exit()
             if self.template:
-                self.correlator, self.bird = self.setup_pybird()
+                self.correlator = self.setup_pybird()
                 self.kin = self.correlator.projection.xout
             else:
-                self.correlator, self.bird = self.setup_pybird()
+                self.correlator = self.setup_pybird()
                 self.kin = self.correlator.projection.xout
         else:
             self.kin, self.paramsmod, self.linmod, self.loopmod = self.load_model()
@@ -63,12 +63,12 @@ class BirdModel:
     def setup_pybird(self):
 
         from pybird_dev.pybird import Correlator
-        from pybird_dev.bird import Bird
 
         Nl = 3 if self.pardict["do_hex"] else 2
         optiresum = True if self.pardict["do_corr"] else False
         output = "bCf" if self.pardict["do_corr"] else "bPk"
         z_pk = float(self.pardict["z_pk"])
+        kmax = None if self.pardict["do_corr"] else 0.5
         correlator = Correlator()
 
         # Set up pybird
@@ -76,32 +76,19 @@ class BirdModel:
             {
                 "output": output,
                 "multipole": Nl,
-                "z": z_pk,
+                "z": float(self.pardict["z_pk"]),
                 "optiresum": optiresum,
                 "with_bias": False,
-                "with_exact_time": False,
-                "with_time": False,
-                "kmax": 0.5,
+                "with_nlo_bias": True,
+                "with_exact_time": True,
                 "with_AP": True,
+                "kmax": kmax,
                 "DA_AP": self.Da,
                 "H_AP": self.Hz,
             }
         )
 
-        correlator.read_cosmo({"k11": self.kmod, "P11": self.Pmod, "z": z_pk, "Omega0_m": self.Om})
-
-        bird = Bird(
-            correlator.cosmo,
-            with_bias=correlator.config["with_bias"],
-            with_stoch=correlator.config["with_stoch"],
-            with_nlo_bias=correlator.config["with_nlo_bias"],
-            with_assembly_bias=correlator.config["with_assembly_bias"],
-            co=correlator.co,
-        )
-        correlator.nonlinear.PsCf(bird)
-        bird.setPsCfl()
-
-        return correlator, bird
+        return correlator
 
     def load_model(self):
 
@@ -181,62 +168,29 @@ class BirdModel:
 
         return Plin, Ploop
 
-    def compute_model_direct(self, coords, bs, x_data):
+    def compute_model_direct(self, coords):
 
-        bias = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5], "cr2": bs[6]}
-        ce1, cemono, cequad = bs[-3:]
-        self.bird.f = coords[2]
+        parameters = copy.deepcopy(self.pardict)
 
-        if self.pardict["do_corr"]:
-            self.correlator.resum.PsCf(self.bird)
-            self.bird.setreduceCflb(bias)
-            self.correlator.projection.AP(bird=self.bird, q=coords[:2])
-            plin, ploop = self.bird.formatTaylorCf()
-            if self.pardict["do_hex"]:
-                P0, P2, P4 = self.bird.fullCf
-            else:
-                P0, P2 = self.bird.fullCf
+        for k, var in enumerate(self.pardict["freepar"]):
+            parameters[var] = coords[k]
+        if parameters["code"] == "CAMB":
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
         else:
-            self.correlator.resum.Ps(self.bird)
-            self.bird.setreducePslb(bias)
-            self.correlator.projection.AP(bird=self.bird, q=coords[:2])
-            plin, ploop = self.bird.formatTaylorPs()
-            if self.pardict["do_hex"]:
-                P0, P2, P4 = self.bird.fullPs
-            else:
-                P0, P2 = self.bird.fullPs
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(parameters)
 
-        P0_interp = sp.interpolate.splev(x_data[0], sp.interpolate.splrep(self.kin, P0))
-        P2_interp = sp.interpolate.splev(x_data[1], sp.interpolate.splrep(self.kin, P2))
-        if self.pardict["do_hex"]:
-            P4_interp = sp.interpolate.splev(x_data[2], sp.interpolate.splrep(self.kin, P4))
+        # Get non-linear power spectrum from pybird
+        self.correlator.compute(
+            {"k11": kin, "P11": Pin, "z": float(self.pardict["z_pk"]), "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz}
+        )
+        Plin, Ploop = (
+            self.correlator.bird.formatTaylorCf() if self.pardict["do_corr"] else self.correlator.bird.formatTaylorPs()
+        )
 
-        if self.pardict["do_corr"]:
-            C0 = np.exp(-self.k_m * x_data[0]) * self.k_m ** 2 / (4.0 * np.pi * x_data[0])
-            C1 = -self.k_m ** 2 * np.exp(-self.k_m * x_data[0]) / (4.0 * np.pi * x_data[0] ** 2)
-            C2 = (
-                np.exp(-self.k_m * x_data[1])
-                * (3.0 + 3.0 * self.k_m * x_data[1] + self.k_m ** 2 * x_data[1] ** 2)
-                / (4.0 * np.pi * x_data[1] ** 3)
-            )
+        Plin = np.swapaxes(Plin.reshape((3, Plin.shape[-2] // 3, Plin.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
+        Ploop = np.swapaxes(Ploop.reshape((3, Ploop.shape[-2] // 3, Ploop.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
 
-            P0_interp += ce1 * C0 + cemono * C1
-            P2_interp += cequad * C2
-        else:
-            P0_interp += ce1 + cemono * x_data[0] ** 2 / self.k_m ** 2
-            P2_interp += cequad * x_data[1] ** 2 / self.k_m ** 2
-
-        if self.pardict["do_hex"]:
-            P_model = np.concatenate([P0, P2, P4])
-            P_model_interp = np.concatenate([P0_interp, P2_interp, P4_interp])
-        else:
-            P_model = np.concatenate([P0, P2])
-            P_model_interp = np.concatenate([P0_interp, P2_interp])
-
-        ploop = ploop.reshape((3, ploop.shape[0] // 3, ploop.shape[1]))
-        ploop = np.swapaxes(ploop, axis1=1, axis2=2)[:, 1:, :]
-
-        return P_model, P_model_interp, ploop
+        return Plin, Ploop
 
     def compute_model(self, cvals, plin, ploop, x_data):
 
@@ -260,12 +214,12 @@ class BirdModel:
                 b2 * b2,
                 b2 * b4,
                 b4 * b4,
-                b1 * cct / self.k_nl ** 2,
-                b1 * cr1 / self.k_m ** 2,
-                b1 * cr2 / self.k_m ** 2,
-                cct / self.k_nl ** 2,
-                cr1 / self.k_m ** 2,
-                cr2 / self.k_m ** 2,
+                2.0 * b1 * cct / self.k_nl ** 2,
+                2.0 * b1 * cr1 / self.k_m ** 2,
+                2.0 * b1 * cr2 / self.k_m ** 2,
+                2.0 * cct / self.k_nl ** 2,
+                2.0 * cr1 / self.k_m ** 2,
+                2.0 * cr2 / self.k_m ** 2,
                 2.0 * b1 ** 2 * bnlo / self.k_m ** 4,
             ]
         )
@@ -442,67 +396,76 @@ class BirdModel:
 
         return Pi
 
-    def compute_bestfit_analytic(self, Pi, data):
+    def compute_bestfit_analytic(self, Pi, data, model):
 
         Covbi = np.dot(Pi, np.dot(data["cov_inv"], Pi.T))
         Covbi += self.priormat
         Cinvbi = np.linalg.inv(Covbi)
-        vectorbi = Pi @ data["cov_inv"] @ data["fit_data"]
+        vectorbi = Pi @ data["cov_inv"] @ (data["fit_data"] - model)
 
         return Cinvbi @ vectorbi
 
-    def get_components(self, coords, cvals, shotnoise=None):
+    def get_components(self, coords, cvals):
 
-        plin, ploop = self.compute_pk(coords)
-
-        if self.pardict["do_hex"]:
-            plin0, plin2 = plin
-            ploop0, ploop2 = ploop
+        if self.direct:
+            plin, ploop = self.compute_model_direct(coords)
         else:
-            plin0, plin2, plin4 = plin
-            ploop0, ploop2, ploop4 = ploop
+            plin, ploop = self.compute_pk(coords)
 
-        if self.pardict["do_corr"]:
-            b1, b2, b3, b4, cct, cr1, cr2 = cvals
-        else:
-            b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
+        plin0, plin2, plin4 = plin
+        ploop0, ploop2, ploop4 = ploop
+
+        b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = cvals
 
         # the columns of the Ploop data files.
         cloop = np.array([1, b1, b2, b3, b4, b1 * b1, b1 * b2, b1 * b3, b1 * b4, b2 * b2, b2 * b4, b4 * b4])
         cvalsct = np.array(
             [
-                b1 * cct / self.k_nl ** 2,
-                b1 * cr1 / self.k_m ** 2,
-                b1 * cr2 / self.k_m ** 2,
-                cct / self.k_nl ** 2,
-                cr1 / self.k_m ** 2,
-                cr2 / self.k_m ** 2,
+                2.0 * b1 * cct / self.k_nl ** 2,
+                2.0 * b1 * cr1 / self.k_m ** 2,
+                2.0 * b1 * cr2 / self.k_m ** 2,
+                2.0 * cct / self.k_nl ** 2,
+                2.0 * cr1 / self.k_m ** 2,
+                2.0 * cr2 / self.k_m ** 2,
             ]
         )
+        cnlo = 2.0 * b1 ** 2 * bnlo / self.k_m ** 4
 
         P0lin = plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
         P2lin = plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
         P0loop = np.dot(cloop, ploop0[:12, :])
         P2loop = np.dot(cloop, ploop2[:12, :])
-        P0ct = np.dot(cvalsct, ploop0[12:, :])
-        P2ct = np.dot(cvalsct, ploop2[12:, :])
+        P0ct = np.dot(cvalsct, ploop0[12:-1, :])
+        P2ct = np.dot(cvalsct, ploop2[12:-1, :])
+        P0nlo = cnlo * ploop0[-1, :]
+        P2nlo = cnlo * ploop2[-1, :]
         if self.pardict["do_hex"]:
             P4lin = plin4[0] + b1 * plin4[1] + b1 * b1 * plin4[2]
             P4loop = np.dot(cloop, ploop4[:12, :])
-            P4ct = np.dot(cvalsct, ploop4[12:, :])
+            P4ct = np.dot(cvalsct, ploop4[12:-1, :])
+            P4nlo = cnlo * ploop4[-1, :]
             Plin = [P0lin, P2lin, P4lin]
-            Ploop = [P0loop, P2loop, P4loop]
+            Ploop = [P0loop + P0nlo, P2loop + P2nlo, P4loop + P4nlo]
             Pct = [P0ct, P2ct, P4ct]
         else:
             Plin = [P0lin, P2lin]
-            Ploop = [P0loop, P2loop]
+            Ploop = [P0loop + P0nlo, P2loop + P2nlo]
             Pct = [P0ct, P2ct]
 
         if self.pardict["do_corr"]:
-            P0st, P2st, P4st = None, None, None
+            C0 = np.exp(-self.k_m * self.kin) * self.k_m ** 2 / (4.0 * np.pi * self.kin)
+            C1 = -self.k_m ** 2 * np.exp(-self.k_m * self.kin) / (4.0 * np.pi * self.kin ** 2)
+            C2 = (
+                np.exp(-self.k_m * self.kin)
+                * (3.0 + 3.0 * self.k_m * self.kin + self.k_m ** 2 * self.kin ** 2)
+                / (4.0 * np.pi * self.kin ** 3)
+            )
+            P0st = ce1 * C0 + cemono * C1
+            P2st = cequad * C2
+            P4st = np.zeros(len(self.kin))
         else:
-            P0st = ce1 * shotnoise + cemono * shotnoise * self.kin ** 2 / self.k_m ** 2
-            P2st = cequad * shotnoise * self.kin ** 2 / self.k_m ** 2
+            P0st = ce1 + cemono * self.kin ** 2 / self.k_m ** 2
+            P2st = cequad * self.kin ** 2 / self.k_m ** 2
             P4st = np.zeros(len(self.kin))
         if self.pardict["do_hex"]:
             Pst = [P0st, P2st, P4st]
@@ -666,19 +629,18 @@ def create_plot(pardict, fittingdata):
         x_data = fittingdata.data["x_data"]
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), len(x_data[2])
     else:
-        print(fittingdata.data["x_data"][:2])
         x_data = fittingdata.data["x_data"][:2]
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
     fit_data = fittingdata.data["fit_data"]
     cov = fittingdata.data["cov"]
 
     plt_data = (
-        np.concatenate(x_data) ** 2 * fit_data if pardict["do_corr"] else np.concatenate(x_data) ** 1.5 * fit_data
+        np.concatenate(x_data) ** 2 * fit_data if pardict["do_corr"] else np.concatenate(x_data) ** 1.0 * fit_data
     )
     if pardict["do_corr"]:
         plt_err = np.concatenate(x_data) ** 2 * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
     else:
-        plt_err = np.concatenate(x_data) ** 1.5 * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
+        plt_err = np.concatenate(x_data) ** 1.0 * np.sqrt(cov[np.diag_indices(nx0 + nx2 + nx4)])
 
     plt.errorbar(
         x_data[0],
@@ -718,13 +680,14 @@ def create_plot(pardict, fittingdata):
             zorder=5,
         )
 
-    plt.xlim(0.0, np.amax(pardict["xfit_max"]) * 1.05)
+    plt.xlim(0.03, np.amax(pardict["xfit_max"]) * 1.05)
+    plt.ylim(100.0, 750.0)
     if pardict["do_corr"]:
         plt.xlabel(r"$s\,(h^{-1}\,\mathrm{Mpc})$", fontsize=16)
         plt.ylabel(r"$s^{2}\xi(s)$", fontsize=16, labelpad=5)
     else:
         plt.xlabel(r"$k\,(h\,\mathrm{Mpc}^{-1})$", fontsize=16)
-        plt.ylabel(r"$k^{3/2}P(k)\,(h^{-3/2}\,\mathrm{Mpc}^{3/2})$", fontsize=16, labelpad=5)
+        plt.ylabel(r"$kP(k)\,(h^{-2}\,\mathrm{Mpc}^{2})$", fontsize=16, labelpad=5)
     plt.tick_params(width=1.3)
     plt.tick_params("both", length=10, which="major")
     plt.tick_params("both", length=5, which="minor")
@@ -748,7 +711,7 @@ def update_plot(pardict, x_data, P_model, plt, keep=False):
     else:
         x_data = x_data[:2]
         nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
-    plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) ** 1.5 * P_model
+    plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) ** 1.0 * P_model
 
     plt10 = plt.errorbar(
         x_data[0], plt_data[:nx0], marker="None", color="r", linestyle="-", markeredgewidth=1.3, zorder=0,
@@ -760,6 +723,50 @@ def update_plot(pardict, x_data, P_model, plt, keep=False):
         plt12 = plt.errorbar(
             x_data[2], plt_data[nx0 + nx2 :], marker="None", color="g", linestyle="-", markeredgewidth=1.3, zorder=0,
         )
+
+    if keep:
+        plt.ioff()
+        plt.show()
+    if not keep:
+        plt.pause(0.005)
+        if plt10 is not None:
+            plt10.remove()
+        if plt11 is not None:
+            plt11.remove()
+        if pardict["do_hex"]:
+            if plt12 is not None:
+                plt12.remove()
+
+
+def update_plot_components(pardict, kin, P_components, plt, keep=False, comp_list=(True, True, True, True)):
+
+    ls = [":", "-.", "--", "-"]
+    labels = ["Linear", "Linear+Loop", "Linear+Loop+Counter", "Linear+Loop+Counter+Stoch"]
+    kinfac = kin ** 2 if pardict["do_corr"] else kin ** 1.0
+
+    part_comp = [np.zeros(len(kin)), np.zeros(len(kin)), np.zeros(len(kin))]
+    for (line, comp, add, label) in zip(ls, P_components, comp_list, labels):
+        for i, c in enumerate(comp):
+            part_comp[i] += c
+        if add:
+            plt10 = plt.errorbar(
+                kin,
+                kinfac * part_comp[0],
+                marker="None",
+                color="r",
+                linestyle=line,
+                markeredgewidth=1.3,
+                zorder=0,
+                label=label,
+            )
+            plt11 = plt.errorbar(
+                kin, kinfac * part_comp[1], marker="None", color="b", linestyle=line, markeredgewidth=1.3, zorder=0,
+            )
+            if pardict["do_hex"]:
+                plt12 = plt.errorbar(
+                    kin, kinfac * part_comp[2], marker="None", color="g", linestyle=line, markeredgewidth=1.3, zorder=0,
+                )
+    plt.legend()
 
     if keep:
         plt.ioff()
