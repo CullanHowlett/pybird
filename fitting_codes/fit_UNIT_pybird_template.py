@@ -210,9 +210,31 @@ def lnlike(params, birdmodel, fittingdata, plt):
     chi_squared = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
 
     if plt is not None:
+        chi_squared_print = chi_squared
+        if birdmodel.pardict["do_marg"]:
+            bs_analytic = birdmodel.compute_bestfit_analytic(Pi, fittingdata.data, P_model_interp)
+            pardict["do_marg"] = 0
+            b2 = (params[-2] + params[-1]) / np.sqrt(2.0)
+            b4 = (params[-2] - params[-1]) / np.sqrt(2.0)
+            bs = [
+                params[-3],
+                b2,
+                bs_analytic[0],
+                b4,
+                bs_analytic[1],
+                bs_analytic[2],
+                bs_analytic[3],
+                bs_analytic[4] * fittingdata.data["shot_noise"],
+                bs_analytic[5] * fittingdata.data["shot_noise"],
+                bs_analytic[6] * fittingdata.data["shot_noise"],
+                bs_analytic[7],
+            ]
+            P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
+            chi_squared_print = birdmodel.compute_chi2(P_model_interp, Pi, fittingdata.data)
+            pardict["do_marg"] = 1
         update_plot(pardict, fittingdata.data["x_data"], P_model_interp, plt)
         if np.random.rand() < 0.1:
-            print(params, chi_squared)
+            print(params, chi_squared_print)
 
     return -0.5 * chi_squared
 

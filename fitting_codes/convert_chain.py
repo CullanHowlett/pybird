@@ -33,7 +33,9 @@ if __name__ == "__main__":
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2d_%3d_%s_%s_%s" if pardict["do_corr"] else "%s_%s_%3.2lf_%3.2lf_%s_%s_%s"
+    fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s_fixedrat"
+    fitlim = birdmodel.pardict["xfit_min"][0] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][0]
+    fitlimhex = birdmodel.pardict["xfit_min"][2] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][2]
 
     taylor_strs = ["grid", "1order", "2order", "3order", "4order"]
     chainfile = str(
@@ -41,13 +43,14 @@ if __name__ == "__main__":
         % (
             birdmodel.pardict["fitfile"],
             dat_str,
-            birdmodel.pardict["xfit_min"],
-            birdmodel.pardict["xfit_max"],
+            fitlim,
+            fitlimhex,
             taylor_strs[pardict["taylor_order"]],
             hex_str,
             marg_str,
         )
     )
+    print(chainfile)
     oldfile = chainfile + ".hdf5"
     newfile = chainfile + "_converted.dat"
     burntin, bestfit, like = read_chain_backend(oldfile)
@@ -71,15 +74,19 @@ if __name__ == "__main__":
         alpha_par = (float(pardict["h"]) * Hz_fid) / (h * Hz) * (r_d_fid / (r_d))
         chainvals.append(
             (
+                ln10As,
+                100.0*h,
+                omega_cdm,
+                omega_b,
                 alpha_perp,
                 alpha_par,
                 Om,
                 2997.92458 * Da / h,
                 100.0 * h * Hz,
-                f * sigma8,
-                f * sigma12,
-                b1 * sigma8,
-                b1 * sigma12,
+                f,
+                sigma8,
+                sigma12,
+                b1,
                 loglike,
             )
         )

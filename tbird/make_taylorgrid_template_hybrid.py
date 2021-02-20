@@ -19,10 +19,10 @@ if __name__ == "__main__":
 
     # Get some cosmological values at the grid centre
     if pardict["code"] == "CAMB":
-        kin, Pin, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12, r_d = run_camb(pardict)
+        kin, Pin, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma8_0_fid, sigma12, r_d = run_camb(pardict)
         omega_nu = float(pardict["Sum_mnu"])
     else:
-        kin, Pin, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12, r_d = run_class(pardict)
+        kin, Pin, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma8_0_fid, sigma12, r_d = run_class(pardict)
         omega_nu = float(pardict["m_ncdm"])
     omega_rat = float(pardict["omega_b"])/float(pardict["omega_cdm"])
 
@@ -100,13 +100,14 @@ if __name__ == "__main__":
         parameters["omega_cdm"] = (truetheta[3] - omega_nu)/(1.0 + omega_rat)
         parameters["omega_b"] = omega_rat*float(parameters["omega_cdm"])
         if parameters["code"] == "CAMB":
-            kin, Pin, Om, Da_temp, Hz_temp, fN, sigma8, sigma12, r_d = run_camb(parameters)
+            kin, Pin, Om, Da_temp, Hz_temp, fN, sigma8, sigma8_0_fid, sigma12, r_d = run_camb(parameters)
         else:
-            kin, Pin, Om, Da_temp, Hz_temp, fN, sigma8, sigma12, r_d = run_class(parameters)
+            kin, Pin, Om, Da_temp, Hz_temp, fN, sigma8, sigma8_0_fid, sigma12, r_d = run_class(parameters)
 
         # There's a nuance here: Do we use Da_fid or the Da computed for the template with the new
         # value of omega_m (and same with Hz)? I've stuck with Da_fid/Hz_fid here, as this seems to match
-        # what I would expect given the definition of the alphas.
+        # what I would expect given the definition of the alphas. I also matches what Pybird does internally,
+        # such that hen truetheta[0] = truetheta[1] = 1, the template (whatever it is) is undilated.
         Da = Da_fid * truetheta[0]
         Hz = Hz_fid / truetheta[1]
         f = truetheta[2]/sigma8_fid

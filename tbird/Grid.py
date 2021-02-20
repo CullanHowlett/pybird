@@ -267,12 +267,13 @@ def run_class(pardict):
     H = M.Hubble(float(parlinear["z_pk"])) / M.Hubble(0.0)
     f = M.scale_independent_growth_factor_f(float(parlinear["z_pk"]))
     sigma8 = M.sigma(8.0 / M.h(), float(parlinear["z_pk"]))
+    sigma8_0 = M.sigma(8.0 / M.h(), 0.0)
     sigma12 = M.sigma(12.0, float(parlinear["z_pk"]))
     r_d = M.rs_drag()
 
     #print(Omega_m, Da, H, f, sigma8, sigma12, r_d, r_d*float(parlinear["H0"])/100.0)
 
-    return kin, Plin, Omega_m, Da, H, f, sigma8, sigma12, r_d
+    return kin, Plin, Omega_m, Da, H, f, sigma8, sigma8_0, sigma12, r_d
 
 
 if __name__ == "__main__":

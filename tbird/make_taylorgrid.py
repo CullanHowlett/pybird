@@ -81,9 +81,9 @@ if __name__ == "__main__":
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
         if parameters["code"] == "CAMB":
-            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma8_0, sigma12, r_d = run_camb(parameters)
         else:
-            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(parameters)
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma8_0, sigma12, r_d = run_class(parameters)
 
         # Get non-linear power spectrum from pybird
         correlator.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})

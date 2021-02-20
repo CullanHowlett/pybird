@@ -19,9 +19,9 @@ if __name__ == "__main__":
 
     # Get some cosmological values at the grid centre
     if pardict["code"] == "CAMB":
-        kin, Pin, Om, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12, r_d = run_camb(pardict)
+        kin, Pin, Om, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma8_0_fid, sigma12, r_d = run_camb(pardict)
     else:
-        kin, Pin, Om, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12, r_d = run_class(pardict)
+        kin, Pin, Om, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma8_0_fid, sigma12, r_d = run_class(pardict)
 
     # Compute the values of the growth rate that this job will do
     valueref, delta, flattenedgrid, _ = grid_properties_template(pardict, fN_fid, sigma8_fid)

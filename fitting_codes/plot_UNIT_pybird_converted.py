@@ -20,23 +20,21 @@ if __name__ == "__main__":
         _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_class(pardict)
 
     chainfiles = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_0.00_0.30_grid_hex_marg_converted.dat",
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_xi_30_200_grid_hex_marg_converted.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_4order_hex_marg_BBNprior_converted.dat",
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_4order_hex_marg_fixedrat_converted.dat",
     ]
     figfile = [
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_HandShake/chain_UNIT_HODsnap97_ELGv1_pk_xi_grid_hex_marg_converted.pdf"
+        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_4order_hex_marg_converted.pdf"
     ]
     names = [
-        r"$P(k);\,\mathrm{0.00-0.30}h\mathrm{Mpc^{-1}}\,\mathrm{Marg}$",
-        r"$\xi(s);\,\mathrm{30-200}h^{-1}\mathrm{Mpc}\,\mathrm{Marg}$",
+        r"$\mathrm{Fixed}\,\Omega_{b}/\Omega_{cdm}$",
+        r"$\mathrm{BBN\,Prior}$",
     ]
 
     truths = {
-        r"$\alpha_{\perp}$": 1.0,
-        r"$\alpha_{||}$": 1.0,
-        r"$D_{A}(z)$": 2997.92458 * Da_fid / float(pardict["h"]),
-        r"$H(z)$": 100.0 * float(pardict["h"]) * Hz_fid,
-        r"$f\sigma_{8}$": fN_fid * sigma8_fid,
+        r"$\Omega_{m}$": Om_fid,
+        r"$H_{0}$": 100.0 * float(pardict["h"]),
+        r"$\sigma_{8}$": sigma8_fid,
     }
 
     # Output name for the figure
@@ -49,8 +47,9 @@ if __name__ == "__main__":
         burntin = np.array(pd.read_csv(chainfile, delim_whitespace=True, header=None))
         like = burntin[:, -1]
         bestfit = burntin[np.argmax(burntin[:, -1]), :-1]
-        paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
-        c.add_chain(burntin[:, [0, 1, 5, 7]], parameters=paramnames, name=names[chaini], posterior=like)
+        #paramnames = [r"$\alpha_{\perp}$", r"$\alpha_{||}$", r"$f\sigma_{8}$", r"$b_{1}\sigma_{8}$"]
+        paramnames = [r"$\Omega_{m}$", r"$H_{0}$", r"$\sigma_{8}$"]
+        c.add_chain(burntin[:, [6, 1, 10]], parameters=paramnames, name=names[chaini], posterior=like)
         bestfits.append(bestfit)
 
     print(bestfits)

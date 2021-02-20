@@ -680,8 +680,7 @@ def create_plot(pardict, fittingdata):
             zorder=5,
         )
 
-    plt.xlim(0.03, np.amax(pardict["xfit_max"]) * 1.05)
-    plt.ylim(100.0, 750.0)
+    plt.xlim(np.amin(pardict["xfit_min"]) * 0.95, np.amax(pardict["xfit_max"]) * 1.05)
     if pardict["do_corr"]:
         plt.xlabel(r"$s\,(h^{-1}\,\mathrm{Mpc})$", fontsize=16)
         plt.ylabel(r"$s^{2}\xi(s)$", fontsize=16, labelpad=5)
