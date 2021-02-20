@@ -100,9 +100,9 @@ if __name__ == "__main__":
         parameters["omega_cdm"] = (truetheta[3] - omega_nu)/(1.0 + omega_rat)
         parameters["omega_b"] = omega_rat*float(parameters["omega_cdm"])
         if parameters["code"] == "CAMB":
-            kin, Pin, Om, Da_temp, Hz_temp, fN, sigma8, sigma8_0_fid, sigma12, r_d = run_camb(parameters)
+            kin, Pin, Om, Da_temp, Hz_temp, fN, sigma8, sigma8_0, sigma12, r_d = run_camb(parameters)
         else:
-            kin, Pin, Om, Da_temp, Hz_temp, fN, sigma8, sigma8_0_fid, sigma12, r_d = run_class(parameters)
+            kin, Pin, Om, Da_temp, Hz_temp, fN, sigma8, sigma8_0, sigma12, r_d = run_class(parameters)
 
         # There's a nuance here: Do we use Da_fid or the Da computed for the template with the new
         # value of omega_m (and same with Hz)? I've stuck with Da_fid/Hz_fid here, as this seems to match
@@ -120,7 +120,7 @@ if __name__ == "__main__":
             {"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om_fid, "f": f, "DA": Da, "H": Hz}
         )
 
-        Params = np.array([Om, Da_temp, Hz_temp, fN, sigma8, sigma12, r_d])
+        Params = np.array([Om, Da_temp, Hz_temp, fN, sigma8, sigma8_0, sigma12, r_d])
         Plin, Ploop = correlator.bird.formatTaylorPs()
         Clin, Cloop = correlatorcf.bird.formatTaylorCf()
         Pin = np.c_[kin, Pin]
