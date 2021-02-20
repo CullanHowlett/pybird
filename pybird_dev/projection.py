@@ -198,8 +198,9 @@ class Projection(object):
 
         else:
             F = qpar / qperp
-            kp = self.kgrid / qperp * (1 + self.mugrid ** 2 * (F ** -2 - 1)) ** 0.5
-            mup = self.mugrid / F * (1 + self.mugrid ** 2 * (F ** -2 - 1)) ** -0.5
+            Ffac = np.sqrt((1 + self.mugrid ** 2 * (1/(F**2) - 1)))
+            kp = self.kgrid / qperp * Ffac
+            mup = self.mugrid / F / Ffac
             arrayLegendremup = np.array([legendre(2 * l)(mup) for l in range(self.co.Nl)])
 
             if bird.with_bias:

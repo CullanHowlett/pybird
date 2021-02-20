@@ -4,6 +4,19 @@ import camb
 from classy import Class
 from scipy.special import hyp2f1
 
+def smooth_hinton2017(ks, pk, degree=13, sigma=1, weight=0.5):
+    """ Smooth power spectrum based on Hinton 2017 polynomial method """
+    log_ks = np.log(ks)
+    log_pk = np.log(pk)
+    index = np.argmax(pk)
+    maxk2 = log_ks[index]
+    gauss = np.exp(-0.5 * np.power(((log_ks - maxk2) / sigma), 2))
+    w = np.ones(pk.size) - weight * gauss
+    z = np.polyfit(log_ks, log_pk, degree, w=w)
+    p = np.poly1d(z)
+    polyval = p(log_ks)
+    pk_smoothed = np.exp(polyval)
+    return pk_smoothed
 
 def grid_properties(pardict):
     """ Computes some useful properties of the grid given the parameters read from the input file
@@ -66,6 +79,36 @@ def grid_properties_template(pardict, fN, sigma8):
 
     return valueref, delta, flattenedgrid, truecrd
 
+
+def grid_properties_template_hybrid(pardict, fsigma8, omegamh2):
+    """ Computes some useful properties of the grid given the parameters read from the input file
+
+    Parameters
+    ----------
+    pardict: dict
+        A dictionary of parameters read from the config file
+
+    Returns
+    -------
+    valueref: np.array
+        An array of the central values of the grid
+    delta: np.array
+        An array containing the grid cell widths
+    flattenedgrid: np.array
+        The number of grid cells from the center for each coordinate, flattened
+    truecrd: list of np.array
+        A list containing 1D numpy arrays for the values of the cosmological parameters along each grid axis
+    """
+
+    order = float(pardict["template_order"])
+    valueref = np.array([1.0, 1.0, fsigma8, omegamh2])
+    delta = np.array(pardict["template_dx"], dtype=np.float) * valueref
+    squarecrd = [np.arange(-order, order + 1) for l in range(4)]
+    truecrd = [valueref[l] + delta[l] * np.arange(-order, order + 1) for l in range(4)]
+    squaregrid = np.array(np.meshgrid(*squarecrd, indexing="ij"))
+    flattenedgrid = squaregrid.reshape([4, -1]).T
+
+    return valueref, delta, flattenedgrid, truecrd
 
 def run_camb(pardict):
     """ Runs an instance of CAMB given the cosmological parameters in pardict
@@ -200,8 +243,8 @@ def run_class(pardict):
     M.compute()
 
     kin = np.logspace(np.log10(2.0e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
-    # Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin])
-    Plin = np.array([M.pk_lin(ki * M.h(), 0.0) * M.h() ** 3 for ki in kin])
+    Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin])
+    # Plin = np.array([M.pk_lin(ki * M.h(), 0.0) * M.h() ** 3 for ki in kin])
     # Plin *= (M.scale_independent_growth_factor(float(parlinear["z_pk"])) / M.scale_independent_growth_factor(0.0)) ** 2
 
     # Get some derived quantities
@@ -210,15 +253,15 @@ def run_class(pardict):
     growth_z = a_z * hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -(a_z ** 3) / Omega_m * (1.0 - Omega_m))
     growth_0 = hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -1.0 / Omega_m * (1.0 - Omega_m))
 
-    print(growth_z / growth_0)
+    #print(growth_z / growth_0)
 
-    np.savetxt(
-        "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/pkmodel_UNIT_cosmo_matter.dat",
-        np.c_[kin, Plin],
-        header="k    P_lin",
-    )
+    #np.savetxt(
+    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/pkmodel_UNIT_cosmo_matter.dat",
+    #    np.c_[kin, Plin],
+    #    header="k    P_lin",
+    #)
 
-    Plin *= (growth_z / growth_0) ** 2
+    #Plin *= (growth_z / growth_0) ** 2
 
     Da = M.angular_distance(float(parlinear["z_pk"])) * M.Hubble(0.0)
     H = M.Hubble(float(parlinear["z_pk"])) / M.Hubble(0.0)
@@ -226,6 +269,8 @@ def run_class(pardict):
     sigma8 = M.sigma(8.0 / M.h(), float(parlinear["z_pk"]))
     sigma12 = M.sigma(12.0, float(parlinear["z_pk"]))
     r_d = M.rs_drag()
+
+    #print(Omega_m, Da, H, f, sigma8, sigma12, r_d, r_d*float(parlinear["H0"])/100.0)
 
     return kin, Plin, Omega_m, Da, H, f, sigma8, sigma12, r_d
 

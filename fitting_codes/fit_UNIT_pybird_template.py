@@ -225,7 +225,7 @@ if __name__ == "__main__":
     plot_flag = int(sys.argv[2])
     pardict = ConfigObj(configfile)
 
-    # Just converts strings in pardicts to numbers in int/float etcz.
+    # Just converts strings in pardicts to numbers in int/float etc.
     pardict = format_pardict(pardict)
 
     # Set up the data
