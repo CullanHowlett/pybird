@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 from configobj import ConfigObj
+from multiprocessing import Pool
 
 sys.path.append("../")
 from fitting_codes.fitting_utils import (
@@ -13,7 +14,7 @@ from fitting_codes.fitting_utils import (
 )
 
 
-def do_emcee(func, start, birdmodel, fittingdata, plt):
+def do_emcee(func, start):
 
     import emcee
 
@@ -54,43 +55,45 @@ def do_emcee(func, start, birdmodel, fittingdata, plt):
     backend = emcee.backends.HDFBackend(chainfile)
     backend.reset(nwalkers, nparams)
 
-    # Initialize the sampler
-    sampler = emcee.EnsembleSampler(nwalkers, nparams, func, args=[birdmodel, fittingdata, plt], backend=backend)
+    with Pool() as pool:
 
-    # Run the sampler for a max of 20000 iterations. We check convergence every 100 steps and stop if
-    # the chain is longer than 100 times the estimated autocorrelation time and if this estimate
-    # changed by less than 1%. I copied this from the emcee site as it seemed reasonable.
-    max_iter = 30000
-    index = 0
-    old_tau = np.inf
-    autocorr = np.empty(max_iter)
-    counter = 0
-    for sample in sampler.sample(begin, iterations=max_iter, progress=True):
+        # Initialize the sampler
+        sampler = emcee.EnsembleSampler(nwalkers, nparams, func, pool=pool, backend=backend)
 
-        # Only check convergence every 100 steps
-        if sampler.iteration % 100:
-            continue
+        # Run the sampler for a max of 20000 iterations. We check convergence every 100 steps and stop if
+        # the chain is longer than 100 times the estimated autocorrelation time and if this estimate
+        # changed by less than 1%. I copied this from the emcee site as it seemed reasonable.
+        max_iter = 30000
+        index = 0
+        old_tau = np.inf
+        autocorr = np.empty(max_iter)
+        counter = 0
+        for sample in sampler.sample(begin, iterations=max_iter, progress=True):
 
-        # Compute the autocorrelation time so far
-        # Using tol=0 means that we'll always get an estimate even
-        # if it isn't trustworthy
-        tau = sampler.get_autocorr_time(tol=0)
-        autocorr[index] = np.mean(tau)
-        counter += 100
-        print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
-        print("Mean Auto-Correlation time: {0:.3f}".format(autocorr[index]))
+            # Only check convergence every 100 steps
+            if sampler.iteration % 100:
+                continue
 
-        # Check convergence
-        converged = np.all(tau * 100 < sampler.iteration)
-        converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
-        if converged:
-            print("Reached Auto-Correlation time goal: %d > 100 x %.3f" % (counter, autocorr[index]))
-            break
-        old_tau = tau
-        index += 1
+            # Compute the autocorrelation time so far
+            # Using tol=0 means that we'll always get an estimate even
+            # if it isn't trustworthy
+            tau = sampler.get_autocorr_time(tol=0)
+            autocorr[index] = np.mean(tau)
+            counter += 100
+            print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+            print("Mean Auto-Correlation time: {0:.3f}".format(autocorr[index]))
+
+            # Check convergence
+            converged = np.all(tau * 100 < sampler.iteration)
+            converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
+            if converged:
+                print("Reached Auto-Correlation time goal: %d > 100 x %.3f" % (counter, autocorr[index]))
+                break
+            old_tau = tau
+            index += 1
 
 
-def lnpost(params, birdmodel, fittingdata, plt):
+def lnpost(params):
 
     # This returns the posterior distribution which is given by the log prior plus the log likelihood
     prior = lnprior(params, birdmodel)
@@ -109,18 +112,18 @@ def lnprior(params, birdmodel):
     else:
         b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = params[-11:]
 
-    lower_bounds = birdmodel.valueref - birdmodel.pardict["template_order"] * birdmodel.delta
-    upper_bounds = birdmodel.valueref + birdmodel.pardict["template_order"] * birdmodel.delta
+    # lower_bounds = birdmodel.valueref - birdmodel.pardict["template_order"] * birdmodel.delta
+    # upper_bounds = birdmodel.valueref + birdmodel.pardict["template_order"] * birdmodel.delta
 
     alpha_perp, alpha_par, fsigma8 = params[:3]
-    f = fsigma8 / birdmodel.valueref[3]
+    f = fsigma8 / birdmodel.sigma8
     # alpha_perp, alpha_par, f = birdmodel.valueref[:3]
 
     # Flat priors for alpha_perp, alpha_par f and sigma8
-    if np.any(np.less([alpha_perp, alpha_par, f, birdmodel.valueref[3]], lower_bounds)) or np.any(
-        np.greater([alpha_perp, alpha_par, f, birdmodel.valueref[3]], upper_bounds)
-    ):
-        return -np.inf
+    # if np.any(np.less([alpha_perp, alpha_par, f, birdmodel.valueref[3]], lower_bounds)) or np.any(
+    #    np.greater([alpha_perp, alpha_par, f, birdmodel.valueref[3]], upper_bounds)
+    # ):
+    #    return -np.inf
 
     # Flat prior for b1
     if b1 < 0.0 or b1 > 3.0:
@@ -199,11 +202,7 @@ def lnlike(params, birdmodel, fittingdata, plt):
         ]
 
     # Get the bird model
-    alpha_perp, alpha_par, fsigma8 = params[:3]
-    f = fsigma8 / birdmodel.valueref[3]
-    # alpha_perp, alpha_par, f = birdmodel.valueref[:3]
-
-    Plin, Ploop = birdmodel.compute_pk([alpha_perp, alpha_par, f, birdmodel.valueref[3]])
+    Plin, Ploop = birdmodel.modify_template(params[:3])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
     Pi = birdmodel.get_Pi_for_marg(Ploop, bs[0], fittingdata.data["shot_noise"], fittingdata.data["x_data"])
 
@@ -254,7 +253,7 @@ if __name__ == "__main__":
     fittingdata = FittingData(pardict, shot_noise=float(pardict["shot_noise"]))
 
     # Set up the BirdModel
-    birdmodel = BirdModel(pardict, template=True)
+    birdmodel = BirdModel(pardict, template=True, direct=True)
 
     # Plotting (for checking/debugging, should turn off for production runs)
     plt = None
@@ -269,7 +268,7 @@ if __name__ == "__main__":
         )
 
     # Does an optimization
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start)
 
     # Does an MCMC
-    do_emcee(lnpost, start, birdmodel, fittingdata, plt)
+    do_emcee(lnpost, start)

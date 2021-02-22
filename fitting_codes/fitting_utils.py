@@ -32,20 +32,31 @@ class BirdModel:
 
         # Get some values at the grid centre
         if pardict["code"] == "CAMB":
-            self.kmod, self.Pmod, self.Om, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_camb(
-                pardict
-            )
+            (
+                self.kmod,
+                self.Pmod,
+                self.Om,
+                self.Da,
+                self.Hz,
+                self.fN,
+                self.sigma8,
+                self.sigma8_0,
+                self.sigma12,
+                self.r_d,
+            ) = run_camb(pardict)
         else:
-            self.kmod, self.Pmod, self.Om, self.Da, self.Hz, self.fN, self.sigma8, self.sigma12, self.r_d = run_class(
-                pardict
-            )
-
-        if self.template:
-            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(
-                pardict, self.fN, self.sigma8
-            )
-        else:
-            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
+            (
+                self.kmod,
+                self.Pmod,
+                self.Om,
+                self.Da,
+                self.Hz,
+                self.fN,
+                self.sigma8,
+                self.sigma8_0,
+                self.sigma12,
+                self.r_d,
+            ) = run_class(pardict)
 
         # Prepare the model
         if self.direct:
@@ -53,11 +64,29 @@ class BirdModel:
             # exit()
             if self.template:
                 self.correlator = self.setup_pybird()
-                self.kin = self.correlator.projection.xout
+                self.correlator.compute(
+                    {
+                        "k11": self.kmod,
+                        "P11": self.Pmod,
+                        "z": float(self.pardict["z_pk"]),
+                        "Omega0_m": self.Om,
+                        "f": self.fN,
+                        "DA": self.Da,
+                        "H": self.Hz,
+                    }
+                )
+                self.linmod, self.loopmod = None, None
+                self.kin = self.correlator.co.k
             else:
                 self.correlator = self.setup_pybird()
-                self.kin = self.correlator.projection.xout
+                self.kin = self.correlator.co.k
         else:
+            if self.template:
+                self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(
+                    pardict, self.fN, self.sigma8
+                )
+            else:
+                self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
             self.kin, self.paramsmod, self.linmod, self.loopmod = self.load_model()
 
     def setup_pybird(self):
@@ -67,7 +96,6 @@ class BirdModel:
         Nl = 3 if self.pardict["do_hex"] else 2
         optiresum = True if self.pardict["do_corr"] else False
         output = "bCf" if self.pardict["do_corr"] else "bPk"
-        z_pk = float(self.pardict["z_pk"])
         kmax = None if self.pardict["do_corr"] else 0.5
         correlator = Correlator()
 
@@ -99,35 +127,44 @@ class BirdModel:
                 paramsmod = None
                 if self.pardict["do_corr"]:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerClin_%s_template.npy" % gridname), allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerClin_%s_template.npy" % gridname),
+                        allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerCloop_%s_template.npy" % gridname), allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerCloop_%s_template.npy" % gridname),
+                        allow_pickle=True,
                     )
                 else:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPlin_%s_template.npy" % gridname), allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerPlin_%s_template.npy" % gridname),
+                        allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPloop_%s_template.npy" % gridname), allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerPloop_%s_template.npy" % gridname),
+                        allow_pickle=True,
                     )
             else:
                 paramsmod = np.load(
-                    os.path.join(self.pardict["outgrid"], "DerParams_%s.npy" % gridname), allow_pickle=True,
+                    os.path.join(self.pardict["outgrid"], "DerParams_%s.npy" % gridname),
+                    allow_pickle=True,
                 )
                 if self.pardict["do_corr"]:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerClin_%s.npy" % gridname), allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerClin_%s.npy" % gridname),
+                        allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerCloop_%s.npy" % gridname), allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerCloop_%s.npy" % gridname),
+                        allow_pickle=True,
                     )
                 else:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPlin_%s.npy" % gridname), allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerPlin_%s.npy" % gridname),
+                        allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPloop_%s.npy" % gridname), allow_pickle=True,
+                        os.path.join(self.pardict["outgrid"], "DerPloop_%s.npy" % gridname),
+                        allow_pickle=True,
                     )
             kin = linmod[0][0, :, 0]
         else:
@@ -187,6 +224,32 @@ class BirdModel:
             self.correlator.bird.formatTaylorCf() if self.pardict["do_corr"] else self.correlator.bird.formatTaylorPs()
         )
 
+        Plin = np.swapaxes(Plin.reshape((3, Plin.shape[-2] // 3, Plin.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
+        Ploop = np.swapaxes(Ploop.reshape((3, Ploop.shape[-2] // 3, Ploop.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
+
+        return Plin, Ploop
+
+    def modify_template(self, params):
+        # Modify the template power spectrum by scaling by f and then
+        # reapplying the AP effect.
+        alpha_perp, alpha_par, fsigma8 = params
+        f = fsigma8 / self.sigma8
+
+        allk = np.concatenate([self.correlator.co.k for i in range(self.correlator.co.Nl)]).reshape(-1, 1)
+        P11l_AP, Pctl_AP, Ploopl_AP, Pnlol_AP = self.correlator.projection.AP(
+            bird=self.correlator.bird, q=[alpha_perp, alpha_par], overwrite=False
+        )
+        Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * f, f ** 2]), P11l_AP), axis=1)
+        Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
+        Plin = np.hstack((allk, Plin))
+        Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploopl_AP), axis=0)
+        Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * f, 2.0 * f, 2.0 * f]), Pctl_AP)
+        Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
+        if self.correlator.bird.with_nlo_bias:
+            Ploop3 = np.concatenate(np.einsum("lnk->lkn", self.correlator.bird.Pnlol), axis=0)
+            Ploop = np.hstack((allk, Ploop1, Ploop2, Ploop3))
+        else:
+            Ploop = np.hstack((allk, Ploop1, Ploop2))
         Plin = np.swapaxes(Plin.reshape((3, Plin.shape[-2] // 3, Plin.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
         Ploop = np.swapaxes(Ploop.reshape((3, Ploop.shape[-2] // 3, Ploop.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
 
@@ -713,14 +776,32 @@ def update_plot(pardict, x_data, P_model, plt, keep=False):
     plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) ** 1.0 * P_model
 
     plt10 = plt.errorbar(
-        x_data[0], plt_data[:nx0], marker="None", color="r", linestyle="-", markeredgewidth=1.3, zorder=0,
+        x_data[0],
+        plt_data[:nx0],
+        marker="None",
+        color="r",
+        linestyle="-",
+        markeredgewidth=1.3,
+        zorder=0,
     )
     plt11 = plt.errorbar(
-        x_data[1], plt_data[nx0 : nx0 + nx2], marker="None", color="b", linestyle="-", markeredgewidth=1.3, zorder=0,
+        x_data[1],
+        plt_data[nx0 : nx0 + nx2],
+        marker="None",
+        color="b",
+        linestyle="-",
+        markeredgewidth=1.3,
+        zorder=0,
     )
     if pardict["do_hex"]:
         plt12 = plt.errorbar(
-            x_data[2], plt_data[nx0 + nx2 :], marker="None", color="g", linestyle="-", markeredgewidth=1.3, zorder=0,
+            x_data[2],
+            plt_data[nx0 + nx2 :],
+            marker="None",
+            color="g",
+            linestyle="-",
+            markeredgewidth=1.3,
+            zorder=0,
         )
 
     if keep:
@@ -759,11 +840,23 @@ def update_plot_components(pardict, kin, P_components, plt, keep=False, comp_lis
                 label=label,
             )
             plt11 = plt.errorbar(
-                kin, kinfac * part_comp[1], marker="None", color="b", linestyle=line, markeredgewidth=1.3, zorder=0,
+                kin,
+                kinfac * part_comp[1],
+                marker="None",
+                color="b",
+                linestyle=line,
+                markeredgewidth=1.3,
+                zorder=0,
             )
             if pardict["do_hex"]:
                 plt12 = plt.errorbar(
-                    kin, kinfac * part_comp[2], marker="None", color="g", linestyle=line, markeredgewidth=1.3, zorder=0,
+                    kin,
+                    kinfac * part_comp[2],
+                    marker="None",
+                    color="g",
+                    linestyle=line,
+                    markeredgewidth=1.3,
+                    zorder=0,
                 )
     plt.legend()
 
@@ -795,7 +888,7 @@ def format_pardict(pardict):
     return pardict
 
 
-def do_optimization(func, start, birdmodel, fittingdata, plt):
+def do_optimization(func, start):
 
     from scipy.optimize import basinhopping
 
@@ -806,7 +899,6 @@ def do_optimization(func, start, birdmodel, fittingdata, plt):
         niter=100,
         stepsize=0.01,
         minimizer_kwargs={
-            "args": (birdmodel, fittingdata, plt),
             "method": "Nelder-Mead",
             "tol": 1.0e-4,
             "options": {"maxiter": 40000, "xatol": 1.0e-4, "fatol": 1.0e-4},

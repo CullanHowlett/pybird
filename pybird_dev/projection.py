@@ -173,11 +173,11 @@ class Projection(object):
             Integrandmu = np.einsum("km,lkm->lkm", Pkmu, self.arrayLegendremugrid)
         return 2 * np.trapz(Integrandmu, x=self.mugrid, axis=-1)
 
-    def AP(self, bird=None, q=None):
+    def AP(self, bird=None, q=None, overwrite=True):
         """
         Apply the AP effect to the bird power spectrum or correlation function
         Credit: Jerome Gleyzes
-            """
+        """
         if q is None:
             qperp, qpar = self.get_AP_param(bird)
         else:
@@ -190,33 +190,57 @@ class Projection(object):
             arrayLegendremup = np.array([legendre(2 * l)(mup) for l in range(self.co.Nl)])
 
             if bird.with_bias:
-                bird.fullCf = self.integrAP(self.co.s, bird.fullCf, sp, arrayLegendremup, many=False)
+                if overwrite:
+                    bird.fullCf = self.integrAP(self.co.s, bird.fullCf, sp, arrayLegendremup, many=False)
+                else:
+                    return self.integrAP(self.co.s, bird.fullCf, sp, arrayLegendremup, many=False)
             else:
-                bird.C11l = self.integrAP(self.co.s, bird.C11l, sp, arrayLegendremup, many=True)
-                bird.Cctl = self.integrAP(self.co.s, bird.Cctl, sp, arrayLegendremup, many=True)
-                bird.Cloopl = self.integrAP(self.co.s, bird.Cloopl, sp, arrayLegendremup, many=True)
+                C11l_AP = self.integrAP(self.co.s, bird.C11l, sp, arrayLegendremup, many=True)
+                Cctl_AP = self.integrAP(self.co.s, bird.Cctl, sp, arrayLegendremup, many=True)
+                Cloopl_AP = self.integrAP(self.co.s, bird.Cloopl, sp, arrayLegendremup, many=True)
+                Cnlol_AP = self.integrAP(self.co.s, bird.Cnlol, sp, arrayLegendremup, many=True)
+                if overwrite:
+                    bird.C11l, bird.Cctl, bird.Cloopl, bird.Cnlol = C11l_AP, Cctl_AP, Cloopl_AP, Cnlol_AP
+                else:
+                    return C11l_AP, Cctl_AP, Cloopl_AP, Cnlol_AP
 
         else:
             F = qpar / qperp
-            Ffac = np.sqrt((1 + self.mugrid ** 2 * (1/(F**2) - 1)))
+            Ffac = np.sqrt((1 + self.mugrid ** 2 * (1 / (F ** 2) - 1)))
             kp = self.kgrid / qperp * Ffac
             mup = self.mugrid / F / Ffac
             arrayLegendremup = np.array([legendre(2 * l)(mup) for l in range(self.co.Nl)])
 
             if bird.with_bias:
-                bird.fullPs = (
-                    1.0 / (qperp ** 2 * qpar) * self.integrAP(self.co.k, bird.fullPs, kp, arrayLegendremup, many=False)
-                )
+                if overwrite:
+                    bird.fullPs = (
+                        1.0
+                        / (qperp ** 2 * qpar)
+                        * self.integrAP(self.co.k, bird.fullPs, kp, arrayLegendremup, many=False)
+                    )
+                else:
+                    return (
+                        1.0
+                        / (qperp ** 2 * qpar)
+                        * self.integrAP(self.co.k, bird.fullPs, kp, arrayLegendremup, many=False)
+                    )
             else:
-                bird.P11l = (
+                P11l_AP = (
                     1.0 / (qperp ** 2 * qpar) * self.integrAP(self.co.k, bird.P11l, kp, arrayLegendremup, many=True)
                 )
-                bird.Pctl = (
+                Pctl_AP = (
                     1.0 / (qperp ** 2 * qpar) * self.integrAP(self.co.k, bird.Pctl, kp, arrayLegendremup, many=True)
                 )
-                bird.Ploopl = (
+                Ploopl_AP = (
                     1.0 / (qperp ** 2 * qpar) * self.integrAP(self.co.k, bird.Ploopl, kp, arrayLegendremup, many=True)
                 )
+                Pnlol_AP = (
+                    1.0 / (qperp ** 2 * qpar) * self.integrAP(self.co.k, bird.Pnlol, kp, arrayLegendremup, many=True)
+                )
+                if overwrite:
+                    bird.P11l, bird.Pctl, bird.Ploopl, bird.Pnlol = P11l_AP, Pctl_AP, Ploopl_AP, Pnlol_AP
+                else:
+                    return P11l_AP, Pctl_AP, Ploopl_AP, Pnlol_AP
 
     def setWindow(self, load=True, save=True, Nl=3, withmask=True, windowk=0.05):
         """
@@ -341,7 +365,7 @@ class Projection(object):
 
     def Window(self, bird):
         """
-        Apply the survey window function to the bird power spectrum 
+        Apply the survey window function to the bird power spectrum
         """
         if self.with_window:
             if self.co.with_cf:
