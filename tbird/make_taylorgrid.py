@@ -34,6 +34,8 @@ if __name__ == "__main__":
     z_pk = float(pardict["z_pk"])
     correlator = pybird.Correlator()
     correlatorcf = pybird.Correlator()
+    correlator_noAP = pybird.Correlator()
+    correlatorcf_noAP = pybird.Correlator()
 
     correlator.set(
         {
@@ -60,6 +62,35 @@ if __name__ == "__main__":
             "with_nlo_bias": True,
             "with_exact_time": True,
             "with_AP": True,
+            "DA_AP": Da_fid,
+            "H_AP": Hz_fid,
+        }
+    )
+    correlator_noAP.set(
+        {
+            "output": "bPk",
+            "multipole": Nl,
+            "z": z_pk,
+            "optiresum": False,
+            "with_bias": False,
+            "with_nlo_bias": True,
+            "with_exact_time": True,
+            "kmax": 0.5,
+            "with_AP": False,
+            "DA_AP": Da_fid,
+            "H_AP": Hz_fid,
+        }
+    )
+    correlatorcf_noAP.set(
+        {
+            "output": "bCf",
+            "multipole": Nl,
+            "z": z_pk,
+            "optiresum": True,
+            "with_bias": False,
+            "with_nlo_bias": True,
+            "with_exact_time": True,
+            "with_AP": False,
             "DA_AP": Da_fid,
             "H_AP": Hz_fid,
         }
@@ -113,3 +144,21 @@ if __name__ == "__main__":
         np.save(os.path.join(pardict["outpk"], "Clin_run%s.npy" % (str(job_no))), np.array(allClin))
         np.save(os.path.join(pardict["outpk"], "Cloop_run%s.npy" % (str(job_no))), np.array(allCloop))
         np.save(os.path.join(pardict["outpk"], "Params_run%s.npy" % (str(job_no))), np.array(allParams))
+
+        correlator_noAP.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
+        correlatorcf_noAP.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
+
+        Plin, Ploop = correlator_noAP.bird.formatTaylorPs()
+        Clin, Cloop = correlatorcf_noAP.bird.formatTaylorCf()
+        idxcol = np.full([Plin.shape[0], 1], idx)
+        allPlin.append(np.hstack([Plin, idxcol]))
+        allPloop.append(np.hstack([Ploop, idxcol]))
+        idxcol = np.full([Clin.shape[0], 1], idx)
+        allClin.append(np.hstack([Clin, idxcol]))
+        allCloop.append(np.hstack([Cloop, idxcol]))
+        if (i == 0) or ((i + 1) % 10 == 0):
+            print("theta check: ", arrayred[idx], theta, truetheta)
+        np.save(os.path.join(pardict["outpk"], "Plin_run%s_noAP.npy" % (str(job_no))), np.array(allPlin))
+        np.save(os.path.join(pardict["outpk"], "Ploop_run%s_noAP.npy" % (str(job_no))), np.array(allPloop))
+        np.save(os.path.join(pardict["outpk"], "Clin_run%s_noAP.npy" % (str(job_no))), np.array(allClin))
+        np.save(os.path.join(pardict["outpk"], "Cloop_run%s_noAP.npy" % (str(job_no))), np.array(allCloop))
