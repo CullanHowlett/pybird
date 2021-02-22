@@ -155,8 +155,6 @@ if __name__ == "__main__":
         idxcol = np.full([Clin.shape[0], 1], idx)
         allClin.append(np.hstack([Clin, idxcol]))
         allCloop.append(np.hstack([Cloop, idxcol]))
-        if (i == 0) or ((i + 1) % 10 == 0):
-            print("theta check: ", arrayred[idx], theta, truetheta)
         np.save(os.path.join(pardict["outpk"], "Plin_run%s_noAP.npy" % (str(job_no))), np.array(allPlin))
         np.save(os.path.join(pardict["outpk"], "Ploop_run%s_noAP.npy" % (str(job_no))), np.array(allPloop))
         np.save(os.path.join(pardict["outpk"], "Clin_run%s_noAP.npy" % (str(job_no))), np.array(allClin))
