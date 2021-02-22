@@ -119,11 +119,13 @@ if __name__ == "__main__":
         # Get non-linear power spectrum from pybird
         correlator.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
         correlatorcf.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
+        correlator_noAP.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
+        correlatorcf_noAP.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
 
+        Pin = np.c_[kin, Pin]
         Params = np.array([Om, Da, Hz, fN, sigma8, sigma8_0, sigma12, r_d])
         Plin, Ploop = correlator.bird.formatTaylorPs()
         Clin, Cloop = correlatorcf.bird.formatTaylorCf()
-        Pin = np.c_[kin, Pin]
         idxcol = np.full([Pin.shape[0], 1], idx)
         allPin.append(np.hstack([Pin, idxcol]))
         idxcol = np.full([Plin.shape[0], 1], idx)
@@ -144,9 +146,6 @@ if __name__ == "__main__":
         np.save(os.path.join(pardict["outpk"], "Clin_run%s.npy" % (str(job_no))), np.array(allClin))
         np.save(os.path.join(pardict["outpk"], "Cloop_run%s.npy" % (str(job_no))), np.array(allCloop))
         np.save(os.path.join(pardict["outpk"], "Params_run%s.npy" % (str(job_no))), np.array(allParams))
-
-        correlator_noAP.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
-        correlatorcf_noAP.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
 
         Plin, Ploop = correlator_noAP.bird.formatTaylorPs()
         Clin, Cloop = correlatorcf_noAP.bird.formatTaylorCf()
