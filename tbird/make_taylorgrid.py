@@ -119,8 +119,12 @@ if __name__ == "__main__":
         # Get non-linear power spectrum from pybird
         correlator.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
         correlatorcf.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
-        correlator_noAP.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
-        correlatorcf_noAP.compute({"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN, "DA": Da, "H": Hz})
+        correlator_noAP.compute(
+            {"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN_fid, "DA": Da_fid, "H": Hz_fid}
+        )
+        correlatorcf_noAP.compute(
+            {"k11": kin, "P11": Pin, "z": z_pk, "Omega0_m": Om, "f": fN_fid, "DA": Da_fid, "H": Hz_fid}
+        )
 
         Pin = np.c_[kin, Pin]
         Params = np.array([Om, Da, Hz, fN, sigma8, sigma8_0, sigma12, r_d])
