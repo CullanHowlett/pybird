@@ -905,17 +905,24 @@ class Bird(object):
                 shotnoise = self.Ploopl[l, n, 0]
                 self.Ploopl[l, n] -= shotnoise
 
-    def formatTaylorPs(self, kdata=None):
+    def formatTaylorPs(self, kdata=None, Ps=None):
         """ An auxiliary to pipe PyBird with TBird: puts Bird(object) power spectrum multipole terms into the right shape for TBird """
-        if kdata is None:
-            allk = np.concatenate([self.co.k for i in range(self.co.Nl)]).reshape(-1, 1)
+
+        allk = (
+            np.concatenate([self.co.k for i in range(self.co.Nl)]).reshape(-1, 1)
+            if kdata is None
+            else np.concatenate([[kdata for i in range(self.co.Nl)]]).reshape(-1, 1)
+        )
+        if Ps is None:
+            P11l, Ploopl, Pctl, Pnlol = self.P11l, self.Ploopl, self.Pctl, self.Pnlol
         else:
-            allk = np.concatenate([[kdata for i in range(self.co.Nl)]]).reshape(-1, 1)
-        Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), self.P11l), axis=1)
+            P11l, Ploopl, Pctl, Pnlol = Ps
+
+        Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), P11l), axis=1)
         Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
         Plin = np.hstack((allk, Plin))
         if self.co.Nloop is 12:
-            Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Ploopl), axis=0)
+            Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploopl), axis=0)
         elif self.co.Nloop is 22:
             Ploop1 = np.einsum(
                 "n,lnk->lnk",
@@ -945,29 +952,36 @@ class Bird(object):
                         1.0,
                     ]
                 ),
-                self.Ploopl,
+                Ploopl,
             )
             Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploop1), axis=0)
-        Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), self.Pctl)
+        Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), Pctl)
         Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
         if self.with_nlo_bias:
-            Ploop3 = np.concatenate(np.einsum("lnk->lkn", self.Pnlol), axis=0)
+            Ploop3 = np.concatenate(np.einsum("lnk->lkn", Pnlol), axis=0)
             Ploop = np.hstack((allk, Ploop1, Ploop2, Ploop3))
         else:
             Ploop = np.hstack((allk, Ploop1, Ploop2))
         return Plin, Ploop
 
-    def formatTaylorCf(self, sdata=None):
+    def formatTaylorCf(self, sdata=None, CFs=None):
         """ An auxiliary to pipe PyBird with TBird: puts Bird(object) power spectrum multipole terms into the right shape for TBird """
-        if sdata is None:
-            allk = np.concatenate([self.co.s for i in range(self.co.Nl)]).reshape(-1, 1)
+
+        allk = (
+            np.concatenate([self.co.s for i in range(self.co.Nl)]).reshape(-1, 1)
+            if sdata is None
+            else np.concatenate([[sdata for i in range(self.co.Nl)]]).reshape(-1, 1)
+        )
+        if CFs is None:
+            C11l, Cloopl, Cctl, Cnlol = self.C11l, self.Cloopl, self.Cctl, self.Cnlol
         else:
-            allk = np.concatenate([sdata for i in range(self.co.Nl)]).reshape(-1, 1)
-        Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), self.C11l), axis=1)
+            C11l, Cloopl, Cctl, Cnlol = CFs
+
+        Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), C11l), axis=1)
         Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
         Plin = np.hstack((allk, Plin))
         if self.co.Nloop is 12:
-            Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Cloopl), axis=0)
+            Ploop1 = np.concatenate(np.einsum("lnk->lkn", Cloopl), axis=0)
         elif self.co.Nloop is 22:
             Ploop1 = np.einsum(
                 "n,lnk->lnk",
@@ -997,13 +1011,13 @@ class Bird(object):
                         1.0,
                     ]
                 ),
-                self.Cloopl,
+                Cloopl,
             )
             Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploop1), axis=0)
-        Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), self.Cctl)
+        Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), Cctl)
         Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
         if self.with_nlo_bias:
-            Ploop3 = np.concatenate(np.einsum("lnk->lkn", self.Cnlol), axis=0)
+            Ploop3 = np.concatenate(np.einsum("lnk->lkn", Cnlol), axis=0)
             Ploop = np.hstack((allk, Ploop1, Ploop2, Ploop3))
         else:
             Ploop = np.hstack((allk, Ploop1, Ploop2))

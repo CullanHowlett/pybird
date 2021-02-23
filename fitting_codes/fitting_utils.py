@@ -12,7 +12,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 sys.path.append("../")
-from pybird import pybird
 from tbird.Grid import grid_properties, run_camb, run_class
 from tbird.computederivs import get_grids, get_PSTaylor, get_ParamsTaylor
 
@@ -116,7 +115,7 @@ class BirdModel:
                 "optiresum": optiresum,
                 "with_bias": False,
                 "with_nlo_bias": True,
-                "with_exact_time": True,
+                "with_time": False,
                 "with_AP": True,
                 "kmax": kmax,
                 "DA_AP": self.Da,
@@ -131,31 +130,31 @@ class BirdModel:
         # Load in the model components
         gridname = self.pardict["code"].lower() + "-" + self.pardict["gridname"]
         if self.pardict["taylor_order"]:
+            paramsmod = np.load(
+                os.path.join(self.pardict["outgrid"], "DerParams_%s.npy" % gridname),
+                allow_pickle=True,
+            )
             if self.template:
                 paramsmod = None
                 if self.pardict["do_corr"]:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerClin_%s_template.npy" % gridname),
+                        os.path.join(self.pardict["outgrid"], "DerClin_%s_noAP.npy" % gridname),
                         allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerCloop_%s_template.npy" % gridname),
+                        os.path.join(self.pardict["outgrid"], "DerCloop_%s_noAP.npy" % gridname),
                         allow_pickle=True,
                     )
                 else:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPlin_%s_template.npy" % gridname),
+                        os.path.join(self.pardict["outgrid"], "DerPlin_%s_noAP.npy" % gridname),
                         allow_pickle=True,
                     )
                     loopmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPloop_%s_template.npy" % gridname),
+                        os.path.join(self.pardict["outgrid"], "DerPloop_%s_noAP.npy" % gridname),
                         allow_pickle=True,
                     )
             else:
-                paramsmod = np.load(
-                    os.path.join(self.pardict["outgrid"], "DerParams_%s.npy" % gridname),
-                    allow_pickle=True,
-                )
                 if self.pardict["do_corr"]:
                     linmod = np.load(
                         os.path.join(self.pardict["outgrid"], "DerClin_%s.npy" % gridname),
@@ -176,16 +175,17 @@ class BirdModel:
                     )
             kin = linmod[0][0, :, 0]
         else:
+            paramstab, lintab, looptab, lintab_noAP, looptab_noAP = get_grids(
+                self.pardict, pad=False, cf=self.pardict["do_corr"]
+            )
+            paramsmod = sp.interpolate.RegularGridInterpolator(self.truecrd, paramstab)
+            kin = lintab[..., 0, :, 0][(0,) * len(self.pardict["freepar"])]
             if self.template:
-                lintab, looptab = get_template_grids(self.pardict, pad=False, cf=self.pardict["do_corr"])
-                paramsmod = None
-                kin = lintab[..., 0, :, 0][(0,) * 4]
+                linmod = sp.interpolate.RegularGridInterpolator(self.truecrd, lintab_noAP)
+                loopmod = sp.interpolate.RegularGridInterpolator(self.truecrd, looptab_noAP)
             else:
-                paramstab, lintab, looptab = get_grids(self.pardict, pad=False, cf=self.pardict["do_corr"])
-                paramsmod = sp.interpolate.RegularGridInterpolator(self.truecrd, paramstab)
-                kin = lintab[..., 0, :, 0][(0,) * len(self.pardict["freepar"])]
-            linmod = sp.interpolate.RegularGridInterpolator(self.truecrd, lintab)
-            loopmod = sp.interpolate.RegularGridInterpolator(self.truecrd, looptab)
+                linmod = sp.interpolate.RegularGridInterpolator(self.truecrd, lintab)
+                loopmod = sp.interpolate.RegularGridInterpolator(self.truecrd, looptab)
 
         return kin, paramsmod, linmod, loopmod
 
@@ -238,26 +238,17 @@ class BirdModel:
         return Plin, Ploop
 
     def modify_template(self, params):
-        # Modify the template power spectrum by scaling by f and then
-        # reapplying the AP effect.
+        # Modify the template power spectrum by scaling by f and then reapplying the AP effect.
         alpha_perp, alpha_par, fsigma8 = params
-        f = fsigma8 / self.sigma8
+        self.correlator.bird.f = fsigma8 / self.sigma8
 
-        allk = np.concatenate([self.correlator.co.k for i in range(self.correlator.co.Nl)]).reshape(-1, 1)
         P11l_AP, Pctl_AP, Ploopl_AP, Pnlol_AP = self.correlator.projection.AP(
             bird=self.correlator.bird, q=[alpha_perp, alpha_par], overwrite=False
         )
-        Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * f, f ** 2]), P11l_AP), axis=1)
-        Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
-        Plin = np.hstack((allk, Plin))
-        Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploopl_AP), axis=0)
-        Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * f, 2.0 * f, 2.0 * f]), Pctl_AP)
-        Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
-        if self.correlator.bird.with_nlo_bias:
-            Ploop3 = np.concatenate(np.einsum("lnk->lkn", self.correlator.bird.Pnlol), axis=0)
-            Ploop = np.hstack((allk, Ploop1, Ploop2, Ploop3))
-        else:
-            Ploop = np.hstack((allk, Ploop1, Ploop2))
+        Plin, Ploop = self.correlator.bird.formatTaylorPs(Ps=[P11l_AP, Ploopl_AP, Pctl_AP, Pnlol_AP])
+        Ploop_compressed = np.empty((12, len(Ploop[0, :])))
+        Ploop_compressed[]
+
         Plin = np.swapaxes(Plin.reshape((3, Plin.shape[-2] // 3, Plin.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
         Ploop = np.swapaxes(Ploop.reshape((3, Ploop.shape[-2] // 3, Ploop.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
 
@@ -918,7 +909,6 @@ def format_pardict(pardict):
     pardict["xfit_min"] = np.array(pardict["xfit_min"]).astype(float)
     pardict["xfit_max"] = np.array(pardict["xfit_max"]).astype(float)
     pardict["order"] = int(pardict["order"])
-    pardict["template_order"] = int(pardict["template_order"])
 
     return pardict
 

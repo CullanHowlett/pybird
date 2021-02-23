@@ -13,6 +13,7 @@ if __name__ == "__main__":
 
     ntot = (2 * float(pardict["order"]) + 1) ** len(pardict["freepar"])
     lenbatch = ntot / njobs
+    print(lenbatch)
 
     linfailed = []
     loopfailed = []
@@ -34,6 +35,7 @@ if __name__ == "__main__":
             Clin = np.load(os.path.join(pardict["outpk"], "Clin_run%d.npy" % i))
             Plin_noAP = np.load(os.path.join(pardict["outpk"], "Plin_run%d_noAP.npy" % i))
             Clin_noAP = np.load(os.path.join(pardict["outpk"], "Clin_run%d_noAP.npy" % i))
+            print(len(Plin), len(Plin_noAP), len(Clin), len(Clin_noAP))
             if (
                 lenbatch != len(Plin)
                 or lenbatch != len(Clin)
