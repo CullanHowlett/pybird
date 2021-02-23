@@ -210,7 +210,7 @@ class Bird(object):
             #     self.G1 = 1.
 
     def setBias(self, bias):
-        """ Given an array of EFT parameters, set them among linear, loops and counter terms, and among multipoles
+        """Given an array of EFT parameters, set them among linear, loops and counter terms, and among multipoles
 
         Parameters
         ----------
@@ -451,7 +451,7 @@ class Bird(object):
                 )
 
     def setPs(self, bs, setfull=True):
-        """ For option: which='full'. Given an array of EFT parameters, multiplies them accordingly to the power spectrum multipole terms and adds the resulting terms together per loop order
+        """For option: which='full'. Given an array of EFT parameters, multiplies them accordingly to the power spectrum multipole terms and adds the resulting terms together per loop order
 
         Parameters
         ----------
@@ -474,7 +474,7 @@ class Bird(object):
             self.setfullPs()
 
     def setCf(self, bs, setfull=True):
-        """ For option: which='full'. Given an array of EFT parameters, multiply them accordingly to the correlation function multipole terms
+        """For option: which='full'. Given an array of EFT parameters, multiply them accordingly to the correlation function multipole terms
 
         Parameters
         ----------
@@ -496,7 +496,7 @@ class Bird(object):
             self.setfullCf()
 
     def setPsCf(self, bs, setfull=True):
-        """ For option: which='full'. Given an array of EFT parameters, multiply them accordingly to the power spectrum and correlation function multipole terms
+        """For option: which='full'. Given an array of EFT parameters, multiply them accordingly to the power spectrum and correlation function multipole terms
 
         Parameters
         ----------
@@ -854,7 +854,7 @@ class Bird(object):
         self.Plooplf[:, 11] = self.Ploopl[:, 21]  # *b4*b4
 
     def setreducePslb(self, bs):
-        """ For option: which='all'. Given an array of EFT parameters, multiply them accordingly to the power spectrum multipole regrouped terms and adds the resulting terms together per loop order.
+        """For option: which='all'. Given an array of EFT parameters, multiply them accordingly to the power spectrum multipole regrouped terms and adds the resulting terms together per loop order.
 
         Parameters
         ----------
@@ -879,7 +879,7 @@ class Bird(object):
         self.fullPs = Ps0 + Ps1
 
     def setreduceCflb(self, bs):
-        """ For option: which='all'. Given an array of EFT parameters, multiply them accordingly to the correlation multipole regrouped terms and adds the resulting terms together per loop order.
+        """For option: which='all'. Given an array of EFT parameters, multiply them accordingly to the correlation multipole regrouped terms and adds the resulting terms together per loop order.
 
         Parameters
         ----------
@@ -914,7 +914,40 @@ class Bird(object):
         Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), self.P11l), axis=1)
         Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
         Plin = np.hstack((allk, Plin))
-        Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Ploopl), axis=0)
+        if self.co.Nloop is 12:
+            Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Ploopl), axis=0)
+        elif self.co.Nloop is 22:
+            Ploop1 = np.einsum(
+                "n,lnk->lnk",
+                np.array(
+                    [
+                        self.f ** 2,
+                        self.f ** 3,
+                        self.f ** 4,
+                        self.f,
+                        self.f ** 2,
+                        self.f ** 3,
+                        self.f,
+                        self.f ** 2,
+                        self.f,
+                        self.f,
+                        self.f ** 2,
+                        1.0,
+                        self.f,
+                        self.f ** 2,
+                        1.0,
+                        self.f,
+                        1.0,
+                        1.0,
+                        self.f,
+                        1.0,
+                        1.0,
+                        1.0,
+                    ]
+                ),
+                self.Ploopl,
+            )
+            Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploop1), axis=0)
         Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), self.Pctl)
         Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
         if self.with_nlo_bias:
@@ -933,7 +966,40 @@ class Bird(object):
         Plin = np.flip(np.einsum("n,lnk->lnk", np.array([1.0, 2.0 * self.f, self.f ** 2]), self.C11l), axis=1)
         Plin = np.concatenate(np.einsum("lnk->lkn", Plin), axis=0)
         Plin = np.hstack((allk, Plin))
-        Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Cloopl), axis=0)
+        if self.co.Nloop is 12:
+            Ploop1 = np.concatenate(np.einsum("lnk->lkn", self.Cloopl), axis=0)
+        elif self.co.Nloop is 22:
+            Ploop1 = np.einsum(
+                "n,lnk->lnk",
+                np.array(
+                    [
+                        self.f ** 2,
+                        self.f ** 3,
+                        self.f ** 4,
+                        self.f,
+                        self.f ** 2,
+                        self.f ** 3,
+                        self.f,
+                        self.f ** 2,
+                        self.f,
+                        self.f,
+                        self.f ** 2,
+                        1.0,
+                        self.f,
+                        self.f ** 2,
+                        1.0,
+                        self.f,
+                        1.0,
+                        1.0,
+                        self.f,
+                        1.0,
+                        1.0,
+                        1.0,
+                    ]
+                ),
+                self.Cloopl,
+            )
+            Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploop1), axis=0)
         Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), self.Cctl)
         Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)
         if self.with_nlo_bias:

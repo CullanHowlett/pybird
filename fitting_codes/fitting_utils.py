@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 
 sys.path.append("../")
 from pybird import pybird
-from tbird.Grid import grid_properties, grid_properties_template, run_camb, run_class
-from tbird.computederivs import get_grids, get_template_grids, get_PSTaylor, get_ParamsTaylor
+from tbird.Grid import grid_properties, run_camb, run_class
+from tbird.computederivs import get_grids, get_PSTaylor, get_ParamsTaylor
 
 # Wrapper around the pybird data and model evaluation
 class BirdModel:
@@ -44,6 +44,7 @@ class BirdModel:
                 self.sigma12,
                 self.r_d,
             ) = run_camb(pardict)
+            self.omega_nu = float(self.pardict["Sum_mnu"]) / 93.14
         else:
             (
                 self.kmod,
@@ -57,11 +58,10 @@ class BirdModel:
                 self.sigma12,
                 self.r_d,
             ) = run_class(pardict)
+            self.omega_nu = float(self.pardict["m_ncdm"]) / 93.14
 
         # Prepare the model
         if self.direct:
-            # print("Direct not currently supported :(")
-            # exit()
             if self.template:
                 self.correlator = self.setup_pybird()
                 self.correlator.compute(
@@ -81,13 +81,21 @@ class BirdModel:
                 self.correlator = self.setup_pybird()
                 self.kin = self.correlator.co.k
         else:
-            if self.template:
-                self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties_template(
-                    pardict, self.fN, self.sigma8
-                )
-            else:
-                self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
+            self.valueref, self.delta, self.flattenedgrid, self.truecrd = grid_properties(pardict)
             self.kin, self.paramsmod, self.linmod, self.loopmod = self.load_model()
+            if self.template:
+                self.correlator = self.setup_pybird()
+                self.correlator.compute(
+                    {
+                        "k11": self.kmod,
+                        "P11": self.Pmod,
+                        "z": float(self.pardict["z_pk"]),
+                        "Omega0_m": self.Om,
+                        "f": self.fN,
+                        "DA": self.Da,
+                        "H": self.Hz,
+                    }
+                )
 
     def setup_pybird(self):
 
@@ -252,6 +260,33 @@ class BirdModel:
             Ploop = np.hstack((allk, Ploop1, Ploop2))
         Plin = np.swapaxes(Plin.reshape((3, Plin.shape[-2] // 3, Plin.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
         Ploop = np.swapaxes(Ploop.reshape((3, Ploop.shape[-2] // 3, Ploop.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
+
+        return Plin, Ploop
+
+    def compute_hybrid(self, params):
+
+        omega_rat = self.valueref[3] / self.valueref[2]
+        omega_cdm = (params[3] - self.omega_nu) / (1.0 + omega_rat)
+        omega_b = omega_rat * omega_cdm
+
+        coords = [self.valueref[0], self.valueref[1], omega_cdm, omega_b]
+
+        if self.pardict["taylor_order"]:
+            dtheta = np.array(coords) - self.valueref
+            Plin = get_PSTaylor(dtheta, self.linmod, self.pardict["taylor_order"])
+            Ploop = get_PSTaylor(dtheta, self.loopmod, self.pardict["taylor_order"])
+        else:
+            Plin = self.linmod(coords)[0]
+            Ploop = self.loopmod(coords)[0]
+        Plin = np.swapaxes(Plin, axis1=1, axis2=2)[:, 1:, :]
+        Ploop = np.swapaxes(Ploop, axis1=1, axis2=2)[:, 1:, :]
+
+        print(np.shape(Plin), np.shape(Ploop))
+
+        self.correlator.bird.P11l = np.einsum("n, kn -> kn", 1.0 / np.array([1.0, 2.0 * self.fN, self.fN ** 2]), Plin)
+        self.correlator.bird.Ploopl = np.einsum(
+            "n, kn -> kn", 1.0 / np.array([2.0, 2.0, 2.0, 2.0 * self.fN, 2.0 * self.fN, 2.0 * self.fN]), Ploop[:, :12]
+        )
 
         return Plin, Ploop
 
