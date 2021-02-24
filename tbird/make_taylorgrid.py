@@ -99,6 +99,10 @@ if __name__ == "__main__":
     allPloop = []
     allClin = []
     allCloop = []
+    allPlin_noAP = []
+    allPloop_noAP = []
+    allClin_noAP = []
+    allCloop_noAP = []
     allParams = []
     allPin = []
     for i, theta in enumerate(arrayred):
@@ -152,12 +156,12 @@ if __name__ == "__main__":
         Plin, Ploop = correlator_noAP.bird.formatTaylorPs()
         Clin, Cloop = correlatorcf_noAP.bird.formatTaylorCf()
         idxcol = np.full([Plin.shape[0], 1], idx)
-        allPlin.append(np.hstack([Plin, idxcol]))
-        allPloop.append(np.hstack([Ploop, idxcol]))
+        allPlin_noAP.append(np.hstack([Plin, idxcol]))
+        allPloop_noAP.append(np.hstack([Ploop, idxcol]))
         idxcol = np.full([Clin.shape[0], 1], idx)
-        allClin.append(np.hstack([Clin, idxcol]))
-        allCloop.append(np.hstack([Cloop, idxcol]))
-        np.save(os.path.join(pardict["outpk"], "Plin_run%s_noAP.npy" % (str(job_no))), np.array(allPlin))
-        np.save(os.path.join(pardict["outpk"], "Ploop_run%s_noAP.npy" % (str(job_no))), np.array(allPloop))
-        np.save(os.path.join(pardict["outpk"], "Clin_run%s_noAP.npy" % (str(job_no))), np.array(allClin))
-        np.save(os.path.join(pardict["outpk"], "Cloop_run%s_noAP.npy" % (str(job_no))), np.array(allCloop))
+        allClin_noAP.append(np.hstack([Clin, idxcol]))
+        allCloop_noAP.append(np.hstack([Cloop, idxcol]))
+        np.save(os.path.join(pardict["outpk"], "Plin_run%s_noAP.npy" % (str(job_no))), np.array(allPlin_noAP))
+        np.save(os.path.join(pardict["outpk"], "Ploop_run%s_noAP.npy" % (str(job_no))), np.array(allPloop_noAP))
+        np.save(os.path.join(pardict["outpk"], "Clin_run%s_noAP.npy" % (str(job_no))), np.array(allClin_noAP))
+        np.save(os.path.join(pardict["outpk"], "Cloop_run%s_noAP.npy" % (str(job_no))), np.array(allCloop_noAP))
