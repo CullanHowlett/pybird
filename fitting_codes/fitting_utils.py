@@ -246,8 +246,9 @@ class BirdModel:
             bird=self.correlator.bird, q=[alpha_perp, alpha_par], overwrite=False
         )
         Plin, Ploop = self.correlator.bird.formatTaylorPs(Ps=[P11l_AP, Ploopl_AP, Pctl_AP, Pnlol_AP])
-        Ploop_compressed = np.empty((12, len(Ploop[0, :])))
-        Ploop_compressed[]
+
+        sum_cols = [0, 1, 4, 7, 9, 10, 12, 15, 17, 18, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+        Ploop = np.array([np.sum(Ploop[:, sum_cols[i] : sum_cols[i + 1]], axis=1) for i in range(20)]).T
 
         Plin = np.swapaxes(Plin.reshape((3, Plin.shape[-2] // 3, Plin.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
         Ploop = np.swapaxes(Ploop.reshape((3, Ploop.shape[-2] // 3, Ploop.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
