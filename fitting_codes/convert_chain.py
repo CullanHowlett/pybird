@@ -26,9 +26,9 @@ if __name__ == "__main__":
 
     # Compute the values at the central point
     if pardict["code"] == "CAMB":
-        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
+        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma8_0_fid, sigma12_fid, r_d_fid = run_camb(pardict)
     else:
-        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_class(pardict)
+        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma8_0_fid, sigma12_fid, r_d_fid = run_class(pardict)
 
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
@@ -64,18 +64,18 @@ if __name__ == "__main__":
         if i % 1000 == 0:
             print(i)
         ln10As, h, omega_cdm, b1 = vals[:4]
-        omega_b = birdmodel.valueref[3]
+        omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
         if np.any(np.less([ln10As, h, omega_cdm, omega_b], lower_bounds)) or np.any(
             np.greater([ln10As, h, omega_cdm, omega_b], upper_bounds)
         ):
             continue
-        Om, Da, Hz, f, sigma8, sigma12, r_d = birdmodel.compute_params([ln10As, h, omega_cdm, omega_b])
+        Om, Da, Hz, f, sigma8, sigma8_0, sigma12, r_d = birdmodel.compute_params([ln10As, h, omega_cdm, omega_b])
         alpha_perp = (Da / h) * (float(pardict["h"]) / Da_fid) * (r_d_fid / (r_d))
         alpha_par = (float(pardict["h"]) * Hz_fid) / (h * Hz) * (r_d_fid / (r_d))
         chainvals.append(
             (
-                ln10As,
-                100.0*h,
+                np.exp(ln10As) / 1.0e1,
+                100.0 * h,
                 omega_cdm,
                 omega_b,
                 alpha_perp,
@@ -85,6 +85,7 @@ if __name__ == "__main__":
                 100.0 * h * Hz,
                 f,
                 sigma8,
+                sigma8_0,
                 sigma12,
                 b1,
                 loglike,

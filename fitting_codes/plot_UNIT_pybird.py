@@ -23,9 +23,9 @@ if __name__ == "__main__":
     pardict = ConfigObj(configfile)
     pardict = format_pardict(pardict)
     if pardict["code"] == "CAMB":
-        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_camb(pardict)
+        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma8_0_fid, sigma12_fid, r_d_fid = run_camb(pardict)
     else:
-        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma12_fid, r_d_fid = run_class(pardict)
+        _, _, Om_fid, Da_fid, Hz_fid, fN_fid, sigma8_fid, sigma8_0_fid, sigma12_fid, r_d_fid = run_class(pardict)
 
     # Set the chainfiles and names for each chain
     if pardict["do_corr"]:
@@ -64,17 +64,19 @@ if __name__ == "__main__":
         ]
     else:
         chainfiles = [
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_4order_hex_marg_fixedrat.hdf5",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_4order_hex_marg_BBNprior.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_3order_hex_marg_fixedrat.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_3order_hex_marg_BBNprior.hdf5",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/output_files/P_cb/chain_UNIT_HODsnap97_ELGv1_3Gpc_covFixAmp_smallgrid_BBNprior_pk_0.20hex0.20_2order_hex_marg.hdf5",
         ]
         figfile = [
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_4order_hex_marg.pdf",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_4order_hex_marg_1d.pdf",
-            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_4order_hex_marg_summary.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_3order_hex_marg.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_3order_hex_marg_1d.pdf",
+            "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/New_chain_UNIT_HODsnap97_ELGv1_3Gpc_FixAmp_pk_0.20hex0.20_3order_hex_marg_summary.pdf",
         ]
         names = [
             r"$\mathrm{Fixed}\,\Omega_{b}/\Omega_{cdm}$",
             r"$\mathrm{BBN\,Prior}$",
+            r"$\mathrm{Old\,Chain\,BBN\,Prior}$",
         ]
 
     truths = {
@@ -94,7 +96,9 @@ if __name__ == "__main__":
 
         burntin, bestfit, like = read_chain_backend(chainfile)
         burntin[:, 0] = np.exp(burntin[:, 0]) / 1.0e1
-        omega_b = float(pardict["omega_b"]) / float(pardict["omega_cdm"]) * burntin[:, 2] if chaini == 0 else burntin[:, 3]
+        omega_b = (
+            float(pardict["omega_b"]) / float(pardict["omega_cdm"]) * burntin[:, 2] if chaini == 0 else burntin[:, 3]
+        )
         Omega_m = (burntin[:, 2] + omega_b + (0.06 / 93.14)) / burntin[:, 1] ** 2
         paramnames = [r"$A_{s}\times 10^{9}$", r"$h$", r"$\omega_{cdm}$", r"$\Omega_{m}$"]
         c.add_chain(

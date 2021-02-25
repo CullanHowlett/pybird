@@ -13,6 +13,7 @@ from fitting_codes.fitting_utils import (
     do_optimization,
 )
 
+
 def do_emcee(func, start):
 
     import emcee
@@ -27,7 +28,7 @@ def do_emcee(func, start):
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s_BBNprior.hdf5"
+    fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s_fixedrat.hdf5"
     fitlim = birdmodel.pardict["xfit_min"][0] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][0]
     fitlimhex = birdmodel.pardict["xfit_min"][2] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][2]
 
@@ -87,6 +88,7 @@ def do_emcee(func, start):
             old_tau = tau
             index += 1
 
+
 def lnpost(params):
 
     # This returns the posterior distribution which is given by the log prior plus the log likelihood
@@ -106,9 +108,9 @@ def lnprior(params, birdmodel):
     else:
         b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = params[-11:]
 
-    ln10As, h, omega_cdm, omega_b = params[:4]
-    #ln10As, h, omega_cdm = params[:3]
-    #omega_b = birdmodel.valueref[3]/birdmodel.valueref[2] * omega_cdm
+    # ln10As, h, omega_cdm, omega_b = params[:4]
+    ln10As, h, omega_cdm = params[:3]
+    omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
 
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
@@ -120,8 +122,8 @@ def lnprior(params, birdmodel):
         return -np.inf
 
     # BBN (D/H) inspired prior on omega_b
-    omega_b_prior = -0.5 * (omega_b - birdmodel.valueref[3]) ** 2 / 0.00037 ** 2
-    #omega_b_prior = 0.0
+    # omega_b_prior = -0.5 * (omega_b - birdmodel.valueref[3]) ** 2 / 0.00037 ** 2
+    omega_b_prior = 0.0
 
     # Flat prior for b1
     if b1 < 0.0 or b1 > 3.0:
@@ -201,8 +203,8 @@ def lnlike(params, birdmodel, fittingdata, plt):
         ]
 
     # Get the bird model
-    ln10As, h, omega_cdm, omega_b = params[:4]
-    #omega_b = birdmodel.valueref[3]/birdmodel.valueref[2] * omega_cdm
+    ln10As, h, omega_cdm = params[:3]
+    omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
 
     Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
@@ -263,12 +265,12 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     if birdmodel.pardict["do_marg"]:
-        start = np.concatenate([birdmodel.valueref[:4], [1.3, 0.5, 0.5]])
+        start = np.concatenate([birdmodel.valueref[:3], [1.3, 0.5, 0.5]])
     else:
-        start = np.concatenate([birdmodel.valueref[:4], [1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]])
+        start = np.concatenate([birdmodel.valueref[:3], [1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]])
 
     # Does an optimization
-    # result = do_optimization(lambda *args: -lnpost(*args), start, birdmodel, fittingdata, plt)
+    # result = do_optimization(lambda *args: -lnpost(*args), start)
 
     # Does an MCMC
     do_emcee(lnpost, start)

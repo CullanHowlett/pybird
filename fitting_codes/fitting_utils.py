@@ -115,7 +115,7 @@ class BirdModel:
                 "optiresum": optiresum,
                 "with_bias": False,
                 "with_nlo_bias": True,
-                "with_time": False,
+                "with_time": self.template,
                 "with_AP": True,
                 "kmax": kmax,
                 "DA_AP": self.Da,
@@ -262,16 +262,7 @@ class BirdModel:
         omega_b = omega_rat * omega_cdm
 
         coords = [self.valueref[0], self.valueref[1], omega_cdm, omega_b]
-
-        if self.pardict["taylor_order"]:
-            dtheta = np.array(coords) - self.valueref
-            Plin = get_PSTaylor(dtheta, self.linmod, self.pardict["taylor_order"])
-            Ploop = get_PSTaylor(dtheta, self.loopmod, self.pardict["taylor_order"])
-        else:
-            Plin = self.linmod(coords)[0]
-            Ploop = self.loopmod(coords)[0]
-        Plin = np.swapaxes(Plin, axis1=1, axis2=2)[:, 1:, :]
-        Ploop = np.swapaxes(Ploop, axis1=1, axis2=2)[:, 1:, :]
+        Plin, Ploop = self.compute_pk(coords)
 
         print(np.shape(Plin), np.shape(Ploop))
 
