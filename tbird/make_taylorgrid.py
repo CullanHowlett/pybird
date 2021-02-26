@@ -72,7 +72,7 @@ if __name__ == "__main__":
             "optiresum": False,
             "with_bias": False,
             "with_nlo_bias": True,
-            "with_time": True,
+            "with_time": False,
             "kmax": 0.5,
             "with_AP": False,
             "DA_AP": Da_fid,
@@ -87,7 +87,7 @@ if __name__ == "__main__":
             "optiresum": True,
             "with_bias": False,
             "with_nlo_bias": True,
-            "with_time": True,
+            "with_time": False,
             "with_AP": False,
             "DA_AP": Da_fid,
             "H_AP": Hz_fid,
@@ -154,6 +154,8 @@ if __name__ == "__main__":
         np.save(os.path.join(pardict["outpk"], "Params_run%s.npy" % (str(job_no))), np.array(allParams))
 
         Plin, Ploop = correlator_noAP.bird.formatTaylorPs()
+        print(np.shape(Ploop))
+        exit()
         Clin, Cloop = correlatorcf_noAP.bird.formatTaylorCf()
         idxcol = np.full([Plin.shape[0], 1], idx)
         allPlin_noAP.append(np.hstack([Plin, idxcol]))

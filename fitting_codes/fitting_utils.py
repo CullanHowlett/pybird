@@ -115,7 +115,7 @@ class BirdModel:
                 "optiresum": optiresum,
                 "with_bias": False,
                 "with_nlo_bias": True,
-                "with_time": self.template,
+                "with_time": not (self.template),
                 "with_AP": True,
                 "kmax": kmax,
                 "DA_AP": self.Da,
