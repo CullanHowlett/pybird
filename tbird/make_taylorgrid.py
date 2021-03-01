@@ -154,8 +154,6 @@ if __name__ == "__main__":
         np.save(os.path.join(pardict["outpk"], "Params_run%s.npy" % (str(job_no))), np.array(allParams))
 
         Plin, Ploop = correlator_noAP.bird.formatTaylorPs()
-        print(np.shape(Ploop))
-        exit()
         Clin, Cloop = correlatorcf_noAP.bird.formatTaylorCf()
         idxcol = np.full([Plin.shape[0], 1], idx)
         allPlin_noAP.append(np.hstack([Plin, idxcol]))
