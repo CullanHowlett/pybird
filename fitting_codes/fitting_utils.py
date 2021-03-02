@@ -147,7 +147,7 @@ class BirdModel:
                     )
                 else:
                     linmod = np.load(
-                        os.path.join(self.pardict["outgrid"], "DerPlin_%s_noAP.npy" % gridname),
+                        os.path.join(self.pardict["outgrid"], "DerPlin_%s.npy" % gridname),
                         allow_pickle=True,
                     )
                     loopmod = np.load(
@@ -258,20 +258,55 @@ class BirdModel:
     def compute_hybrid(self, params):
 
         omega_rat = self.valueref[3] / self.valueref[2]
-        omega_cdm = (params[3] - self.omega_nu) / (1.0 + omega_rat)
+        omega_cdm = (params[3] * self.valueref[1] ** 2 - self.omega_nu) / (1.0 + omega_rat)
         omega_b = omega_rat * omega_cdm
 
         coords = [self.valueref[0], self.valueref[1], omega_cdm, omega_b]
         Plin, Ploop = self.compute_pk(coords)
 
-        print(np.shape(Plin), np.shape(Ploop))
-
-        self.correlator.bird.P11l = np.einsum("n, kn -> kn", 1.0 / np.array([1.0, 2.0 * self.fN, self.fN ** 2]), Plin)
-        self.correlator.bird.Ploopl = np.einsum(
-            "n, kn -> kn", 1.0 / np.array([2.0, 2.0, 2.0, 2.0 * self.fN, 2.0 * self.fN, 2.0 * self.fN]), Ploop[:, :12]
+        self.correlator.bird.P11l = np.einsum(
+            "n,lnk->lnk", 1.0 / np.array([1.0, 2.0 * self.fN, self.fN ** 2]), Plin[:, ::-1, :]
         )
+        self.correlator.bird.Ploopl = np.einsum(
+            "n,lnk->lnk",
+            1.0
+            / np.array(
+                [
+                    self.fN ** 2,
+                    self.fN ** 3,
+                    self.fN ** 4,
+                    self.fN,
+                    self.fN ** 2,
+                    self.fN ** 3,
+                    self.fN,
+                    self.fN ** 2,
+                    self.fN,
+                    self.fN,
+                    self.fN ** 2,
+                    1.0,
+                    self.fN,
+                    self.fN ** 2,
+                    1.0,
+                    self.fN,
+                    1.0,
+                    1.0,
+                    self.fN,
+                    1.0,
+                    1.0,
+                    1.0,
+                ]
+            ),
+            Ploop[:, :22, :],
+        )
+        self.correlator.bird.Pctl = np.einsum(
+            "n,lnk->lnk",
+            1.0 / np.array([2.0, 2.0, 2.0, 2.0 * self.fN, 2.0 * self.fN, 2.0 * self.fN]),
+            Ploop[:, 22:28],
+        )
+        if self.correlator.bird.with_nlo_bias:
+            self.correlator.bird.Pnlol[:, 0, :] = Ploop[:, 28]
 
-        return Plin, Ploop
+        return self.modify_template(params[:3])
 
     def compute_model(self, cvals, plin, ploop, x_data):
 

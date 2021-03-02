@@ -114,7 +114,7 @@ def lnprior(params, birdmodel):
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
 
     omega_rat = birdmodel.valueref[3] / birdmodel.valueref[2]
-    omega_cdm = (params[3] - birdmodel.omega_nu) / (1.0 + omega_rat)
+    omega_cdm = (params[3] * birdmodel.valueref[1] ** 2 - birdmodel.omega_nu) / (1.0 + omega_rat)
     omega_b = omega_rat * omega_cdm
 
     # Flat priors for h, omega_cdm and omega_b (based on free parameter omega_m)
@@ -259,16 +259,14 @@ if __name__ == "__main__":
         plt = create_plot(pardict, fittingdata)
 
     if pardict["do_marg"]:
-        start = np.array(
-            [1.0, 1.0, birdmodel.fN * birdmodel.sigma8, birdmodel.Om * float(pardict["h"]) ** 2, 1.3, 0.5, 0.5]
-        )
+        start = np.array([1.0, 1.0, birdmodel.fN * birdmodel.sigma8, birdmodel.Om, 1.3, 0.5, 0.5])
     else:
         start = np.array(
             [
                 1.0,
                 1.0,
                 birdmodel.fN * birdmodel.sigma8,
-                birdmodel.Om * float(pardict["h"]) ** 2,
+                birdmodel.Om,
                 1.3,
                 0.5,
                 0.5,
@@ -284,7 +282,7 @@ if __name__ == "__main__":
         )
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start)
+    # result = do_optimization(lambda *args: -lnpost(*args), start)
 
     # Does an MCMC
-    # do_emcee(lnpost, start)
+    do_emcee(lnpost, start)
