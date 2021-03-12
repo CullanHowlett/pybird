@@ -33,7 +33,7 @@ if __name__ == "__main__":
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s_fixedrat"
+    fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s_planck"
     fitlim = birdmodel.pardict["xfit_min"][0] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][0]
     fitlimhex = birdmodel.pardict["xfit_min"][2] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][2]
 
@@ -63,8 +63,9 @@ if __name__ == "__main__":
     for i, (vals, loglike) in enumerate(zip(burntin, like)):
         if i % 1000 == 0:
             print(i)
-        ln10As, h, omega_cdm, b1 = vals[:4]
-        omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
+        ln10As, h, omega_cdm, omega_b = vals[:4]
+        # ln10As, h, omega_cdm = vals[:3]
+        # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
         if np.any(np.less([ln10As, h, omega_cdm, omega_b], lower_bounds)) or np.any(
             np.greater([ln10As, h, omega_cdm, omega_b], upper_bounds)
         ):
@@ -74,7 +75,7 @@ if __name__ == "__main__":
         alpha_par = (float(pardict["h"]) * Hz_fid) / (h * Hz) * (r_d_fid / (r_d))
         chainvals.append(
             (
-                np.exp(ln10As) / 1.0e1,
+                ln10As,
                 100.0 * h,
                 omega_cdm,
                 omega_b,
@@ -87,7 +88,6 @@ if __name__ == "__main__":
                 sigma8,
                 sigma8_0,
                 sigma12,
-                b1,
                 loglike,
             )
         )

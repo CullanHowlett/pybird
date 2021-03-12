@@ -258,7 +258,7 @@ class BirdModel:
     def compute_hybrid(self, params):
 
         omega_rat = self.valueref[3] / self.valueref[2]
-        omega_cdm = (params[3] * self.valueref[1] ** 2 - self.omega_nu) / (1.0 + omega_rat)
+        omega_cdm = (params[3] - self.omega_nu) / (1.0 + omega_rat)
         omega_b = omega_rat * omega_cdm
 
         coords = [self.valueref[0], self.valueref[1], omega_cdm, omega_b]
@@ -1023,3 +1023,27 @@ def read_chain_backend(chainfile):
     bestid = np.argmax(log_prob_samples)
 
     return samples, copy.copy(samples[bestid]), log_prob_samples
+
+
+def get_Planck(filename, nfiles, usecols=(6, 29, 3, 2), raw=False):
+
+    weights = []
+    chain = []
+    for i in range(1, nfiles):
+        strin = str("%s_%d.txt" % (filename, i))
+        data = np.array(pd.read_csv(strin, delim_whitespace=True, header=None))
+        weights.append(data[:, 0])
+        chain.append(data[:, list(usecols)])
+    weights = np.concatenate(weights)
+    chain = np.concatenate(chain)
+
+    # Need to convert H0 to h if requested
+    index = np.where(np.array(usecols) == 29)[0]
+    if len(index) > 0:
+        chain[:, index] /= 100.0
+
+    if raw:
+        return weights, chain
+    else:
+        cov = np.cov(chain, rowvar=False, aweights=weights)
+        return np.average(chain, axis=0, weights=weights), cov, np.linalg.inv(cov)

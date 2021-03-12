@@ -268,7 +268,7 @@ if __name__ == "__main__":
         )
 
     # Does an optimization
-    result = do_optimization(lambda *args: -lnpost(*args), start)
+    # result = do_optimization(lambda *args: -lnpost(*args), start)
 
     # Does an MCMC
-    # do_emcee(lnpost, start)
+    do_emcee(lnpost, start)

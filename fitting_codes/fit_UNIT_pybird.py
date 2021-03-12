@@ -11,6 +11,7 @@ from fitting_codes.fitting_utils import (
     update_plot,
     format_pardict,
     do_optimization,
+    get_Planck,
 )
 
 
@@ -28,7 +29,7 @@ def do_emcee(func, start):
     marg_str = "marg" if pardict["do_marg"] else "all"
     hex_str = "hex" if pardict["do_hex"] else "nohex"
     dat_str = "xi" if pardict["do_corr"] else "pk"
-    fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s_fixedrat.hdf5"
+    fmt_str = "%s_%s_%2dhex%2d_%s_%s_%s.hdf5" if pardict["do_corr"] else "%s_%s_%3.2lfhex%3.2lf_%s_%s_%s_planck.hdf5"
     fitlim = birdmodel.pardict["xfit_min"][0] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][0]
     fitlimhex = birdmodel.pardict["xfit_min"][2] if pardict["do_corr"] else birdmodel.pardict["xfit_max"][2]
 
@@ -108,9 +109,9 @@ def lnprior(params, birdmodel):
     else:
         b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = params[-11:]
 
-    # ln10As, h, omega_cdm, omega_b = params[:4]
-    ln10As, h, omega_cdm = params[:3]
-    omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
+    ln10As, h, omega_cdm, omega_b = params[:4]
+    # ln10As, h, omega_cdm = params[:3]
+    # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
 
     lower_bounds = birdmodel.valueref - birdmodel.pardict["order"] * birdmodel.delta
     upper_bounds = birdmodel.valueref + birdmodel.pardict["order"] * birdmodel.delta
@@ -125,6 +126,11 @@ def lnprior(params, birdmodel):
     # omega_b_prior = -0.5 * (omega_b - birdmodel.valueref[3]) ** 2 / 0.00037 ** 2
     omega_b_prior = 0.0
 
+    # Planck prior
+    diff = params[:4] - birdmodel.valueref
+    Planck_prior = -0.5 * diff @ planck_icov @ diff
+    # Planck_prior = 0.0
+
     # Flat prior for b1
     if b1 < 0.0 or b1 > 3.0:
         return -np.inf
@@ -138,7 +144,7 @@ def lnprior(params, birdmodel):
 
     if birdmodel.pardict["do_marg"]:
 
-        return omega_b_prior + c4_prior
+        return Planck_prior + omega_b_prior + c4_prior
 
     else:
         # Gaussian prior for b3 of width 2 centred on 0
@@ -166,7 +172,8 @@ def lnprior(params, birdmodel):
         bnlo_prior = -0.5 * 0.25 * bnlo ** 2
 
         return (
-            omega_b_prior
+            Planck_prior
+            + omega_b_prior
             + c4_prior
             + b3_prior
             + cct_prior
@@ -203,8 +210,8 @@ def lnlike(params, birdmodel, fittingdata, plt):
         ]
 
     # Get the bird model
-    ln10As, h, omega_cdm = params[:3]
-    omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
+    ln10As, h, omega_cdm, omega_b = params[:4]
+    # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
 
     Plin, Ploop = birdmodel.compute_pk([ln10As, h, omega_cdm, omega_b])
     P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"])
@@ -259,15 +266,19 @@ if __name__ == "__main__":
     # Set up the BirdModel
     birdmodel = BirdModel(pardict, template=False)
 
+    # Read in and create a Planck prior covariance matrix
+    Planck_file = "/Volumes/Work/UQ/CAMB/COM_CosmoParams_fullGrid_R3.01/base/plikHM_TTTEEE_lowl_lowE_lensing/base_plikHM_TTTEEE_lowl_lowE_lensing"
+    planck_mean, planck_cov, planck_icov = get_Planck(Planck_file, 4)
+
     # Plotting (for checking/debugging, should turn off for production runs)
     plt = None
     if plot_flag:
         plt = create_plot(pardict, fittingdata)
 
     if birdmodel.pardict["do_marg"]:
-        start = np.concatenate([birdmodel.valueref[:3], [1.3, 0.5, 0.5]])
+        start = np.concatenate([birdmodel.valueref[:4], [1.3, 0.5, 0.5]])
     else:
-        start = np.concatenate([birdmodel.valueref[:3], [1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]])
+        start = np.concatenate([birdmodel.valueref[:4], [1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]])
 
     # Does an optimization
     # result = do_optimization(lambda *args: -lnpost(*args), start)
