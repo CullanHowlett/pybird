@@ -1,0 +1,6 @@
+/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/Grids/z1_NGC_s10fixed_grids/
+/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/Grids/z1_SGC_s10fixed_grids/
+/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/Grids/z2_NGC_s10fixed_grids/
+/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/Grids/z2_SGC_s10fixed_grids/
+/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/Grids/z3_NGC_s10fixed_grids/
+/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/Grids/z3_SGC_s10fixed_grids/

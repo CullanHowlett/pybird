@@ -4,6 +4,7 @@ import camb
 from classy import Class
 from scipy.special import hyp2f1
 
+
 def smooth_hinton2017(ks, pk, degree=13, sigma=1, weight=0.5):
     """ Smooth power spectrum based on Hinton 2017 polynomial method """
     log_ks = np.log(ks)
@@ -18,8 +19,9 @@ def smooth_hinton2017(ks, pk, degree=13, sigma=1, weight=0.5):
     pk_smoothed = np.exp(polyval)
     return pk_smoothed
 
+
 def grid_properties(pardict):
-    """ Computes some useful properties of the grid given the parameters read from the input file
+    """Computes some useful properties of the grid given the parameters read from the input file
 
     Parameters
     ----------
@@ -50,7 +52,7 @@ def grid_properties(pardict):
 
 
 def grid_properties_template(pardict, fN, sigma8):
-    """ Computes some useful properties of the grid given the parameters read from the input file
+    """Computes some useful properties of the grid given the parameters read from the input file
 
     Parameters
     ----------
@@ -81,7 +83,7 @@ def grid_properties_template(pardict, fN, sigma8):
 
 
 def grid_properties_template_hybrid(pardict, fsigma8, omegamh2):
-    """ Computes some useful properties of the grid given the parameters read from the input file
+    """Computes some useful properties of the grid given the parameters read from the input file
 
     Parameters
     ----------
@@ -110,8 +112,9 @@ def grid_properties_template_hybrid(pardict, fsigma8, omegamh2):
 
     return valueref, delta, flattenedgrid, truecrd
 
-def run_camb(pardict):
-    """ Runs an instance of CAMB given the cosmological parameters in pardict
+
+def run_camb(pardict, redindex=0):
+    """Runs an instance of CAMB given the cosmological parameters in pardict
 
     Parameters
     ----------
@@ -152,7 +155,7 @@ def run_camb(pardict):
         pars.set_dark_energy(w=float(parlinear["w0_fld"]), dark_energy_model="fluid")
     pars.InitPower.set_params(As=float(parlinear["A_s"]), ns=float(parlinear["n_s"]))
     pars.set_matter_power(
-        redshifts=[float(parlinear["z_pk"]), 0.0], kmax=float(parlinear["P_k_max_h/Mpc"]), nonlinear=False
+        redshifts=[float(parlinear["z_pk"][redindex]), 0.0], kmax=float(parlinear["P_k_max_h/Mpc"]), nonlinear=False
     )
     pars.set_cosmology(
         H0=float(parlinear["H0"]),
@@ -170,13 +173,15 @@ def run_camb(pardict):
 
     # Get the power spectrum
     kin, _, Plin = results.get_matter_power_spectrum(
-        minkh=2.0e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=200,
+        minkh=2.0e-5,
+        maxkh=float(parlinear["P_k_max_h/Mpc"]),
+        npoints=200,
     )
 
     # Get some derived quantities
     Omega_m = results.get_Omega("cdm") + results.get_Omega("baryon") + results.get_Omega("nu")
-    Da = results.angular_diameter_distance(float(parlinear["z_pk"])) * float(parlinear["H0"]) / 299792.458
-    H = results.hubble_parameter(float(parlinear["z_pk"])) / float(parlinear["H0"])
+    Da = results.angular_diameter_distance(float(parlinear["z_pk"][redindex])) * float(parlinear["H0"]) / 299792.458
+    H = results.hubble_parameter(float(parlinear["z_pk"][redindex])) / float(parlinear["H0"])
     fsigma8 = results.get_fsigma8()[0]
     sigma8 = results.get_sigma8()[0]
     sigma12 = results.get_sigmaR(12.0, hubble_units=False)[0]
@@ -185,8 +190,8 @@ def run_camb(pardict):
     return kin, Plin[-1], Omega_m, Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
 
 
-def run_class(pardict):
-    """ Runs an instance of CAMB given the cosmological parameters in pardict
+def run_class(pardict, redindex=0):
+    """Runs an instance of CAMB given the cosmological parameters in pardict
 
     Parameters
     ----------
@@ -239,39 +244,45 @@ def run_class(pardict):
             "m_ncdm": parlinear["m_ncdm"],
         }
     )
-    M.set({"output": "mPk", "P_k_max_1/Mpc": float(parlinear["P_k_max_h/Mpc"]), "z_max_pk": float(parlinear["z_pk"])})
+    M.set(
+        {
+            "output": "mPk",
+            "P_k_max_1/Mpc": float(parlinear["P_k_max_h/Mpc"]),
+            "z_max_pk": float(parlinear["z_pk"][redindex]),
+        }
+    )
     M.compute()
 
     kin = np.logspace(np.log10(2.0e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
-    Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"])) * M.h() ** 3 for ki in kin])
+    Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"][redindex])) * M.h() ** 3 for ki in kin])
     # Plin = np.array([M.pk_lin(ki * M.h(), 0.0) * M.h() ** 3 for ki in kin])
     # Plin *= (M.scale_independent_growth_factor(float(parlinear["z_pk"])) / M.scale_independent_growth_factor(0.0)) ** 2
 
     # Get some derived quantities
     Omega_m = M.Om_m(0.0)
-    a_z = 1.0 / (1.0 + float(parlinear["z_pk"]))
+    a_z = 1.0 / (1.0 + float(parlinear["z_pk"][redindex]))
     growth_z = a_z * hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -(a_z ** 3) / Omega_m * (1.0 - Omega_m))
     growth_0 = hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -1.0 / Omega_m * (1.0 - Omega_m))
 
-    #print(growth_z / growth_0)
+    # print(growth_z / growth_0)
 
-    #np.savetxt(
+    # np.savetxt(
     #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/pkmodel_UNIT_cosmo_matter.dat",
     #    np.c_[kin, Plin],
     #    header="k    P_lin",
-    #)
+    # )
 
-    #Plin *= (growth_z / growth_0) ** 2
+    # Plin *= (growth_z / growth_0) ** 2
 
-    Da = M.angular_distance(float(parlinear["z_pk"])) * M.Hubble(0.0)
-    H = M.Hubble(float(parlinear["z_pk"])) / M.Hubble(0.0)
-    f = M.scale_independent_growth_factor_f(float(parlinear["z_pk"]))
-    sigma8 = M.sigma(8.0 / M.h(), float(parlinear["z_pk"]))
+    Da = M.angular_distance(float(parlinear["z_pk"][redindex])) * M.Hubble(0.0)
+    H = M.Hubble(float(parlinear["z_pk"][redindex])) / M.Hubble(0.0)
+    f = M.scale_independent_growth_factor_f(float(parlinear["z_pk"][redindex]))
+    sigma8 = M.sigma(8.0 / M.h(), float(parlinear["z_pk"][redindex]))
     sigma8_0 = M.sigma(8.0 / M.h(), 0.0)
-    sigma12 = M.sigma(12.0, float(parlinear["z_pk"]))
+    sigma12 = M.sigma(12.0, float(parlinear["z_pk"][redindex]))
     r_d = M.rs_drag()
 
-    #print(Omega_m, Da, H, f, sigma8, sigma12, r_d, r_d*float(parlinear["H0"])/100.0)
+    # print(Omega_m, Da, H, f, sigma8, sigma12, r_d, r_d*float(parlinear["H0"])/100.0)
 
     return kin, Plin, Omega_m, Da, H, f, sigma8, sigma8_0, sigma12, r_d
 

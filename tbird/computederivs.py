@@ -258,21 +258,30 @@ def get_pder_lin(parref, pi, dx, filename, template=False):
 def get_PSTaylor(dtheta, derivatives, taylor_order):
     # Shape of dtheta: number of free parameters
     # Shape of derivatives: tuple up to third derivative where each element has shape (num free par, multipoles, lenk, columns)
-    t1 = np.einsum("p,pmkb->mkb", dtheta, derivatives[1])
-    t2diag = np.einsum("p,pmkb->mkb", dtheta ** 2, derivatives[2])
-    t2nondiag = np.sum([dtheta[d[0]] * dtheta[d[1]] * d[2] for d in derivatives[3]], axis=0)
-    t3diag = np.einsum("p,pmkb->mkb", dtheta ** 3, derivatives[4])
-    t3semidiagx = np.sum([dtheta[d[0]] ** 2 * dtheta[d[1]] * d[2] for d in derivatives[5]], axis=0)
-    t3semidiagy = np.sum([dtheta[d[0]] * dtheta[d[1]] ** 2 * d[2] for d in derivatives[6]], axis=0)
-    t3nondiag = np.sum([dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]] * d[3] for d in derivatives[7]], axis=0)
-    t4diag = np.einsum("p,pmkb->mkb", dtheta ** 4, derivatives[8])
-    t4semidiagx = np.sum([dtheta[d[0]] ** 3 * dtheta[d[1]] * d[2] for d in derivatives[9]], axis=0)
-    t4semidiagy = np.sum([dtheta[d[0]] * dtheta[d[1]] ** 3 * d[2] for d in derivatives[10]], axis=0)
-    t4semidiagx2 = np.sum([dtheta[d[0]] ** 2 * dtheta[d[1]] * dtheta[d[2]] * d[3] for d in derivatives[11]], axis=0)
-    t4semidiagy2 = np.sum([dtheta[d[0]] * dtheta[d[1]] ** 2 * dtheta[d[2]] * d[3] for d in derivatives[12]], axis=0)
-    t4semidiagz2 = np.sum([dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]] ** 2 * d[3] for d in derivatives[13]], axis=0)
+    t1 = np.einsum("pd,pmkb->dmkb", dtheta, derivatives[1])
+    t2diag = np.einsum("pd,pmkb->dmkb", dtheta ** 2, derivatives[2])
+    t2nondiag = np.sum([np.multiply.outer(dtheta[d[0]] * dtheta[d[1]], d[2]) for d in derivatives[3]], axis=0)
+    t3diag = np.einsum("pd,pmkb->dmkb", dtheta ** 3, derivatives[4])
+    t3semidiagx = np.sum([np.multiply.outer(dtheta[d[0]] ** 2 * dtheta[d[1]], d[2]) for d in derivatives[5]], axis=0)
+    t3semidiagy = np.sum([np.multiply.outer(dtheta[d[0]] * dtheta[d[1]] ** 2, d[2]) for d in derivatives[6]], axis=0)
+    t3nondiag = np.sum(
+        [np.multiply.outer(dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]], d[3]) for d in derivatives[7]], axis=0
+    )
+    t4diag = np.einsum("pd,pmkb->dmkb", dtheta ** 4, derivatives[8])
+    t4semidiagx = np.sum([np.multiply.outer(dtheta[d[0]] ** 3 * dtheta[d[1]], d[2]) for d in derivatives[9]], axis=0)
+    t4semidiagy = np.sum([np.multiply.outer(dtheta[d[0]] * dtheta[d[1]] ** 3, d[2]) for d in derivatives[10]], axis=0)
+    t4semidiagx2 = np.sum(
+        [np.multiply.outer(dtheta[d[0]] ** 2 * dtheta[d[1]] * dtheta[d[2]], d[3]) for d in derivatives[11]], axis=0
+    )
+    t4semidiagy2 = np.sum(
+        [np.multiply.outer(dtheta[d[0]] * dtheta[d[1]] ** 2 * dtheta[d[2]], d[3]) for d in derivatives[12]], axis=0
+    )
+    t4semidiagz2 = np.sum(
+        [np.multiply.outer(dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]] ** 2, d[3]) for d in derivatives[13]], axis=0
+    )
     t4nondiag = np.sum(
-        [dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]] * dtheta[d[3]] * d[4] for d in derivatives[14]], axis=0
+        [np.multiply.outer(dtheta[d[0]] * dtheta[d[1]] * dtheta[d[2]] * dtheta[d[3]], d[4]) for d in derivatives[14]],
+        axis=0,
     )
     allPS = derivatives[0] + t1
     if taylor_order > 1:
