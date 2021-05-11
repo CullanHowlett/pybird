@@ -203,15 +203,20 @@ class BirdModel:
 
     def compute_pk(self, coords):
 
-        if self.pardict["taylor_order"]:
-            dtheta = np.array(coords) - self.valueref[:, None]
-            Plin = get_PSTaylor(dtheta, self.linmod, self.pardict["taylor_order"])
-            Ploop = get_PSTaylor(dtheta, self.loopmod, self.pardict["taylor_order"])
+        if self.direct:
+            Plin, Ploop = self.compute_model_direct(coords)
+            Plin = Plin[:, :, :, None]
+            Ploop = np.swapaxes(Ploop[:, :, :, None], axis1=1, axis2=2)
         else:
-            Plin = self.linmod(coords)[0]
-            Ploop = self.loopmod(coords)[0]
-        Plin = np.transpose(Plin, axes=[1, 3, 2, 0])[:, 1:, :, :]
-        Ploop = np.transpose(Ploop, axes=[1, 2, 3, 0])[:, :, 1:, :]
+            if self.pardict["taylor_order"]:
+                dtheta = np.array(coords) - self.valueref[:, None]
+                Plin = get_PSTaylor(dtheta, self.linmod, self.pardict["taylor_order"])
+                Ploop = get_PSTaylor(dtheta, self.loopmod, self.pardict["taylor_order"])
+            else:
+                Plin = self.linmod(coords)[0]
+                Ploop = self.loopmod(coords)[0]
+            Plin = np.transpose(Plin, axes=[1, 3, 2, 0])[:, 1:, :, :]
+            Ploop = np.transpose(Ploop, axes=[1, 2, 3, 0])[:, :, 1:, :]
 
         return Plin, Ploop
 
@@ -222,9 +227,9 @@ class BirdModel:
         for k, var in enumerate(self.pardict["freepar"]):
             parameters[var] = coords[k]
         if parameters["code"] == "CAMB":
-            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_camb(parameters)
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma8_0, sigma12, r_d = run_camb(parameters)
         else:
-            kin, Pin, Om, Da, Hz, fN, sigma8, sigma12, r_d = run_class(parameters)
+            kin, Pin, Om, Da, Hz, fN, sigma8, sigma8_0, sigma12, r_d = run_class(parameters)
 
         # Get non-linear power spectrum from pybird
         self.correlator.compute(
@@ -242,8 +247,12 @@ class BirdModel:
             self.correlator.bird.formatTaylorCf() if self.pardict["do_corr"] else self.correlator.bird.formatTaylorPs()
         )
 
-        Plin = np.swapaxes(Plin.reshape((3, Plin.shape[-2] // 3, Plin.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
-        Ploop = np.swapaxes(Ploop.reshape((3, Ploop.shape[-2] // 3, Ploop.shape[-1])), axis1=1, axis2=2)[:, 1:, :]
+        Plin = np.swapaxes(Plin.reshape((self.Nl, Plin.shape[-2] // self.Nl, Plin.shape[-1])), axis1=1, axis2=2)[
+            :, 1:, :
+        ]
+        Ploop = np.swapaxes(Ploop.reshape((self.Nl, Ploop.shape[-2] // self.Nl, Ploop.shape[-1])), axis1=1, axis2=2)[
+            :, 1:, :
+        ]
 
         return Plin, Ploop
 

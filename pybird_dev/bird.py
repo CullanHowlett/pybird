@@ -553,8 +553,9 @@ class Bird(object):
         self.C13l = np.einsum("lnx,ln->lnx", self.C13l, self.co.l13)
 
         if self.with_nlo_bias:
-            self.Pnlol = np.einsum("x,x,ln->lnx", self.co.k ** 4, self.P11, np.array([[1.0], [0], [0]]))
-            self.Cnlol = np.einsum("lx,ln->lnx", self.Cnlo, np.array([[1.0], [0], [0]]))
+            mumap = np.array([[1.0], [0], [0]]) if self.co.Nl == 3 else np.array([[1.0], [0]])
+            self.Pnlol = np.einsum("x,x,ln->lnx", self.co.k ** 4, self.P11, mumap)
+            self.Cnlol = np.einsum("lx,ln->lnx", self.Cnlo, mumap)
 
         self.reducePsCfl()
 
