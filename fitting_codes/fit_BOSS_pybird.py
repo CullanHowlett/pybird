@@ -291,7 +291,7 @@ def lnlike(params, birdmodels, fittingdata, plt):
                 ]
             )
 
-        Plin, Ploop = birdmodels[i].compute_pk([ln10As, h, omega_cdm, omega_b])
+        Plin, Ploop = birdmodels[i].compute_pk(np.array([ln10As, h, omega_cdm, omega_b]))
         P_model, P_model_interp = birdmodels[i].compute_model(bs, Plin, Ploop, fittingdata.data["x_data"][i])
         Pi = birdmodels[i].get_Pi_for_marg(
             Ploop, bs[0], float(fittingdata.data["shot_noise"][i]), fittingdata.data["x_data"][i]
@@ -360,7 +360,8 @@ if __name__ == "__main__":
     # Set up the BirdModels
     birdmodels = []
     for i in range(len(pardict["z_pk"])):
-        birdmodels.append(BirdModel(pardict, template=False, redindex=i))
+        birdmodels.append(BirdModel(pardict, direct=True, redindex=i, window=fittingdata.data["windows"][i]))
+        # birdmodels.append(BirdModel(pardict, redindex=i))
 
     # Read in and create a Planck prior covariance matrix
     Planck_file = "/Volumes/Work/UQ/CAMB/COM_CosmoParams_fullGrid_R3.01/base/plikHM_TTTEEE_lowl_lowE_lensing/base_plikHM_TTTEEE_lowl_lowE_lensing"

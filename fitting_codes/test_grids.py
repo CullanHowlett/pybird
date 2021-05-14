@@ -15,11 +15,11 @@ from fitting_codes.fitting_utils import (
 )
 
 
-def plot_comparison(k, pk, k_grid, pk_grid):
+def plot_comparison(k, pk, pk_grid):
 
     plt.errorbar(
         k,
-        k * pk[1],
+        pk_grid[1] / pk[1] - 1.0,
         marker="None",
         color="k",
         linestyle="-",
@@ -28,27 +28,9 @@ def plot_comparison(k, pk, k_grid, pk_grid):
     )
     plt.errorbar(
         k,
-        k * pk[0],
+        pk_grid[0] / pk[0] - 1.0,
         marker="None",
         color="k",
-        linestyle="--",
-        markeredgewidth=1.3,
-        zorder=0,
-    )
-    plt.errorbar(
-        k_grid,
-        k_grid * pk_grid[1],
-        marker="None",
-        color="r",
-        linestyle="-",
-        markeredgewidth=1.3,
-        zorder=0,
-    )
-    plt.errorbar(
-        k_grid,
-        k_grid * pk_grid[0],
-        marker="None",
-        color="r",
         linestyle="--",
         markeredgewidth=1.3,
         zorder=0,
@@ -83,11 +65,14 @@ if __name__ == "__main__":
     # Set up the data
     fittingdata = FittingData(pardict)
 
+    # Read in the window functions
+    winnames = np.loadtxt(pardict["winfile"], dtype=str)
+
     # Set up the BirdModels
     birdmodels = []
     birdmodels_grid = []
     for i in range(len(pardict["z_pk"])):
-        birdmodels.append(BirdModel(pardict, direct=True, redindex=i))
+        birdmodels.append(BirdModel(pardict, direct=True, redindex=i, window=winnames[i]))
         birdmodels_grid.append(BirdModel(pardict, redindex=i))
 
     params = np.array(
@@ -97,5 +82,6 @@ if __name__ == "__main__":
     # Do some comparison plots
     Plin, Ploop = birdmodels[0].compute_pk(params)
     Plin_grid, Ploop_grid = birdmodels_grid[0].compute_pk(params)
+    print(birdmodels[0].kin, birdmodels_grid[0].kin)
     for i in range(3):
-        plot_comparison(birdmodels[0].kin, Plin[:, i, :, 0], birdmodels_grid[0].kin, Plin_grid[:, i, :, 0])
+        plot_comparison(birdmodels[0].kin, Plin_grid[:2, i, :, 0] / Plin[:, i, :, 0] - 1.0)

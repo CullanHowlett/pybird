@@ -17,13 +17,14 @@ from tbird.computederivs import get_grids, get_PSTaylor, get_ParamsTaylor
 
 # Wrapper around the pybird data and model evaluation
 class BirdModel:
-    def __init__(self, pardict, redindex=0, template=False, direct=False):
+    def __init__(self, pardict, redindex=0, template=False, direct=False, window=None):
 
         self.redindex = redindex
         self.pardict = pardict
         self.Nl = 3 if pardict["do_hex"] else 2
         self.template = template
         self.direct = direct
+        self.window = window
 
         # Some constants for the EFT model
         self.k_m, self.k_nl = 0.7, 0.7
@@ -61,6 +62,8 @@ class BirdModel:
 
         # Prepare the model
         if self.direct:
+            self.valueref = np.array([float(pardict[k]) for k in pardict["freepar"]])
+            self.delta = np.array(pardict["dx"], dtype=np.float) * self.valueref
             if self.template:
                 self.correlator = self.setup_pybird()
                 self.correlator.compute(
@@ -103,7 +106,7 @@ class BirdModel:
         Nl = 3 if self.pardict["do_hex"] else 2
         optiresum = True if self.pardict["do_corr"] else False
         output = "bCf" if self.pardict["do_corr"] else "bPk"
-        kmax = None if self.pardict["do_corr"] else 0.5
+        kmax = None if self.pardict["do_corr"] else 0.6
         correlator = Correlator()
 
         # Set up pybird
@@ -120,6 +123,9 @@ class BirdModel:
                 "kmax": kmax,
                 "DA_AP": self.Da,
                 "H_AP": self.Hz,
+                "with_window": False if self.window is None else True,
+                "windowPk": self.window,
+                "windowCf": self.window + ".dat",
             }
         )
 
@@ -178,7 +184,7 @@ class BirdModel:
             kin = linmod[0][0, :, 0]
         else:
             paramstab, lintab, looptab, lintab_noAP, looptab_noAP = get_grids(
-                self.pardict, pad=False, cf=self.pardict["do_corr"]
+                self.pardict, outgrids[self.redindex], gridname, pad=False, cf=self.pardict["do_corr"]
             )
             paramsmod = sp.interpolate.RegularGridInterpolator(self.truecrd, paramstab)
             kin = lintab[..., 0, :, 0][(0,) * len(self.pardict["freepar"])]
@@ -204,12 +210,16 @@ class BirdModel:
     def compute_pk(self, coords):
 
         if self.direct:
-            Plin, Ploop = self.compute_model_direct(coords)
-            Plin = Plin[:, :, :, None]
-            Ploop = np.swapaxes(Ploop[:, :, :, None], axis1=1, axis2=2)
+            Plins, Ploops = [], []
+            for i in range(np.shape(coords)[1]):
+                Plin, Ploop = self.compute_model_direct(coords[:, i])
+                Plins.append(Plin)
+                Ploops.append(Ploop)
+            Plin = np.transpose(np.array(Plins), axes=[1, 2, 3, 0])
+            Ploop = np.transpose(np.array(Ploops), axes=[1, 3, 2, 0])
         else:
             if self.pardict["taylor_order"]:
-                dtheta = np.array(coords) - self.valueref[:, None]
+                dtheta = coords - self.valueref[:, None]
                 Plin = get_PSTaylor(dtheta, self.linmod, self.pardict["taylor_order"])
                 Ploop = get_PSTaylor(dtheta, self.loopmod, self.pardict["taylor_order"])
             else:
@@ -217,6 +227,8 @@ class BirdModel:
                 Ploop = self.loopmod(coords)[0]
             Plin = np.transpose(Plin, axes=[1, 3, 2, 0])[:, 1:, :, :]
             Ploop = np.transpose(Ploop, axes=[1, 2, 3, 0])[:, :, 1:, :]
+
+        print(np.shape(Plin), np.shape(Ploop))
 
         return Plin, Ploop
 
@@ -329,8 +341,12 @@ class BirdModel:
 
     def compute_model(self, cvals, plin, ploop, x_data):
 
-        plin0, plin2, plin4 = plin
-        ploop0, ploop2, ploop4 = ploop
+        if (self.direct or self.template) and not self.pardict["do_hex"]:
+            plin0, plin2 = plin
+            ploop0, ploop2 = ploop
+        else:
+            plin0, plin2, plin4 = plin
+            ploop0, ploop2, ploop4 = ploop
 
         b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = cvals
 
@@ -403,7 +419,6 @@ class BirdModel:
             Pimult = np.dot(Pi, data["cov_inv"])
             Covbi = np.einsum("dpk,dqk->dpq", Pimult, Pi)
             Covbi += np.diag(1.0 / np.tile(self.eft_priors, len(data["x_data"])))
-            Cinvbi = np.linalg.inv(Covbi)
             vectorbi = np.einsum("dpk,kd->dp", Pimult, P_model) - np.dot(Pi, data["invcovdata"])
             chi2nomar = (
                 np.einsum("kd,kd->d", P_model, np.dot(data["cov_inv"], P_model))
@@ -429,7 +444,10 @@ class BirdModel:
 
         if self.pardict["do_marg"]:
 
-            ploop0, ploop2, ploop4 = ploop
+            if (self.direct or self.template) and not self.pardict["do_hex"]:
+                ploop0, ploop2 = ploop
+            else:
+                ploop0, ploop2, ploop4 = ploop
 
             Pb3 = np.concatenate(
                 np.swapaxes(
@@ -710,6 +728,8 @@ class FittingData:
     def __init__(self, pardict):
 
         x_data, fit_data, cov, cov_inv, chi2data, invcovdata, fitmask = self.read_data(pardict)
+        winnames = np.loadtxt(pardict["winfile"], dtype=str)
+        print(winnames)
 
         self.data = {
             "x_data": x_data,
@@ -720,6 +740,7 @@ class FittingData:
             "invcovdata": invcovdata,
             "fitmask": fitmask,
             "shot_noise": pardict["shot_noise"],
+            "windows": winnames,
         }
 
         # Check covariance matrix is symmetric and positive-definite by trying to do a cholesky decomposition
