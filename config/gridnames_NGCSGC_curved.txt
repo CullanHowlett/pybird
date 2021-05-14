@@ -1,0 +1,6 @@
+SimFits_Curved_WinFunc_z0p38_s10fixed-A_s-h-omega_cdm-omega_b_pm
+SimFits_Curved_SGCWinFunc_z0p38_s10fixed-A_s-h-omega_cdm-omega_b_pm
+SimFits_Curved_WinFunc_z0p51-A_s-h-omega_cdm-omega_b_pm
+SimFits_Curved_SGCWinFunc_z0p51-A_s-h-omega_cdm-omega_b_pm
+SimFits_Curved_WinFunc_NGCz0p61_s10fixed-A_s-h-omega_cdm-omega_b_pm
+SimFits_Curved_SGCWinFunc_z0p61_s10fixed-A_s-h-omega_cdm-omega_b_pm

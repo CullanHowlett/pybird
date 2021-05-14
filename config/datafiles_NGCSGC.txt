@@ -4,9 +4,3 @@
 /Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z2/Pk_Nbodykit/Nbodykit_BOSS_SGC_z2_Pk.out
 /Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z3/Pk_Nbodykit/Nbodykit_BOSS_NGC_z3_Pk.out
 /Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z3/Pk_Nbodykit/Nbodykit_BOSS_SGC_z3_Pk.out
-#/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z1/Pk/Mock_mean_ps1D_bianchi_NGC_z1.dat
-#/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z1/Pk/Mock_mean_ps1D_bianchi_SGC_z1.dat
-#/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z2/Pk/
-#/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z2/Pk_Nbodykit/Nbodykit_BOSS_SGC_z2_Pk.out
-#/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z3/Pk_Nbodykit/Nbodykit_BOSS_NGC_z3_Pk.out
-#/Volumes/Work/UQ/DESI/cBIRD/BOSSdata/NGC+SGC_z3/Pk_Nbodykit/Nbodykit_BOSS_SGC_z3_Pk.out

@@ -76,29 +76,29 @@ def get_grids(parref, outgrid, name, nmult=3, nout=3, pad=True, cf=False):
     if pad:
         ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
-    """if cf:
-        plin_noAP = np.load(os.path.join(outgrid, "TableClin_%s_noAP.npy" % name))
+    if cf:
+        plin_noAP = np.load(os.path.join(outgrid, "TableClin_%s.npy" % name))
     else:
-        plin_noAP = np.load(os.path.join(outgrid, "TablePlin_%s_noAP.npy" % name))
+        plin_noAP = np.load(os.path.join(outgrid, "TablePlin_%s.npy" % name))
     plin_noAP = plin_noAP.reshape((*shapecrd[1:], nmult, plin_noAP.shape[-2] // nmult, plin_noAP.shape[-1]))
     if pad:
         plin_noAP = np.pad(plin_noAP, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     if cf:
-        ploop_noAP = np.load(os.path.join(outgrid, "TableCloop_%s_noAP.npy" % name))
+        ploop_noAP = np.load(os.path.join(outgrid, "TableCloop_%s.npy" % name))
     else:
-        ploop_noAP = np.load(os.path.join(outgrid, "TablePloop_%s_noAP.npy" % name))
+        ploop_noAP = np.load(os.path.join(outgrid, "TablePloop_%s.npy" % name))
     ploop_noAP = ploop_noAP.reshape((*shapecrd[1:], nmult, ploop_noAP.shape[-2] // nmult, ploop_noAP.shape[-1]))
     if pad:
-        ploop_noAP = np.pad(ploop_noAP, padshape + [(0, 0)] * 3, "constant", constant_values=0)"""
+        ploop_noAP = np.pad(ploop_noAP, padshape + [(0, 0)] * 3, "constant", constant_values=0)
 
     # The output is not concatenated for multipoles
     return (
         params,
         plin[..., :nout, :, :],
         ploop[..., :nout, :, :],
-        # plin_noAP[..., :nout, :, :],
-        # ploop_noAP[..., :nout, :, :],
+        plin_noAP[..., :nout, :, :],
+        ploop_noAP[..., :nout, :, :],
     )
 
 

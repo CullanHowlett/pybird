@@ -223,12 +223,10 @@ class BirdModel:
                 Plin = get_PSTaylor(dtheta, self.linmod, self.pardict["taylor_order"])
                 Ploop = get_PSTaylor(dtheta, self.loopmod, self.pardict["taylor_order"])
             else:
-                Plin = self.linmod(coords)[0]
-                Ploop = self.loopmod(coords)[0]
+                Plin = self.linmod(coords.T)
+                Ploop = self.loopmod(coords.T)
             Plin = np.transpose(Plin, axes=[1, 3, 2, 0])[:, 1:, :, :]
             Ploop = np.transpose(Ploop, axes=[1, 2, 3, 0])[:, :, 1:, :]
-
-        print(np.shape(Plin), np.shape(Ploop))
 
         return Plin, Ploop
 

@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import copy
 from configobj import ConfigObj
 import matplotlib.pyplot as plt
 
@@ -15,11 +16,11 @@ from fitting_codes.fitting_utils import (
 )
 
 
-def plot_comparison(k, pk, pk_grid):
+def plot_comparison(k, pk_base, pk, pk_grid):
 
     plt.errorbar(
         k,
-        pk_grid[1] / pk[1] - 1.0,
+        k * pk_base[1],
         marker="None",
         color="k",
         linestyle="-",
@@ -28,9 +29,45 @@ def plot_comparison(k, pk, pk_grid):
     )
     plt.errorbar(
         k,
-        pk_grid[0] / pk[0] - 1.0,
+        k * pk[1],
+        marker="None",
+        color="r",
+        linestyle="-",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt.errorbar(
+        k,
+        k * pk_grid[1],
+        marker="None",
+        color="b",
+        linestyle="-",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt.errorbar(
+        k,
+        k * pk_base[0],
         marker="None",
         color="k",
+        linestyle="--",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt.errorbar(
+        k,
+        k * pk[0],
+        marker="None",
+        color="r",
+        linestyle="--",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt.errorbar(
+        k,
+        k * pk_grid[0],
+        marker="None",
+        color="b",
         linestyle="--",
         markeredgewidth=1.3,
         zorder=0,
@@ -61,6 +98,8 @@ if __name__ == "__main__":
 
     # Just converts strings in pardicts to numbers in int/float etc.
     pardict = format_pardict(pardict)
+    pardict2 = copy.copy(pardict)
+    pardict2["taylor_order"] = 4
 
     # Set up the data
     fittingdata = FittingData(pardict)
@@ -71,17 +110,20 @@ if __name__ == "__main__":
     # Set up the BirdModels
     birdmodels = []
     birdmodels_grid = []
-    for i in range(len(pardict["z_pk"])):
+    birdmodels_taylor = []
+    for i in range(1):
         birdmodels.append(BirdModel(pardict, direct=True, redindex=i, window=winnames[i]))
         birdmodels_grid.append(BirdModel(pardict, redindex=i))
+        birdmodels_taylor.append(BirdModel(pardict2, redindex=i))
 
-    params = np.array(
-        [float(pardict["ln10^{10}A_s"]), float(pardict["h"]), float(pardict["omega_cdm"]), float(pardict["omega_b"])]
-    )[:, None]
+    params = birdmodels[0].valueref - np.array([-3.5 * birdmodels[0].delta[0], 0.0, 0.0, 0.0])
+    params = params[:, None]
 
     # Do some comparison plots
     Plin, Ploop = birdmodels[0].compute_pk(params)
+    Plin_taylor, Ploop_taylor = birdmodels_taylor[0].compute_pk(params)
     Plin_grid, Ploop_grid = birdmodels_grid[0].compute_pk(params)
-    print(birdmodels[0].kin, birdmodels_grid[0].kin)
     for i in range(3):
-        plot_comparison(birdmodels[0].kin, Plin_grid[:2, i, :, 0] / Plin[:, i, :, 0] - 1.0)
+        plot_comparison(birdmodels[0].kin, Plin[:, i, :, 0], Plin_grid[:2, i, :, 0], Plin_taylor[:2, i, :, 0])
+    for i in range(19):
+        plot_comparison(birdmodels[0].kin, Ploop[:, :, i, 0], Ploop_grid[:2, :, i, 0], Ploop_taylor[:2, :, i, 0])
