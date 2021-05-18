@@ -23,7 +23,7 @@ if __name__ == "__main__":
     valueref = np.array([float(pardict[k]) for k in pardict["freepar"]])
     delta = np.fabs(np.array(pardict["dx"], dtype=np.float) * valueref)
     lhc = np.load(str("lhc_%dD_10000.npy" % ndims))
-    lhc = (2 * lhc - 1) * order + lhc
+    lhc = (2.0 * lhc - 1.0) * order
     lenrun = int(len(lhc) / njobs)
     start = job_no * lenrun
     final = min((job_no + 1) * lenrun, len(lhc))
