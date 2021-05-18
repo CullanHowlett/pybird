@@ -2,12 +2,13 @@
 # with fixed or varying template, and for any number of cosmological parameters
 
 import os
+import sys
 import copy
 import numpy as np
 import scipy as sp
-from scipy.interpolate import splrep, splev
-import sys
 from scipy.linalg import lapack, cholesky
+from scipy.interpolate import splrep, splev
+from scipy.ndimage import map_coordinates
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -137,7 +138,7 @@ class BirdModel:
         outgrids = np.loadtxt(self.pardict["outgrid"], dtype=str)
         gridnames = np.loadtxt(self.pardict["gridname"], dtype=str)
         gridname = self.pardict["code"].lower() + "-" + gridnames[self.redindex]
-        if self.pardict["taylor_order"]:
+        if self.pardict["taylor_order"] > 0:
             paramsmod = np.load(
                 os.path.join(outgrids[self.redindex], "DerParams_%s.npy" % gridname),
                 allow_pickle=True,
@@ -182,6 +183,14 @@ class BirdModel:
                         allow_pickle=True,
                     )
             kin = linmod[0][0, :, 0]
+        elif self.pardict["taylor_order"] < 0:
+            paramstab, lintab, looptab, lintab_noAP, looptab_noAP = get_grids(
+                self.pardict, outgrids[self.redindex], gridname, pad=False, cf=self.pardict["do_corr"]
+            )
+            paramsmod = paramstab
+            kin = lintab[..., 0, :, 0][(0,) * len(self.pardict["freepar"])]
+            linmod = lintab
+            loopmod = looptab
         else:
             paramstab, lintab, looptab, lintab_noAP, looptab_noAP = get_grids(
                 self.pardict, outgrids[self.redindex], gridname, pad=False, cf=self.pardict["do_corr"]
@@ -218,15 +227,35 @@ class BirdModel:
             Plin = np.transpose(np.array(Plins), axes=[1, 2, 3, 0])
             Ploop = np.transpose(np.array(Ploops), axes=[1, 3, 2, 0])
         else:
-            if self.pardict["taylor_order"]:
+            if self.pardict["taylor_order"] > 0:
                 dtheta = coords - self.valueref[:, None]
                 Plin = get_PSTaylor(dtheta, self.linmod, self.pardict["taylor_order"])
                 Ploop = get_PSTaylor(dtheta, self.loopmod, self.pardict["taylor_order"])
+                Plin = np.transpose(Plin, axes=[1, 3, 2, 0])[:, 1:, :, :]
+                Ploop = np.transpose(Ploop, axes=[1, 2, 3, 0])[:, :, 1:, :]
+            elif self.pardict["taylor_order"] < 0:
+                Nl, Nk = np.shape(self.linmod)[np.shape(coords)[0]], np.shape(self.linmod)[np.shape(coords)[0] + 1]
+                Nlin = np.shape(self.linmod)[np.shape(coords)[0] + 2]
+                Nloop = np.shape(self.loopmod)[np.shape(coords)[0] + 2]
+                scaled_coords = (coords - self.valueref[:, None]) / self.delta[:, None] + float(self.pardict["order"])
+                print(scaled_coords)
+                Plin = np.zeros((Nl, Nlin - 1, Nk, np.shape(coords)[1]))
+                Ploop = np.zeros((Nl, Nk, Nloop - 1, np.shape(coords)[1]))
+                for i in range(Nl):
+                    for j in range(Nk):
+                        for k in range(1, Nlin):
+                            Plin[i, k - 1, j] = map_coordinates(
+                                self.linmod[..., i, j, k], scaled_coords, order=3, prefilter=False
+                            )
+                        for k in range(1, Nloop):
+                            Ploop[i, j, k - 1] = map_coordinates(
+                                self.loopmod[..., i, j, k], scaled_coords, order=3, prefilter=False
+                            )
             else:
-                Plin = self.linmod(coords.T)
-                Ploop = self.loopmod(coords.T)
-            Plin = np.transpose(Plin, axes=[1, 3, 2, 0])[:, 1:, :, :]
-            Ploop = np.transpose(Ploop, axes=[1, 2, 3, 0])[:, :, 1:, :]
+                Plin = np.transpose(self.linmod(coords.T), axes=[1, 3, 2, 0])[:, 1:, :, :]
+                Ploop = np.transpose(self.loopmod(coords.T), axes=[1, 2, 3, 0])[:, :, 1:, :]
+
+        print(np.shape(Plin), np.shape(Ploop))
 
         return Plin, Ploop
 
