@@ -15,12 +15,12 @@ if __name__ == "__main__":
     gridname = pardict["code"].lower() + "-" + gridnames[redindex]
 
     # Read in a Latin Hypercube with the correct number of dimensions
-    order = float(pardict["template_order"])
+    order = float(pardict["order"])
     ndims = len(pardict["freepar"])
     valueref = np.array([float(pardict[k]) for k in pardict["freepar"]])
     delta = np.fabs(np.array(pardict["dx"], dtype=np.float) * valueref)
     lhc = np.load(str("lhc_%dD_10000.npy" % ndims))
-    lhc = (2 * lhc - 1) * order + lhc
+    lhc = (2.0 * lhc - 1.0) * order
     ntot = len(lhc)
     lenbatch = ntot / njobs
     print(lenbatch)
