@@ -159,7 +159,10 @@ def lnpost(params):
 
     # This returns the posterior distribution which is given by the log prior plus the log likelihood
     prior = lnprior(params, birdmodels)
-    like = lnlike(params, birdmodels, fittingdata, plt)
+    index = np.where(~np.isinf(prior))[0]
+    like = np.zeros(np.shape(params[1]))
+    if len(index) > 0:
+        like[index] = lnlike(params[:, index], birdmodels, fittingdata, plt)
 
     return prior + like
 
@@ -169,7 +172,9 @@ def lnprior(params, birdmodels):
     # Here we define the prior for all the parameters. We'll ignore the constants as they
     # cancel out when subtracting the log posteriors
 
-    ln10As, h, omega_cdm, omega_b = params[:4]
+    ln10As, h, omega_cdm, omega_b, omega_k = params[:5]
+    # ln10As, h, omega_cdm, omega_b, omega_k = birdmodels[0].valueref[:, None]
+    # omega_k = [0.0]
     # ln10As, h, omega_cdm = params[:3]
     # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
 
@@ -179,12 +184,13 @@ def lnprior(params, birdmodels):
     priors = np.zeros(np.shape(params[1]))
 
     # Flat priors for cosmological parameters
-    for i, param in enumerate([ln10As, h, omega_cdm, omega_b]):
+    for i, param in enumerate([ln10As, h, omega_cdm, omega_b, omega_k]):
         priors += np.where(np.logical_or(param < lower_bounds[i], param > upper_bounds[i]), -np.inf, 0.0)
 
     # BBN (D/H) inspired prior on omega_b
-    omega_b_prior = -0.5 * (omega_b - 0.02235) ** 2 / 0.00037 ** 2
+    omega_b_prior = -0.5 * (omega_b - 0.02230) ** 2 / 0.00037 ** 2
     # omega_b_prior = 0.0
+    priors += omega_b_prior
 
     # Planck prior
     # diff = params[:4] - birdmodel.valueref
@@ -194,7 +200,8 @@ def lnprior(params, birdmodels):
     nz = len(birdmodels[0].pardict["z_pk"])
     for i in range(nz):
         if birdmodels[0].pardict["do_marg"]:
-            b1, c2, c4 = params[-3 * (nz - i) : -3 * (nz - i - 1)] if i != nz - 1 else params[-3 * (nz - i) :]
+            # b1, c2, c4 = params[-3 * (nz - i) : -3 * (nz - i - 1)] if i != nz - 1 else params[-3 * (nz - i) :]
+            b1, c2 = params[-2 * (nz - i) : -2 * (nz - i - 1)] if i != nz - 1 else params[-2 * (nz - i) :]
         else:
             b1, c2, b3, c4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = (
                 params[-11 * (nz - i) : -11 * (nz - i - 1)] if i != nz - 1 else params[-11 * (nz - i) :]
@@ -207,7 +214,7 @@ def lnprior(params, birdmodels):
         priors += np.where(np.logical_or(c2 < -4.0, c2 > 4.0), -np.inf, 0.0)
 
         # Gaussian prior for c4
-        priors += -0.5 * 0.25 * c4 ** 2
+        # priors += -0.5 * 0.25 * c4 ** 2
 
         if not birdmodels[0].pardict["do_marg"]:
 
@@ -241,7 +248,9 @@ def lnprior(params, birdmodels):
 def lnlike(params, birdmodels, fittingdata, plt):
 
     # Get the bird model
-    ln10As, h, omega_cdm, omega_b = params[:4]
+    ln10As, h, omega_cdm, omega_b, omega_k = params[:5]
+    # ln10As, h, omega_cdm, omega_b, omega_k = birdmodels[0].valueref[:, None]
+    # omega_k = [0.0]
     # omega_b = birdmodel.valueref[3] / birdmodel.valueref[2] * omega_cdm
 
     Picount = 0
@@ -250,11 +259,13 @@ def lnlike(params, birdmodels, fittingdata, plt):
     nz = len(birdmodels[0].pardict["z_pk"])
     Pi_full = np.zeros((nz * len(birdmodels[0].eft_priors), len(fittingdata.data["fit_data"]), len(ln10As)))
     for i in range(nz):
-        ndata = int(np.prod(np.shape(fittingdata.data["x_data"][i])))
         if birdmodels[0].pardict["do_marg"]:
-            counter = -3 * (nz - i)
-            b2 = (params[counter + 1] + params[counter + 2]) / np.sqrt(2.0)
-            b4 = (params[counter + 1] - params[counter + 2]) / np.sqrt(2.0)
+            # counter = -3 * (nz - i)
+            # b2 = (params[counter + 1] + params[counter + 2]) / np.sqrt(2.0)
+            # b4 = (params[counter + 1] - params[counter + 2]) / np.sqrt(2.0)
+            counter = -2 * (nz - i)
+            b2 = (params[counter + 1]) / np.sqrt(2.0)
+            b4 = (params[counter + 1]) / np.sqrt(2.0)
             margb = np.zeros(np.shape(params)[1])
             bs = np.array(
                 [
@@ -268,7 +279,7 @@ def lnlike(params, birdmodels, fittingdata, plt):
                     margb,
                     margb,
                     margb,
-                    margb,
+                    # margb,
                 ]
             )
         else:
@@ -287,11 +298,11 @@ def lnlike(params, birdmodels, fittingdata, plt):
                     params[counter + 7] * float(fittingdata.data["shot_noise"][i]),
                     params[counter + 8] * float(fittingdata.data["shot_noise"][i]),
                     params[counter + 9] * float(fittingdata.data["shot_noise"][i]),
-                    params[counter + 10],
+                    # params[counter + 10],
                 ]
             )
 
-        Plin, Ploop = birdmodels[i].compute_pk(np.array([ln10As, h, omega_cdm, omega_b]))
+        Plin, Ploop = birdmodels[i].compute_pk(np.array([ln10As, h, omega_cdm, omega_b, omega_k]))
         P_model, P_model_interp = birdmodels[i].compute_model(bs, Plin, Ploop, fittingdata.data["x_data"][i])
         Pi = birdmodels[i].get_Pi_for_marg(
             Ploop, bs[0], float(fittingdata.data["shot_noise"][i]), fittingdata.data["x_data"][i]
@@ -299,22 +310,63 @@ def lnlike(params, birdmodels, fittingdata, plt):
         Plins.append(Plin)
         Ploops.append(Ploop)
         P_models.append(P_model_interp)
-        Pi_full[i * nmarg : (i + 1) * nmarg, Picount : Picount + ndata] = Pi
-        Picount += ndata
+        Pi_full[i * nmarg : (i + 1) * nmarg, Picount : Picount + fittingdata.data["ndata"][i]] = Pi
+        Picount += fittingdata.data["ndata"][i]
 
     P_model = np.concatenate(P_models)
-    chi_squared = birdmodels[0].compute_chi2(P_model, Pi_full, fittingdata.data)
+    # chi_squared = birdmodels[0].compute_chi2(P_model, Pi_full, fittingdata.data)
+
+    # Now get the best-fit values for parameters we don't care about
+    P_models = []
+    bs_analytic = birdmodels[0].compute_bestfit_analytic(Pi_full[:, :, 0], fittingdata.data, P_model[:, 0])
+    pardict["do_marg"] = 0
+    for i in range(nz):
+        # counter = -3 * (nz - i)
+        # b2 = (params[counter + 1, 0] + params[counter + 2, 0]) / np.sqrt(2.0)
+        # b4 = (params[counter + 1, 0] - params[counter + 2, 0]) / np.sqrt(2.0)
+        counter = -2 * (nz - i)
+        b2 = (params[counter + 1, 0]) / np.sqrt(2.0)
+        b4 = (params[counter + 1, 0]) / np.sqrt(2.0)
+        bs = np.array(
+            [
+                params[counter, 0],
+                b2,
+                bs_analytic[7 * i],
+                b4,
+                bs_analytic[7 * i + 1],
+                bs_analytic[7 * i + 2],
+                bs_analytic[7 * i + 3],
+                bs_analytic[7 * i + 4] * float(fittingdata.data["shot_noise"][i]),
+                bs_analytic[7 * i + 5] * float(fittingdata.data["shot_noise"][i]),
+                bs_analytic[7 * i + 6] * float(fittingdata.data["shot_noise"][i]),
+                # bs_analytic[8 * i + 7],
+            ]
+        )[:, None]
+        P_model, P_model_interp = birdmodels[i].compute_model(
+            bs, Plins[i][:, :, :, 0, None], Ploops[i][:, :, :, 0, None], fittingdata.data["x_data"][i]
+        )
+        P_models.append(P_model_interp[:, 0])
+    chi_squared_print = birdmodels[0].compute_chi2(np.concatenate(P_models), Pi_full[:, :, 0], fittingdata.data)
+    pardict["do_marg"] = 1
 
     if plt is not None:
+        update_plot(pardict, fittingdata.data["x_data"][plot_flag - 1], P_models[plot_flag - 1], plt)
+        if np.random.rand() < 1.0:
+            print(params[:, 0], chi_squared_print, len(fittingdata.data["fit_data"]))
+
+    """if plt is not None:
         P_models = []
         chi_squared_print = chi_squared[0]
         if birdmodels[0].pardict["do_marg"]:
             bs_analytic = birdmodels[0].compute_bestfit_analytic(Pi_full[:, :, 0], fittingdata.data, P_model[:, 0])
             pardict["do_marg"] = 0
             for i in range(nz):
-                counter = -3 * (nz - i)
-                b2 = (params[counter + 1, 0] + params[counter + 2, 0]) / np.sqrt(2.0)
-                b4 = (params[counter + 1, 0] - params[counter + 2, 0]) / np.sqrt(2.0)
+                # counter = -3 * (nz - i)
+                # b2 = (params[counter + 1, 0] + params[counter + 2, 0]) / np.sqrt(2.0)
+                # b4 = (params[counter + 1, 0] - params[counter + 2, 0]) / np.sqrt(2.0)
+                counter = -2 * (nz - i)
+                b2 = (params[counter + 1, 0]) / np.sqrt(2.0)
+                b4 = (params[counter + 1, 0]) / np.sqrt(2.0)
                 bs = np.array(
                     [
                         params[counter, 0],
@@ -337,10 +389,10 @@ def lnlike(params, birdmodels, fittingdata, plt):
             chi_squared_print = birdmodels[0].compute_chi2(np.concatenate(P_models), Pi_full[:, :, 0], fittingdata.data)
             pardict["do_marg"] = 1
         update_plot(pardict, fittingdata.data["x_data"][plot_flag - 1], P_models[plot_flag - 1], plt)
-        if np.random.rand() < 0.1:
-            print(params[:, 0], chi_squared_print, len(fittingdata.data["fit_data"]))
+        if np.random.rand() < 1.0:
+            print(params[:, 0], bs_analytic, chi_squared, chi_squared_print, len(fittingdata.data["fit_data"]))"""
 
-    return -0.5 * chi_squared
+    return -0.5 * chi_squared_print
 
 
 if __name__ == "__main__":
@@ -360,8 +412,8 @@ if __name__ == "__main__":
     # Set up the BirdModels
     birdmodels = []
     for i in range(len(pardict["z_pk"])):
-        birdmodels.append(BirdModel(pardict, direct=True, redindex=i, window=fittingdata.data["windows"][i]))
-        # birdmodels.append(BirdModel(pardict, redindex=i))
+        # birdmodels.append(BirdModel(pardict, direct=True, redindex=i, window=fittingdata.data["windows"][i]))
+        birdmodels.append(BirdModel(pardict, redindex=i))
 
     # Read in and create a Planck prior covariance matrix
     Planck_file = "/Volumes/Work/UQ/CAMB/COM_CosmoParams_fullGrid_R3.01/base/plikHM_TTTEEE_lowl_lowE_lensing/base_plikHM_TTTEEE_lowl_lowE_lensing"
@@ -372,16 +424,33 @@ if __name__ == "__main__":
     if plot_flag:
         plt = create_plot(pardict, fittingdata, plotindex=plot_flag - 1)
 
-    start = [birdmodels[0].valueref[:4]]
+    start = [[2.6, birdmodels[0].valueref[1], birdmodels[0].valueref[2], birdmodels[0].valueref[3]], [-0.10]]
     if birdmodels[0].pardict["do_marg"]:
         for i in range(len(pardict["z_pk"])):
-            start.append([1.3, 0.5, 0.5])
+            start.append([1.3, 0.5])
     else:
         for i in range(len(pardict["z_pk"])):
-            start.append([1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+            start.append([1.3, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
     start = np.concatenate(start)
 
     # Does an optimization
+    """lower_bounds = birdmodels[0].valueref - birdmodels[0].pardict["order"] * birdmodels[0].delta
+    upper_bounds = birdmodels[0].valueref + birdmodels[0].pardict["order"] * birdmodels[0].delta
+    start = (
+        (lower_bounds[0], upper_bounds[0]),
+        (lower_bounds[1], upper_bounds[1]),
+        (lower_bounds[2], upper_bounds[2]),
+        (lower_bounds[3], upper_bounds[3]),
+        (lower_bounds[4], upper_bounds[4]),
+        (0.0, 3.0),
+        (-4.0, 4.0),
+        (0.0, 3.0),
+        (-4.0, 4.0),
+        (0.0, 3.0),
+        (-4.0, 4.0),
+        (0.0, 3.0),
+        (-4.0, 4.0),
+    )"""
     result = do_optimization(lambda *args: -lnpost(*args), start)
 
     # Does an MCMC

@@ -9,7 +9,7 @@ from pybird_dev import pybird
 from tbird.Grid import run_camb, run_class
 
 
-def get_lhc_grids(parref, outgrid, name, nmult=3, nout=3, pad=True, cf=False):
+def get_lhc_grids(parref, outgrid, name, nmult=3, nout=3, cf=False):
     # order_i is the number of points away from the origin for parameter i
     # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
     # outgrid = parref["outgrid"]
@@ -17,35 +17,32 @@ def get_lhc_grids(parref, outgrid, name, nmult=3, nout=3, pad=True, cf=False):
 
     # Coordinates have shape (len(freepar), 2 * order_1 + 1, ..., 2 * order_n + 1)
     shapecrd = np.concatenate([[len(parref["freepar"])], np.full(len(parref["freepar"]), 2 * int(parref["order"]) + 1)])
-    padshape = [(1, 1)] * (len(shapecrd) - 1)
 
     # grids need to be reshaped and padded at both ends along the freepar directions
     params = np.load(os.path.join(outgrid, "TableParams_lhc_%s.npy" % name))
-    params = params.reshape((*shapecrd[1:], params.shape[-1]))
-    if pad:
-        params = np.pad(params, padshape + [(0, 0)], "constant", constant_values=0)
+    print(np.shape(params))
 
     if cf:
         plin = np.load(os.path.join(outgrid, "TableClin_lhc_%s.npy" % name))
     else:
         plin = np.load(os.path.join(outgrid, "TablePlin_lhc_%s.npy" % name))
-    plin = plin.reshape((*shapecrd[1:], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
-    if pad:
-        plin = np.pad(plin, padshape + [(0, 0)] * 3, "constant", constant_values=0)
+    nsamp, nk, nlin = np.shape(plin)
+    plin = plin.reshape((nsamp, nmult, nk // nmult, nlin))
 
     if cf:
         ploop = np.load(os.path.join(outgrid, "TableCloop_lhc_%s.npy" % name))
     else:
         ploop = np.load(os.path.join(outgrid, "TablePloop_lhc_%s.npy" % name))
-    ploop = ploop.reshape((*shapecrd[1:], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
-    if pad:
-        ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
+    nsamp, nk, nloop = np.shape(ploop)
+    ploop = ploop.reshape((nsamp, nmult, nk // nmult, nloop))
+
+    print(np.shape(plin), np.shape(ploop))
 
     # The output is not concatenated for multipoles
     return (
         params,
-        plin[..., :nout, :, :],
-        ploop[..., :nout, :, :],
+        plin[:, :nout, :, :],
+        ploop[:, :nout, :, :],
     )
 
 

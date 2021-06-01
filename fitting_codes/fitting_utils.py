@@ -28,8 +28,9 @@ class BirdModel:
         self.window = window
 
         # Some constants for the EFT model
-        self.k_m, self.k_nl = 0.7, 0.7
-        self.eft_priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0, 2.0])
+        self.k_m, self.k_nl = 0.5, 0.5
+        # self.eft_priors = np.array([10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0])
+        self.eft_priors = np.array([1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0])
 
         # Get some values at the grid centre
         if pardict["code"] == "CAMB":
@@ -116,17 +117,18 @@ class BirdModel:
                 "output": output,
                 "multipole": Nl,
                 "z": float(self.pardict["z_pk"][self.redindex]),
-                "optiresum": optiresum,
+                "optiresum": True,
                 "with_bias": False,
                 "with_nlo_bias": True,
                 "with_time": not (self.template),
                 "with_AP": True,
-                "kmax": kmax,
+                "with_resum": False,
+                "kmax": 0.25,
                 "DA_AP": self.Da,
                 "H_AP": self.Hz,
                 "with_window": False if self.window is None else True,
-                "windowPk": self.window,
-                "windowCf": self.window + ".dat",
+                "windowPk": str(self.window),
+                "windowCf": str(self.window) + ".dat",
             }
         )
 
@@ -255,8 +257,6 @@ class BirdModel:
                 Plin = np.transpose(self.linmod(coords.T), axes=[1, 3, 2, 0])[:, 1:, :, :]
                 Ploop = np.transpose(self.loopmod(coords.T), axes=[1, 2, 3, 0])[:, :, 1:, :]
 
-        print(np.shape(Plin), np.shape(Ploop))
-
         return Plin, Ploop
 
     def compute_model_direct(self, coords):
@@ -375,7 +375,7 @@ class BirdModel:
             plin0, plin2, plin4 = plin
             ploop0, ploop2, ploop4 = ploop
 
-        b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad, bnlo = cvals
+        b1, b2, b3, b4, cct, cr1, cr2, ce1, cemono, cequad = cvals
 
         # the columns of the Ploop data files.
         cvals = np.array(
@@ -398,14 +398,14 @@ class BirdModel:
                 2.0 * cct / self.k_nl ** 2,
                 2.0 * cr1 / self.k_m ** 2,
                 2.0 * cr2 / self.k_m ** 2,
-                2.0 * b1 ** 2 * bnlo / self.k_m ** 4,
+                # 2.0 * b1 ** 2 * bnlo / self.k_m ** 4,
             ]
         )
 
-        P0 = np.sum(cvals * ploop0, axis=1) + plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
-        P2 = np.sum(cvals * ploop2, axis=1) + plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
+        P0 = np.sum(cvals * ploop0[:, :-1, :], axis=1) + plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
+        P2 = np.sum(cvals * ploop2[:, :-1, :], axis=1) + plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
         if self.pardict["do_hex"]:
-            P4 = np.sum(cvals * ploop4, axis=1) + plin4[0] + b1 * plin4[1] + b1 * b1 * plin4[2]
+            P4 = np.sum(cvals * ploop4[:, :-1, :], axis=1) + plin4[0] + b1 * plin4[1] + b1 * b1 * plin4[2]
 
         P0_interp = [sp.interpolate.splev(x_data[0], sp.interpolate.splrep(self.kin, P0[:, i])) for i in range(len(b1))]
         P2_interp = [sp.interpolate.splev(x_data[1], sp.interpolate.splrep(self.kin, P2[:, i])) for i in range(len(b1))]
@@ -558,18 +558,19 @@ class BirdModel:
                         Pb3,
                         np.array(
                             [
-                                splev(x_data[0], splrep(self.kin, ploop4[:, 3, i] + b * ploop4[:, 7, i]))
+                                splev(x_data[2], splrep(self.kin, ploop4[:, 3, i] + b * ploop4[:, 7, i]))
                                 for i, b in enumerate(b1)
                             ]
                         ).T,
                     ]
                 )
+
                 Pcct = np.concatenate(
                     [
                         Pcct,
                         np.array(
                             [
-                                splev(x_data[0], splrep(self.kin, ploop4[:, 15, i] + b * ploop4[:, 12, i]))
+                                splev(x_data[2], splrep(self.kin, ploop4[:, 15, i] + b * ploop4[:, 12, i]))
                                 for i, b in enumerate(b1)
                             ]
                         ).T,
@@ -580,7 +581,7 @@ class BirdModel:
                         Pcr1,
                         np.array(
                             [
-                                splev(x_data[0], splrep(self.kin, ploop4[:, 16, i] + b * ploop4[:, 13, i]))
+                                splev(x_data[2], splrep(self.kin, ploop4[:, 16, i] + b * ploop4[:, 13, i]))
                                 for i, b in enumerate(b1)
                             ]
                         ).T,
@@ -591,7 +592,7 @@ class BirdModel:
                         Pcr2,
                         np.array(
                             [
-                                splev(x_data[0], splrep(self.kin, ploop4[:, 17, i] + b * ploop4[:, 14, i]))
+                                splev(x_data[2], splrep(self.kin, ploop4[:, 17, i] + b * ploop4[:, 14, i]))
                                 for i, b in enumerate(b1)
                             ]
                         ).T,
@@ -601,7 +602,7 @@ class BirdModel:
                     [
                         Pnlo,
                         np.array(
-                            [splev(x_data[0], splrep(self.kin, b ** 2 * ploop4[:, 18, i])) for i, b in enumerate(b1)]
+                            [splev(x_data[2], splrep(self.kin, b ** 2 * ploop4[:, 18, i])) for i, b in enumerate(b1)]
                         ).T,
                     ]
                 )
@@ -631,13 +632,13 @@ class BirdModel:
                 Pi = np.array(
                     [
                         Pb3,  # *b3
-                        2.0 * Pcct / self.k_nl ** 2,  # *cct
-                        2.0 * Pcr1 / self.k_m ** 2,  # *cr1
-                        2.0 * Pcr2 / self.k_m ** 2,  # *cr2
+                        Pcct / self.k_nl ** 2,  # *cct
+                        Pcr1 / self.k_m ** 2,  # *cr1
+                        Pcr2 / self.k_m ** 2,  # *cr2
                         np.tile(C0, (len(b1), 1)).T * self.k_m ** 2 * shot_noise,  # ce1
                         np.tile(C1, (len(b1), 1)).T * self.k_m ** 2 * shot_noise,  # cemono
                         np.tile(C2, (len(b1), 1)).T * shot_noise,  # cequad
-                        2.0 * Pnlo / self.k_m ** 4,  # bnlo
+                        # 2.0 * Pnlo / self.k_m ** 4,  # bnlo
                     ]
                 )
 
@@ -661,7 +662,7 @@ class BirdModel:
                         np.tile(Onel0, (len(b1), 1)).T * shot_noise,  # *ce1
                         np.tile(kl0 ** 2, (len(b1), 1)).T / self.k_m ** 2 * shot_noise,  # *cemono
                         np.tile(kl2 ** 2, (len(b1), 1)).T / self.k_m ** 2 * shot_noise,  # *cequad
-                        2.0 * Pnlo / self.k_m ** 4,  # bnlo
+                        # 2.0 * Pnlo / self.k_m ** 4,  # bnlo
                     ]
                 )
 
@@ -754,13 +755,14 @@ class BirdModel:
 class FittingData:
     def __init__(self, pardict):
 
-        x_data, fit_data, cov, cov_inv, chi2data, invcovdata, fitmask = self.read_data(pardict)
+        x_data, ndata, fit_data, cov, cov_inv, chi2data, invcovdata, fitmask = self.read_data(pardict)
         winnames = np.loadtxt(pardict["winfile"], dtype=str)
         print(winnames)
 
         self.data = {
             "x_data": x_data,
             "fit_data": fit_data,
+            "ndata": ndata,
             "cov": cov,
             "cov_inv": cov_inv,
             "chi2data": chi2data,
@@ -835,13 +837,15 @@ class FittingData:
         # Read in the data
         datafiles = np.loadtxt(pardict["datafile"], ndmin=1, dtype=str)
         nz = len(pardict["z_pk"])
-        print(datafiles, nz)
+        print(datafiles)
         all_xdata = []
+        all_ndata = []
         all_fitmask = []
         all_fit_data = []
         for i in range(nz):
-            x_data, fitmask, fit_data = self.get_some_data(pardict, datafiles[i])
+            x_data, ndata, fitmask, fit_data = self.get_some_data(pardict, datafiles[i])
             all_xdata.append(x_data)
+            all_ndata.append(ndata)
             all_fitmask.append(fitmask)
             all_fit_data.append(fit_data)
         fitmask = np.concatenate(all_fitmask)
@@ -876,11 +880,10 @@ class FittingData:
         chi2data = np.dot(fit_data, np.dot(cov_inv, fit_data))
         invcovdata = np.dot(fit_data, cov_inv)
 
-        return all_xdata, fit_data, cov, cov_inv, chi2data, invcovdata, fitmask
+        return all_xdata, all_ndata, fit_data, cov, cov_inv, chi2data, invcovdata, fitmask
 
     def get_some_data(self, pardict, datafile):
 
-        print(datafile)
         if pardict["do_corr"]:
             data = np.array(pd.read_csv("datafile", delim_whitespace=True, header=None))
         else:
@@ -902,10 +905,11 @@ class FittingData:
         fitmask = np.array(
             [np.logical_and(x_data >= pardict["xfit_min"][i], x_data <= pardict["xfit_max"][i]) for i in range(ell)]
         )
+        # fitmask = np.concatenate([fitmask, [np.full(len(x_data), False)]])
         x_data = np.array([data[fitmask[i], 0] for i in range(ell)])
         fit_data = np.concatenate([data[fitmask[i], i + 1] for i in range(ell)])
 
-        return x_data, np.concatenate(fitmask), fit_data
+        return x_data, np.sum([len(x_data[i]) for i in range(ell)]), np.concatenate(fitmask), fit_data
 
 
 def create_plot(pardict, fittingdata, plotindex=0):
@@ -1109,7 +1113,6 @@ def format_pardict(pardict):
     pardict["xfit_max"] = np.array(pardict["xfit_max"]).astype(float)
     pardict["order"] = int(pardict["order"])
     pardict["z_pk"] = np.array(pardict["z_pk"], dtype=float)
-    print(np.shape(pardict["z_pk"]))
     if not any(np.shape(pardict["z_pk"])):
         pardict["z_pk"] = [float(pardict["z_pk"])]
 
@@ -1125,7 +1128,7 @@ def do_optimization(func, start):
         start,
         niter_success=10,
         niter=100,
-        stepsize=0.01,
+        stepsize=0.005,
         minimizer_kwargs={
             "method": "Nelder-Mead",
             "tol": 1.0e-4,
@@ -1134,6 +1137,9 @@ def do_optimization(func, start):
     )
     print("#-------------- Best-fit----------------")
     print(result)
+
+    # from scipy.optimize import differential_evolution
+    # result = differential_evolution(func, start)
 
     return result
 

@@ -101,7 +101,7 @@ sbird = np.array(
 class Common(object):
     """
     A class to share data among different objects
-    
+
     Attributes
     ----------
     Nl : int

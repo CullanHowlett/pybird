@@ -9,7 +9,7 @@ from .resumfactor import Qa, Qawithhex, Qawithhex20
 
 class Resum(object):
     """
-    given a Bird() object, performs the IR-resummation of the power spectrum. 
+    given a Bird() object, performs the IR-resummation of the power spectrum.
     There are two options:
     1.  fullresum: the FFTLog's are performed on the full integrands from s = .1 to s = 10000. in (Mpc/h) (default)
     2. 'optiresum: the FFTLog's are performed only on the BAO peak that is extracted by removing the smooth part of the correlation function. What is left is then padded with zeros and the FFTLog's run from s = .1 to s = 1000. in (Mpc/h).
@@ -60,7 +60,7 @@ class Resum(object):
     XM : ndarray
         spherical Bessel transform matrices to evaluate the IR-filters X and Y
     XsPow : ndarray
-        s's to the powers on which to perform the FFTLog to evaluate the IR-filters X and Y    
+        s's to the powers on which to perform the FFTLog to evaluate the IR-filters X and Y
     """
 
     def __init__(self, LambdaIR=0.2, NFFT=192, co=co):
@@ -168,9 +168,9 @@ class Resum(object):
         return np.real(np.einsum("nk,ln->lk", CoefkPow, self.M[: self.co.Na]))
 
     def extractBAO(self, cf):
-        """ Given a correlation function cf, 
-            - if fullresum, return cf 
-            - if optiresum, extract the BAO peak """
+        """Given a correlation function cf,
+        - if fullresum, return cf
+        - if optiresum, extract the BAO peak"""
         if self.co.optiresum is True:
             cfnobao = np.concatenate([cf[..., : self.idlow], cf[..., self.idhigh :]], axis=-1)
             nobao = (
@@ -272,6 +272,7 @@ class Resum(object):
         else:
             for l, cl in enumerate(self.extractBAO(bird.C11)):
                 for j, xy in enumerate(XpYp):
+                    print(cl * xy)
                     IRcorrUnsorted = np.real((-1j) ** (2 * l)) * self.k2p[j] * self.IRn(xy * cl, window=window)
                     for v in range(self.co.Na):
                         bird.IRPs11[l, j * self.co.Na + v, self.Nlow :] = IRcorrUnsorted[v]
