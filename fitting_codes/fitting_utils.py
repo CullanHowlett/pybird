@@ -28,9 +28,9 @@ class BirdModel:
         self.window = window
 
         # Some constants for the EFT model
-        self.k_m, self.k_nl = 0.5, 0.5
-        # self.eft_priors = np.array([10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0])
-        self.eft_priors = np.array([1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0])
+        self.k_m, self.k_nl = 1.0, 1.0
+        # self.eft_priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0])
+        self.eft_priors = np.array([2.0, 2.0, 2.0, 2.0, 0.2, 1.0, 1.0])
 
         # Get some values at the grid centre
         if pardict["code"] == "CAMB":
@@ -117,12 +117,11 @@ class BirdModel:
                 "output": output,
                 "multipole": Nl,
                 "z": float(self.pardict["z_pk"][self.redindex]),
-                "optiresum": True,
+                "optiresum": False,
                 "with_bias": False,
                 "with_nlo_bias": True,
                 "with_time": not (self.template),
                 "with_AP": True,
-                "with_resum": False,
                 "kmax": 0.25,
                 "DA_AP": self.Da,
                 "H_AP": self.Hz,
@@ -240,7 +239,6 @@ class BirdModel:
                 Nlin = np.shape(self.linmod)[np.shape(coords)[0] + 2]
                 Nloop = np.shape(self.loopmod)[np.shape(coords)[0] + 2]
                 scaled_coords = (coords - self.valueref[:, None]) / self.delta[:, None] + float(self.pardict["order"])
-                print(scaled_coords)
                 Plin = np.zeros((Nl, Nlin - 1, Nk, np.shape(coords)[1]))
                 Ploop = np.zeros((Nl, Nk, Nloop - 1, np.shape(coords)[1]))
                 for i in range(Nl):
@@ -392,27 +390,42 @@ class BirdModel:
                 b2 * b2,
                 b2 * b4,
                 b4 * b4,
-                2.0 * b1 * cct / self.k_nl ** 2,
-                2.0 * b1 * cr1 / self.k_m ** 2,
-                2.0 * b1 * cr2 / self.k_m ** 2,
-                2.0 * cct / self.k_nl ** 2,
-                2.0 * cr1 / self.k_m ** 2,
-                2.0 * cr2 / self.k_m ** 2,
-                # 2.0 * b1 ** 2 * bnlo / self.k_m ** 4,
+                b1 * cct / self.k_nl ** 2,
+                b1 * cr1 / self.k_m ** 2,
+                b1 * cr2 / self.k_m ** 2,
+                cct / self.k_nl ** 2,
+                cr1 / self.k_m ** 2,
+                cr2 / self.k_m ** 2,
             ]
         )
 
-        P0 = np.sum(cvals * ploop0[:, :-1, :], axis=1) + plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2]
-        P2 = np.sum(cvals * ploop2[:, :-1, :], axis=1) + plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2]
+        P0_lin, P0_loop = plin0[0] + b1 * plin0[1] + b1 * b1 * plin0[2], np.sum(cvals * ploop0[:, :-1, :], axis=1)
+        P2_lin, P2_loop = plin2[0] + b1 * plin2[1] + b1 * b1 * plin2[2], np.sum(cvals * ploop2[:, :-1, :], axis=1)
         if self.pardict["do_hex"]:
-            P4 = np.sum(cvals * ploop4[:, :-1, :], axis=1) + plin4[0] + b1 * plin4[1] + b1 * b1 * plin4[2]
+            P4_lin, P4_loop = plin4[0] + b1 * plin4[1] + b1 * b1 * plin4[2], np.sum(cvals * ploop4[:, :-1, :], axis=1)
 
-        P0_interp = [sp.interpolate.splev(x_data[0], sp.interpolate.splrep(self.kin, P0[:, i])) for i in range(len(b1))]
-        P2_interp = [sp.interpolate.splev(x_data[1], sp.interpolate.splrep(self.kin, P2[:, i])) for i in range(len(b1))]
+        P0_interp_lin = [
+            sp.interpolate.splev(x_data[0], sp.interpolate.splrep(self.kin, P0_lin[:, i])) for i in range(len(b1))
+        ]
+        P0_interp_loop = [
+            sp.interpolate.splev(x_data[0], sp.interpolate.splrep(self.kin, P0_loop[:, i])) for i in range(len(b1))
+        ]
+        P2_interp_lin = [
+            sp.interpolate.splev(x_data[1], sp.interpolate.splrep(self.kin, P2_lin[:, i])) for i in range(len(b1))
+        ]
+        P2_interp_loop = [
+            sp.interpolate.splev(x_data[1], sp.interpolate.splrep(self.kin, P2_loop[:, i])) for i in range(len(b1))
+        ]
+        P0_interp = [P0_interp_lin[i] + P0_interp_loop[i] for i in range(len(b1))]
+        P2_interp = [P2_interp_lin[i] + P2_interp_loop[i] for i in range(len(b1))]
         if self.pardict["do_hex"]:
-            P4_interp = [
-                sp.interpolate.splev(x_data[2], sp.interpolate.splrep(self.kin, P4[:, i])) for i in range(len(b1))
+            P4_interp_lin = [
+                sp.interpolate.splev(x_data[2], sp.interpolate.splrep(self.kin, P4_lin[:, i])) for i in range(len(b1))
             ]
+            P4_interp_loop = [
+                sp.interpolate.splev(x_data[2], sp.interpolate.splrep(self.kin, P4_loop[:, i])) for i in range(len(b1))
+            ]
+            P4_interp = [P4_interp_lin[i] + P4_interp_loop[i] for i in range(len(b1))]
 
         if self.pardict["do_corr"]:
             C0 = np.exp(-self.k_m * x_data[0]) * self.k_m ** 2 / (4.0 * np.pi * x_data[0])
@@ -430,41 +443,15 @@ class BirdModel:
             P2_interp += np.outer(cequad, x_data[1] ** 2 / self.k_m ** 2)
 
         if self.pardict["do_hex"]:
-            P_model = np.concatenate([P0, P2, P4], axis=1)
+            P_model_lin = np.concatenate([P0_interp_lin, P2_interp_lin, P4_interp_lin], axis=1)
+            P_model_loop = np.concatenate([P0_interp_loop, P2_interp_loop, P4_interp_loop], axis=1)
             P_model_interp = np.concatenate([P0_interp, P2_interp, P4_interp], axis=1)
         else:
-            P_model = np.concatenate([P0, P2], axis=1)
+            P_model_lin = np.concatenate([P0_interp_lin, P2_interp_lin], axis=1)
+            P_model_loop = np.concatenate([P0_interp_loop, P2_interp_loop], axis=1)
             P_model_interp = np.concatenate([P0_interp, P2_interp], axis=1)
 
-        return P_model.T, P_model_interp.T
-
-    def compute_chi2(self, P_model, Pi, data):
-
-        if self.pardict["do_marg"]:
-
-            Pi = np.transpose(Pi, axes=(2, 0, 1))
-            Pimult = np.dot(Pi, data["cov_inv"])
-            Covbi = np.einsum("dpk,dqk->dpq", Pimult, Pi)
-            Covbi += np.diag(1.0 / np.tile(self.eft_priors, len(data["x_data"])))
-            vectorbi = np.einsum("dpk,kd->dp", Pimult, P_model) - np.dot(Pi, data["invcovdata"])
-            chi2nomar = (
-                np.einsum("kd,kd->d", P_model, np.dot(data["cov_inv"], P_model))
-                - 2.0 * np.dot(data["invcovdata"], P_model)
-                + data["chi2data"]
-            )
-            chi2mar = -np.einsum("dp,dp->d", vectorbi, np.linalg.solve(Covbi, vectorbi)) + np.log(np.linalg.det(Covbi))
-            chi_squared = chi2nomar + chi2mar
-
-        else:
-
-            # Compute the chi_squared
-            chi_squared = 0.0
-            for i in range(len(data["fit_data"])):
-                chi_squared += (P_model[i] - data["fit_data"][i]) * np.sum(
-                    data["cov_inv"][i, 0:] * (P_model - data["fit_data"])
-                )
-
-        return chi_squared
+        return P_model_lin.T, P_model_loop.T, P_model_interp.T
 
     # Ignore names, works for both power spectrum and correlation function
     def get_Pi_for_marg(self, ploop, b1, shot_noise, x_data):
@@ -656,9 +643,9 @@ class BirdModel:
                 Pi = np.array(
                     [
                         Pb3,  # *b3
-                        2.0 * Pcct / self.k_nl ** 2,  # *cct
-                        2.0 * Pcr1 / self.k_m ** 2,  # *cr1
-                        2.0 * Pcr2 / self.k_m ** 2,  # *cr2
+                        Pcct / self.k_nl ** 2,  # *cct
+                        Pcr1 / self.k_m ** 2,  # *cr1
+                        Pcr2 / self.k_m ** 2,  # *cr2
                         np.tile(Onel0, (len(b1), 1)).T * shot_noise,  # *ce1
                         np.tile(kl0 ** 2, (len(b1), 1)).T / self.k_m ** 2 * shot_noise,  # *cemono
                         np.tile(kl2 ** 2, (len(b1), 1)).T / self.k_m ** 2 * shot_noise,  # *cequad
@@ -672,14 +659,39 @@ class BirdModel:
 
         return Pi
 
-    def compute_bestfit_analytic(self, Pi, data, model):
+    def compute_chi2(self, P_model, data):
 
-        Covbi = np.dot(Pi, np.dot(data["cov_inv"], Pi.T))
-        Covbi += np.diag(1.0 / np.tile(self.eft_priors, len(data["x_data"])))
+        # Compute the chi_squared
+        diff = P_model - data["fit_data"][:, None]
+        return np.einsum("ip,ij,jp->p", diff, data["cov_inv"], diff)
+
+    def compute_chi2_marginalised(self, P_model, Pi, data):
+
+        Pi = np.transpose(Pi, axes=(2, 0, 1))
+        Pimult = np.dot(Pi, data["cov_inv"])
+        Covbi = np.einsum("dpk,dqk->dpq", Pimult, Pi)
+        Covbi += np.diag(1.0 / np.tile(self.eft_priors, len(data["x_data"]))) ** 2
+        vectorbi = np.einsum("dpk,kd->dp", Pimult, P_model) - np.dot(Pi, data["invcovdata"])
+        chi2nomar = (
+            np.einsum("kd,kd->d", P_model, np.dot(data["cov_inv"], P_model))
+            - 2.0 * np.dot(data["invcovdata"], P_model)
+            + data["chi2data"]
+        )
+        chi2mar = -np.einsum("dp,dp->d", vectorbi, np.linalg.solve(Covbi, vectorbi)) + np.log(np.linalg.det(Covbi))
+        chi_squared = chi2nomar + chi2mar
+
+        return chi_squared
+
+    def compute_bestfit_analytic(self, P_model, Pi, data):
+
+        Pi = np.transpose(Pi, axes=(2, 0, 1))
+        Pimult = np.dot(Pi, data["cov_inv"])
+        Covbi = np.einsum("dpk,dqk->dpq", Pimult, Pi)
+        Covbi += np.diag(1.0 / np.tile(self.eft_priors, len(data["x_data"]))) ** 2
         Cinvbi = np.linalg.inv(Covbi)
-        vectorbi = Pi @ data["cov_inv"] @ (data["fit_data"] - model)
+        vectorbi = np.einsum("dpk,kd->dp", Pimult, P_model) - np.dot(Pi, data["invcovdata"])
 
-        return Cinvbi @ vectorbi
+        return -np.einsum("dpq,dp->qd", Cinvbi, vectorbi)
 
     def get_components(self, coords, cvals):
 
@@ -1047,6 +1059,126 @@ def update_plot(pardict, x_data, P_model, plt, keep=False, plot_index=0):
                 plt12.remove()
 
 
+def update_plot_lin_loop(pardict, x_data, P_model, P_model_lin, P_model_loop, plt, keep=False, plot_index=0):
+
+    if pardict["do_hex"]:
+        nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), len(x_data[2])
+    else:
+        x_data = x_data[:2]
+        nx0, nx2, nx4 = len(x_data[0]), len(x_data[1]), 0
+    plt_data = np.concatenate(x_data) ** 2 * P_model if pardict["do_corr"] else np.concatenate(x_data) ** 1.0 * P_model
+    plt_data_lin = (
+        np.concatenate(x_data) ** 2 * P_model_lin if pardict["do_corr"] else np.concatenate(x_data) ** 1.0 * P_model_lin
+    )
+    plt_data_loop = (
+        np.concatenate(x_data) ** 2 * P_model_loop
+        if pardict["do_corr"]
+        else np.concatenate(x_data) ** 1.0 * P_model_loop
+    )
+
+    plt10 = plt.errorbar(
+        x_data[0],
+        plt_data[:nx0],
+        marker="None",
+        color="r",
+        linestyle="-",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt20 = plt.errorbar(
+        x_data[0],
+        plt_data_lin[:nx0],
+        marker="None",
+        color="r",
+        linestyle=":",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt30 = plt.errorbar(
+        x_data[0],
+        plt_data_lin[:nx0] + plt_data_loop[:nx0],
+        marker="None",
+        color="r",
+        linestyle="--",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt11 = plt.errorbar(
+        x_data[1],
+        plt_data[nx0 : nx0 + nx2],
+        marker="None",
+        color="b",
+        linestyle="-",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt21 = plt.errorbar(
+        x_data[1],
+        plt_data_lin[nx0 : nx0 + nx2],
+        marker="None",
+        color="b",
+        linestyle=":",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    plt31 = plt.errorbar(
+        x_data[1],
+        plt_data_lin[nx0 : nx0 + nx2] + plt_data_loop[nx0 : nx0 + nx2],
+        marker="None",
+        color="b",
+        linestyle="--",
+        markeredgewidth=1.3,
+        zorder=0,
+    )
+    if pardict["do_hex"]:
+        plt12 = plt.errorbar(
+            x_data[2],
+            plt_data[nx0 + nx2 :],
+            marker="None",
+            color="g",
+            linestyle="-",
+            markeredgewidth=1.3,
+            zorder=0,
+        )
+        plt22 = plt.errorbar(
+            x_data[2],
+            plt_data_lin[nx0 + nx2 :],
+            marker="None",
+            color="g",
+            linestyle=":",
+            markeredgewidth=1.3,
+            zorder=0,
+        )
+        plt32 = plt.errorbar(
+            x_data[2],
+            plt_data_lin[nx0 + nx2 :] + plt_data_loop[nx0 + nx2 :],
+            marker="None",
+            color="g",
+            linestyle="--",
+            markeredgewidth=1.3,
+            zorder=0,
+        )
+
+    if keep:
+        plt.ioff()
+        plt.show()
+    if not keep:
+        plt.pause(0.005)
+        if plt10 is not None:
+            plt10.remove()
+            plt20.remove()
+            plt30.remove()
+        if plt11 is not None:
+            plt11.remove()
+            plt21.remove()
+            plt31.remove()
+        if pardict["do_hex"]:
+            if plt12 is not None:
+                plt12.remove()
+                plt22.remove()
+                plt32.remove()
+
+
 def update_plot_components(pardict, kin, P_components, plt, keep=False, comp_list=(True, True, True, True)):
 
     ls = [":", "-.", "--", "-"]
@@ -1139,7 +1271,8 @@ def do_optimization(func, start):
     print(result)
 
     # from scipy.optimize import differential_evolution
-    # result = differential_evolution(func, start)
+
+    # result = differential_evolution(func, start, tol=1.0e-6)
 
     return result
 

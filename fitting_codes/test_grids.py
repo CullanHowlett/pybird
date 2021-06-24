@@ -3,6 +3,7 @@ import sys
 import copy
 from configobj import ConfigObj
 import matplotlib.pyplot as plt
+from pybird_dev.pybird import Correlator
 
 sys.path.append("../")
 from fitting_codes.fitting_utils import (
@@ -112,7 +113,7 @@ if __name__ == "__main__":
     # Code to generate a power spectrum template at fixed cosmology using pybird, then fit the AP parameters and fsigma8
     # First read in the config file
     configfile = sys.argv[1]
-    plot_flag = sys.argv[2]
+    plot_flag = int(sys.argv[2])
     pardict = ConfigObj(configfile)
 
     # Just converts strings in pardicts to numbers in int/float etc.
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     pardict2 = copy.copy(pardict)
     pardict2["code"] = "CAMB"
     pardict3 = copy.copy(pardict)
-    pardict3["taylor_order"] = -1
+    pardict3["taylor_order"] = 0
 
     # Set up the data
     fittingdata = FittingData(pardict)
@@ -128,83 +129,88 @@ if __name__ == "__main__":
     # Read in the window functions
     winnames = np.loadtxt(pardict["winfile"], dtype=str)
 
-    # Set up the BirdModels
-    birdmodels = []
-    birdmodels_grid = []
-    # birdmodels_ndimage = []
-    # birdmodels_taylor = []
-    for i in range(1):
-        birdmodels.append(BirdModel(pardict, direct=True, redindex=i))
-        birdmodels_grid.append(BirdModel(pardict, direct=True, redindex=i))
-        # birdmodels_grid.append(BirdModel(pardict, redindex=i))
-        # birdmodels_ndimage.append(BirdModel(pardict3, redindex=i))
-        # birdmodels_taylor.append(BirdModel(pardict2, redindex=i))
-
-    index = np.where(birdmodels[0].kin <= 0.25)[0]
-    print(index)
+    # Set up the BirdModel
+    birdmodel = BirdModel(pardict, direct=True, redindex=0)
 
     params = np.array(
         [
             [
-                birdmodels[0].valueref[0],
-                birdmodels[0].valueref[1],
-                birdmodels[0].valueref[2],
-                birdmodels[0].valueref[3],
-                0.0,
-            ],
-            [2.65133479, 0.65543637, 0.11155482, 0.0225015, -0.07430659],
+                birdmodel.valueref[0],
+                birdmodel.valueref[1],
+                birdmodel.valueref[2],
+                birdmodel.valueref[3],
+                birdmodel.valueref[4],
+            ]
         ]
     ).T
-    print(params)
+    bs = np.array(
+        [
+            [
+                1.8,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.6,
+                0.7,
+                0.8,
+                0.9,
+            ]
+        ]
+    ).T
 
-    # Fixed sim cosmology
-    # [1.82329744, 0.7277994,  0.36883151, 1.82566472, 0.66005296, 0.56958937, 2.01504828, 0.73229193, 0.26549316, 1.97126975, 0.48619364, 0.31502055]
-    # 13.975620481579705
+    Plin, Ploop = birdmodel.compute_pk(params)
+    P_model, P_model_interp = birdmodel.compute_model(bs, Plin, Ploop, fittingdata.data["x_data"][0])
 
-    # [2.71847577,  0.69834081,  0.11520184,  0.02231963, -0.23094655,  2.04720901, 0.72866703,  1.19230816,  2.03879757,  0.49749398, - 0.28684672,  2.28461804, 0.72606937,  0.89107149,  2.22612114,  0.30310565,  0.11983974]
-    # 14.944924472813728
+    # Set up a default pybird correlator
+    Nl = 3 if pardict["do_hex"] else 2
+    optiresum = True if pardict["do_corr"] else False
+    output = "bCf" if pardict["do_corr"] else "bPk"
+    kmax = None if pardict["do_corr"] else 0.6
+    correlator = Correlator()
 
-    # [1.82288593 0.71230644 1.8249855  0.6402078  2.01430063 0.71742001 1.96952603 0.46803072]
-    # [63.91720995]
-    # 13.895122791901443
+    # Set up pybird
+    correlator.set(
+        {
+            "output": output,
+            "multipole": Nl,
+            "z": float(pardict["z_pk"][0]),
+            "optiresum": False,
+            "with_AP": True,
+            "kmax": 0.5,
+            "with_bias": True,
+            "DA_AP": birdmodel.Da,
+            "H_AP": birdmodel.Hz,
+        }
+    )
 
-    # [1.89332541 0.79972024 1.89362445 0.69606235 2.09136723 0.87192942 2.04276339 0.54878832]
-    # [65.35896434]
-    # 15.97329758543616
-
-    # [2.78040454  0.69623241  0.1138217   0.02226641 -0.22522994  1.94444006 0.51014521  1.959835    0.50018533  2.15895801  0.38411174  2.12181232 0.20969426]
-    # [61.25668875]
-    # 14.228549185885775
+    correlator.compute(
+        {
+            "k11": birdmodel.kmod,
+            "P11": birdmodel.Pmod,
+            "z": float(pardict["z_pk"][0]),
+            "Omega0_m": birdmodel.Om,
+            "f": birdmodel.fN,
+            "DA": birdmodel.Da,
+            "H": birdmodel.Hz,
+            "bias": {
+                "b1": bs[0, 0],
+                "b2": bs[1, 0],
+                "b3": bs[2, 0],
+                "b4": bs[3, 0],
+                "cct": bs[4, 0],
+                "cr1": bs[5, 0],
+                "cr2": bs[6, 0],
+            },
+        }
+    )
 
     # Plotting (for checking/debugging, should turn off for production runs)
     plt = create_plot(pardict, fittingdata, plotindex=plot_flag - 1)
 
-    # Do some comparison plots
-    Plin, Ploop = birdmodels[0].get_components(params)
-    Plin_grid, Ploop_grid = birdmodels_grid[0].get_components(params)
-    """Plin_taylor, Ploop_taylor = birdmodels_taylor[0].compute_pk(params)
-    Plin_grid, Ploop_grid = birdmodels_grid[0].compute_pk(params)
-    Plin_ndimage, Ploop_ndimage = birdmodels_ndimage[0].compute_pk(params)
-    print(np.shape(birdmodels[0].kin[index]), np.shape(Plin[:, 0, index, 0]))
-    print(np.shape(Plin_grid))
-    for i in range(3):
-        plot_comparison(
-            birdmodels[0].kin[index],
-            Plin[:, i, index, 0],
-            Plin_grid[:2, i, index, 0],
-            Plin_ndimage[:2, i, index, 0],
-            Plin_taylor[:2, i, index, 0],
-        )
-    for i in range(19):
-        plot_comparison(
-            birdmodels[0].kin[index],
-            Ploop[:, index, i, 0],
-            Ploop_grid[:2, index, i, 0],
-            Ploop_ndimage[:2, index, i, 0],
-            Ploop_taylor[:2, index, i, 0],
-        )"""
-    for i in range(np.shape(params)[1]):
-        # plt.plot(birdmodels[0].kin[index], birdmodels[0].kin[index] * Plin[0, 0, index, i])
-        plt.plot(birdmodels[0].kin[index], birdmodels[0].kin[index] * Plin_grid[0, 0, index, i])
-    plt.ylim(-200.0, 500.0)
+    # Do some comparison plot
+    plt.plot(birdmodel.kin, birdmodel.kin * P_model[2])
+    plt.plot(correlator.co.k, correlator.co.k * correlator.bird.fullPs[2], ls="--")
+    plt.ioff()
     plt.show()

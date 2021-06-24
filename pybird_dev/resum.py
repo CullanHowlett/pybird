@@ -272,7 +272,6 @@ class Resum(object):
         else:
             for l, cl in enumerate(self.extractBAO(bird.C11)):
                 for j, xy in enumerate(XpYp):
-                    print(cl * xy)
                     IRcorrUnsorted = np.real((-1j) ** (2 * l)) * self.k2p[j] * self.IRn(xy * cl, window=window)
                     for v in range(self.co.Na):
                         bird.IRPs11[l, j * self.co.Na + v, self.Nlow :] = IRcorrUnsorted[v]

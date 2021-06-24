@@ -234,13 +234,13 @@ class Projection(object):
                 Ploopl_AP = (
                     1.0 / (qperp ** 2 * qpar) * self.integrAP(self.co.k, bird.Ploopl, kp, arrayLegendremup, many=True)
                 )
-                Pnlol_AP = (
-                    1.0 / (qperp ** 2 * qpar) * self.integrAP(self.co.k, bird.Pnlol, kp, arrayLegendremup, many=True)
-                )
+                # Pnlol_AP = (
+                #    1.0 / (qperp ** 2 * qpar) * self.integrAP(self.co.k, bird.Pnlol, kp, arrayLegendremup, many=True)
+                # )
                 if overwrite:
-                    bird.P11l, bird.Pctl, bird.Ploopl, bird.Pnlol = P11l_AP, Pctl_AP, Ploopl_AP, Pnlol_AP
+                    bird.P11l, bird.Pctl, bird.Ploopl = P11l_AP, Pctl_AP, Ploopl_AP
                 else:
-                    return P11l_AP, Pctl_AP, Ploopl_AP, Pnlol_AP
+                    return P11l_AP, Pctl_AP, Ploopl_AP
 
     def setWindow(self, load=True, save=True, Nl=3, withmask=True, windowk=0.05):
         """

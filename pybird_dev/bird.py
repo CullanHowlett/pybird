@@ -219,6 +219,7 @@ class Bird(object):
         """
 
         f = self.f
+        print(bias)
 
         b1 = bias["b1"]
         b2 = bias["b2"]
