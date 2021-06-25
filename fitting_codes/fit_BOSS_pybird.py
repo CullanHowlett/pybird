@@ -206,11 +206,15 @@ def do_dynesty(func, prior_transform, start, jobid):
 def lnpost(params):
 
     # This returns the posterior distribution which is given by the log prior plus the log likelihood
-    prior = lnprior(params, birdmodels)
-    index = np.where(~np.isinf(prior))[0]
-    like = np.zeros(np.shape(params)[1])
-    if len(index) > 0:
-        like[index] = lnlike(params[:, index], birdmodels, fittingdata, plt)
+    if params.ndim == 1:
+        prior = lnprior(params, birdmodels)
+        like = lnlike(params, birdmodels, fittingdata, plt)
+    else:
+        prior = lnprior(params, birdmodels)
+        index = np.where(~np.isinf(prior))[0]
+        like = np.zeros(len(prior))
+        if len(index) > 0:
+            like[index] = lnlike(params[index], birdmodels, fittingdata, plt)
 
     return prior + like
 
@@ -537,8 +541,8 @@ if __name__ == "__main__":
         (0.0, 3.0),
         (-4.0, 4.0),
     )"""
-    # result = do_optimization(lambda *args: -lnpost(*args), start)
+    result = do_optimization(lambda *args: -lnpost(*args), start)
 
     # Does an MCMC
     # do_emcee(lnpost, start)
-    do_dynesty(lnlike, lnprior_transform, start, jobid)
+    # do_dynesty(lnlike, lnprior_transform, start, jobid)
