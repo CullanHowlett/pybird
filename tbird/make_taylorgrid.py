@@ -7,6 +7,7 @@ from configobj import ConfigObj
 sys.path.append("../")
 from pybird_dev import pybird
 from tbird.Grid import grid_properties, run_camb, run_class
+from fitting_codes.fitting_utils import format_pardict
 
 if __name__ == "__main__":
 
@@ -16,6 +17,8 @@ if __name__ == "__main__":
     njobs = int(sys.argv[3])
     redindex = int(sys.argv[4])
     pardict = ConfigObj(configfile)
+
+    pardict = format_pardict(pardict)
 
     # Compute some stuff for the grid based on the config file
     valueref, delta, flattenedgrid, _ = grid_properties(pardict)
@@ -153,7 +156,6 @@ if __name__ == "__main__":
         allParams.append(np.hstack([Params, [idx]]))
         if (i == 0) or ((i + 1) % 10 == 0):
             print("theta check: ", arrayred[idx], theta, truetheta)
-        print(pardict["outpk"])
         if parameters["code"] == "CAMB":
             np.save(
                 os.path.join(pardict["outpk"], "redindex%d" % (redindex), "CAMB_run%s.npy" % (str(job_no))),

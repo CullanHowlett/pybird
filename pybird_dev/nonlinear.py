@@ -9,9 +9,9 @@ from .common import co
 
 class NonLinear(object):
     """
-    given a Bird() object, computes the one-loop power spectrum and one-loop correlation function. 
+    given a Bird() object, computes the one-loop power spectrum and one-loop correlation function.
     The correlation function is useful to perform the IR-resummation of the power spectrum.
-    The loop and spherical Bessel transform matrices are either loaded either precomputed and stored at the instanciation of the class. 
+    The loop and spherical Bessel transform matrices are either loaded either precomputed and stored at the instanciation of the class.
 
     Attributes
     ----------
@@ -22,7 +22,7 @@ class NonLinear(object):
         An object of type FFTLog() to perform the FFTLog
     M22 : ndarray
         22-loop power spectrum matrices
-    M13 : ndarray 
+    M13 : ndarray
         13-loop power spectrum matrices
     Mcf11 : ndarray
         Spherical Bessel transform matrices of the linear power spectrum to correlation function
@@ -41,7 +41,7 @@ class NonLinear(object):
     optipathC13l : NumPy einsum_path
         Optimization settings for NumPy einsum when performing matrix multiplications to compute the 13-loop correlation function. For speedup purpose in repetitive evaluations.
     optipathC22l : NumPy einsum_path
-        Optimization settings for NumPy einsum when performing matrix multiplications to compute the 22-loop correlation function. For speedup purpose in repetitive evaluations. 
+        Optimization settings for NumPy einsum when performing matrix multiplications to compute the 22-loop correlation function. For speedup purpose in repetitive evaluations.
     """
 
     def __init__(self, load=True, save=True, path="./", NFFT=256, co=co):
@@ -230,7 +230,7 @@ class NonLinear(object):
         bird.C13l = np.real(np.einsum("ns,ms,blnm->lbs", CoefsPow, CoefsPow, self.Mcf13, optimize=self.optipathC13l))
 
     def Coef(self, bird, window=None):
-        """ Perform the FFTLog (i.e. calculate the coefficients of the FFTLog) of the input linear power spectrum in the given a Bird().
+        """Perform the FFTLog (i.e. calculate the coefficients of the FFTLog) of the input linear power spectrum in the given a Bird().
 
         Parameters
         ----------
@@ -240,7 +240,7 @@ class NonLinear(object):
         return self.fft.Coef(bird.kin, bird.Pin, window=window)
 
     def Ps(self, bird, window=None):
-        """ Compute the loop power spectrum given a Bird(). Perform the FFTLog and the matrix multiplications.
+        """Compute the loop power spectrum given a Bird(). Perform the FFTLog and the matrix multiplications.
 
         Parameters
         ----------
@@ -253,7 +253,7 @@ class NonLinear(object):
         self.makeP13(coefkPow, bird)
 
     def Cf(self, bird, window=None):
-        """ Compute the loop correlation function given a Bird(). Perform the FFTLog and the matrix multiplications.
+        """Compute the loop correlation function given a Bird(). Perform the FFTLog and the matrix multiplications.
 
         Parameters
         ----------
@@ -271,7 +271,7 @@ class NonLinear(object):
             self.makeCnlo(coefsPow, bird)
 
     def PsCf(self, bird, window=None):
-        """ Compute the loop power spectrum and correlation function given a Bird(). Perform the FFTLog and the matrix multiplications.
+        """Compute the loop power spectrum and correlation function given a Bird(). Perform the FFTLog and the matrix multiplications.
 
         Parameters
         ----------

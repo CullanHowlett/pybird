@@ -246,7 +246,7 @@ class BirdLikelihood(object):
 
     def cleanup(self):
         """
-        You can override the cleanup method if you do something 
+        You can override the cleanup method if you do something
         unusual to get your data, like open a database or something.
         It is run just once, at the end of the pipeline.
         """

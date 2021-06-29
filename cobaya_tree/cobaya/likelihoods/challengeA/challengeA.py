@@ -14,7 +14,7 @@ except ImportError:
 class Likelihood_eft(Likelihood):
     def initialize(self):
         """
-         Prepare any computation, importing any necessary code, files, etc.
+        Prepare any computation, importing any necessary code, files, etc.
         """
         # read values of k (in h/Mpc)
         k3, PSdata = self.__load_data()
@@ -218,7 +218,7 @@ class challengeA(Likelihood_eft):
 
     def get_requirements(self):
         """
-         returns a dictionary specifying quantities calculated by a theory code are needed
+        returns a dictionary specifying quantities calculated by a theory code are needed
         """
         needs = {
             "H0": None,

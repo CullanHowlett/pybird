@@ -2319,7 +2319,14 @@ class Likelihood_mpk(Likelihood):
         # low-order spline through zeros to subtract smooth trend from wiggles fn.
         wzeros = d2.roots()
         wzeros = wzeros[np.where(np.logical_and(wzeros >= k_ref[0], wzeros <= k_ref[1]))]
-        wzeros = np.concatenate((wzeros, [k_ref[1],]))
+        wzeros = np.concatenate(
+            (
+                wzeros,
+                [
+                    k_ref[1],
+                ],
+            )
+        )
         wtrend = scipy.interpolate.UnivariateSpline(wzeros, fwiggle(wzeros), k=3, s=0)
 
         # Construct smooth no-BAO:
