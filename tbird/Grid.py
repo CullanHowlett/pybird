@@ -42,7 +42,7 @@ def grid_properties(pardict):
 
     order = float(pardict["order"])
     valueref = np.array([float(pardict[k]) for k in pardict["freepar"]])
-    delta = np.fabs(np.array(pardict["dx"], dtype=np.float) * valueref)
+    delta = np.fabs(np.array(pardict["dx"], dtype=np.float))
     squarecrd = [np.arange(-order, order + 1) for l in pardict["freepar"]]
     truecrd = [valueref[l] + delta[l] * np.arange(-order, order + 1) for l in range(len(pardict["freepar"]))]
     squaregrid = np.array(np.meshgrid(*squarecrd, indexing="ij"))
