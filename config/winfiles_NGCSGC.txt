@@ -1,6 +1,6 @@
-../BOSSdata/NGC+SGC_z1/WindowFunc/Ql_z1_NGC_rebinned_5000bins_s10fixed
-../BOSSdata/NGC+SGC_z1/WindowFunc/Ql_z1_SGC_rebinned_5000bins_s10fixed
-../BOSSdata/NGC+SGC_z2/WindowFunc/Ql_z2_NGC_rebinned_5000bins_s10fixed
-../BOSSdata/NGC+SGC_z2/WindowFunc/Ql_z2_SGC_rebinned_5000bins_s10fixed
-../BOSSdata/NGC+SGC_z3/WindowFunc/Ql_z3_NGC_rebinned_5000bins_s10fixed
-../BOSSdata/NGC+SGC_z3/WindowFunc/Ql_z3_SGC_rebinned_5000bins_s10fixed
+../../BOSSdata/NGC+SGC_z1/WindowFunc/Ql_z1_NGC_rebinned_5000bins_s10fixed
+../../BOSSdata/NGC+SGC_z1/WindowFunc/Ql_z1_SGC_rebinned_5000bins_s10fixed
+../../BOSSdata/NGC+SGC_z2/WindowFunc/Ql_z2_NGC_rebinned_5000bins_s10fixed
+../../BOSSdata/NGC+SGC_z2/WindowFunc/Ql_z2_SGC_rebinned_5000bins_s10fixed
+../../BOSSdata/NGC+SGC_z3/WindowFunc/Ql_z3_NGC_rebinned_5000bins_s10fixed
+../../BOSSdata/NGC+SGC_z3/WindowFunc/Ql_z3_SGC_rebinned_5000bins_s10fixed
