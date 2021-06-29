@@ -4,10 +4,17 @@ from numpy import pi, cos, sin, log, exp, sqrt, trapz
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.special import legendre, spherical_jn, j1
-from copy import deepcopy
-from .fftlog import FFTLog, MPC
-from .common import co
+from copy import deepcopy 
+from fftlog import FFTLog, MPC
+from common import co
+from greenfunction import GreenFunction
+from fourier import FourierTransform
 
+# import importlib, sys
+# importlib.reload(sys.modules['greenfunction'])
+# from greenfunction import GreenFunction
+
+# from time import time
 
 def cH(Om, a):
     """ LCDM growth rate auxiliary function """
@@ -88,23 +95,10 @@ class Projection(object):
     - Fiber collision corrections
     - Wedges
     """
-
-    def __init__(
-        self,
-        xout,
-        DA_AP=None,
-        H_AP=None,
-        nbinsmu=100,
-        window_fourier_name=None,
-        path_to_window=None,
-        window_configspace_file=None,
-        binning=False,
-        fibcol=False,
-        Nwedges=0,
-        zz=None,
-        nz=None,
-        co=co,
-    ):
+    def __init__(self, xout, DA_AP=None, H_AP=None, nbinsmu=100,
+        window_fourier_name=None, path_to_window=None, window_configspace_file=None, 
+        binning=False, fibcol=False, Nwedges=0, wedges_bounds=None,
+        zz=None, nz=None, co=co):
 
         self.co = co
         self.cf = self.co.with_cf
@@ -113,14 +107,14 @@ class Projection(object):
         if DA_AP is not None and H_AP is not None:
             self.DA = DA_AP
             self.H = H_AP
-            self.muacc = np.linspace(0.0, 1.0, nbinsmu)
-            if self.cf:
-                self.sgrid, self.mugrid = np.meshgrid(self.co.s, self.muacc, indexing="ij")
-            else:
-                self.kgrid, self.mugrid = np.meshgrid(self.co.k, self.muacc, indexing="ij")
-            self.arrayLegendremugrid = np.array(
-                [(2 * 2 * l + 1) / 2.0 * legendre(2 * l)(self.mugrid) for l in range(self.co.Nl)]
-            )
+
+            self.DA = DA(self.Om_AP, self.z_AP)
+            self.H = Hubble(self.Om_AP, self.z_AP)
+            self.muacc = np.linspace(0., 1., nbinsmu)
+            self.sgrid, self.musgrid = np.meshgrid(self.co.s, self.muacc, indexing='ij')
+            self.kgrid, self.mukgrid = np.meshgrid(self.co.k, self.muacc, indexing='ij')
+            self.arrayLegendremusgrid = np.array([(2*2*l+1)/2.*legendre(2*l)(self.musgrid) for l in range(self.co.Nl)])
+            self.arrayLegendremukgrid = np.array([(2*2*l+1)/2.*legendre(2*l)(self.mukgrid) for l in range(self.co.Nl)])
 
         self.with_window = False
         if window_configspace_file is not None:
@@ -137,15 +131,18 @@ class Projection(object):
         # wedges
         if Nwedges is not 0:
             self.Nw = Nwedges
-            self.IL = self.IntegralLegendreArray(Nw=self.Nw, Nl=self.co.Nl)
+            self.IL = self.IntegralLegendreArray(Nw=self.Nw, Nl=self.co.Nl, bounds=wedges_bounds)
 
+        # redshift bin evolution
         if zz is not None and nz is not None:
             self.zz = zz
             self.nz = nz
-            self.z1, self.z2 = np.meshgrid(self.zz, self.zz, indexing="ij")
-            self.n1, self.n2 = self.mesheval2d(self.zz, self.z1, self.z2, self.nz)
-            self.np2 = self.n1 * self.n2
-            self.zm = 0.5 * (self.z1 + self.z2)
+            mu = np.linspace(0, 1, 100)
+            self.s, self.z1, self.mu = np.meshgrid(self.co.s, self.zz, mu, indexing='ij')
+            self.n1 = self.mesheval1d(self.zz, self.z1, nz)
+            self.L = np.array([legendre(2*l)(self.mu) for l in range(self.co.Nl)]) # Legendre to reconstruct the 3D 2pt function
+            self.Lp = 2. * np.array([(4*l+1)/2. * legendre(2*l)(self.mu) for l in range(self.co.Nl)]) # Legendre in the integrand to get the multipoles ; factor 2 in front because mu integration goes from 0 to 1
+            self.ft = FourierTransform(co=self.co)
 
     def get_AP_param(self, bird=None, DA=None, H=None):
         """
@@ -164,14 +161,20 @@ class Projection(object):
         AP integration
         Credit: Jerome Gleyzes
         """
-        Pkint = interp1d(k, Pk, axis=-1, kind="cubic", bounds_error=False, fill_value="extrapolate")
-        if many:
-            Pkmu = np.einsum("lpkm,lkm->pkm", Pkint(kp), arrayLegendremup)
-            Integrandmu = np.einsum("pkm,lkm->lpkm", Pkmu, self.arrayLegendremugrid)
+        if self.cf:
+            mugrid = self.musgrid
+            arrayLegendremugrid = self.arrayLegendremusgrid
         else:
-            Pkmu = np.einsum("lkm,lkm->km", Pkint(kp), arrayLegendremup)
-            Integrandmu = np.einsum("km,lkm->lkm", Pkmu, self.arrayLegendremugrid)
-        return 2 * np.trapz(Integrandmu, x=self.mugrid, axis=-1)
+            mugrid = self.mukgrid
+            arrayLegendremugrid = self.arrayLegendremukgrid
+        Pkint = interp1d(k, Pk, axis=-1, kind='cubic', bounds_error=False, fill_value='extrapolate')
+        if many:
+            Pkmu = np.einsum('lpkm,lkm->pkm', Pkint(kp), arrayLegendremup)
+            Integrandmu = np.einsum('pkm,lkm->lpkm', Pkmu, arrayLegendremugrid)
+        else:
+            Pkmu = np.einsum('lkm,lkm->km', Pkint(kp), arrayLegendremup)
+            Integrandmu = np.einsum('km,lkm->lkm', Pkmu, arrayLegendremugrid)
+        return 2 * np.trapz(Integrandmu, x=mugrid, axis=-1)
 
     def AP(self, bird=None, q=None, overwrite=True):
         """
@@ -183,11 +186,11 @@ class Projection(object):
         else:
             qperp, qpar = q
 
-        if self.co.with_cf:
-            G = (self.mugrid ** 2 * qpar ** 2 + (1 - self.mugrid ** 2) * qperp ** 2) ** 0.5
+        if self.cf:
+            G = (self.musgrid**2 * qpar**2 + (1-self.musgrid**2) * qperp**2)**0.5
             sp = self.sgrid * G
-            mup = self.mugrid * qpar / G
-            arrayLegendremup = np.array([legendre(2 * l)(mup) for l in range(self.co.Nl)])
+            mup = self.musgrid * qpar / G
+            arrayLegendremup = np.array([legendre(2*l)(mup) for l in range(self.co.Nl)])
 
             if bird.with_bias:
                 if overwrite:
@@ -198,18 +201,15 @@ class Projection(object):
                 C11l_AP = self.integrAP(self.co.s, bird.C11l, sp, arrayLegendremup, many=True)
                 Cctl_AP = self.integrAP(self.co.s, bird.Cctl, sp, arrayLegendremup, many=True)
                 Cloopl_AP = self.integrAP(self.co.s, bird.Cloopl, sp, arrayLegendremup, many=True)
-                Cnlol_AP = self.integrAP(self.co.s, bird.Cnlol, sp, arrayLegendremup, many=True)
                 if overwrite:
-                    bird.C11l, bird.Cctl, bird.Cloopl, bird.Cnlol = C11l_AP, Cctl_AP, Cloopl_AP, Cnlol_AP
+                    bird.C11l, bird.Cctl, bird.Cloopl = C11l_AP, Cctl_AP, Cloopl_AP
                 else:
-                    return C11l_AP, Cctl_AP, Cloopl_AP, Cnlol_AP
-
+                    return C11l_AP, Cctl_AP, Cloopl_AP
         else:
             F = qpar / qperp
-            Ffac = np.sqrt((1 + self.mugrid ** 2 * (1 / (F ** 2) - 1)))
-            kp = self.kgrid / qperp * Ffac
-            mup = self.mugrid / F / Ffac
-            arrayLegendremup = np.array([legendre(2 * l)(mup) for l in range(self.co.Nl)])
+            kp = self.kgrid / qperp * (1 + self.mukgrid**2 * (F**-2 - 1))**0.5
+            mup = self.mukgrid / F * (1 + self.mukgrid**2 * (F**-2 - 1))**-0.5
+            arrayLegendremup = np.array([legendre(2*l)(mup) for l in range(self.co.Nl)])
 
             if bird.with_bias:
                 if overwrite:
@@ -256,45 +256,39 @@ class Projection(object):
 
         compute = True
 
-        if self.co.with_cf:
+        # if self.cf: # no window for cf estimator
+        #     try:
+        #         swindow_config_space = np.loadtxt(self.window_configspace_file)
+        #     except:
+        #         print ('Error: can\'t load mask file: %s.'%self.window_configspace_file)
+        #         compute = False
+
+        # else:
+        self.p = np.concatenate([ np.geomspace(1e-5, 0.015, 100, endpoint=False) , np.arange(0.015, self.co.kmax, 1e-3) ])
+        window_fourier_file = os.path.join(self.path_to_window, '%s_Nl%s_kmax%.2f.npy') % (self.window_fourier_name, self.co.Nl, self.co.kmax)
+
+        if load:
             try:
-                swindow_config_space = np.loadtxt(self.window_configspace_file)
-            except:
-                print("Error: can't load mask file: %s." % self.window_configspace_file)
+                self.Wal = np.load(window_fourier_file)
+                print ('Loaded mask: %s' % window_fourier_file)
+                save = False
                 compute = False
+            except:
+                print ('Can\'t load mask: %s \n instead,' % window_fourier_file )
+                load = False
 
-        else:
-            self.p = np.concatenate(
-                [np.geomspace(1e-5, 0.015, 100, endpoint=False), np.arange(0.015, self.co.kmax, 1e-3)]
-            )
-            window_fourier_file = os.path.join(self.path_to_window, "%s_Nl%s_kmax%.2f.npy") % (
-                self.window_fourier_name,
-                self.co.Nl,
-                self.co.kmax,
-            )
-
-            if load:
+        if not load: # do not change to else
+            print ('Computing new mask.')
+            if self.window_configspace_file is None:
+                print ('Error: please specify a configuration-space mask file.')
+                compute = False
+            else:
                 try:
-                    self.Wal = np.load(window_fourier_file)
-                    print("Loaded mask: %s" % window_fourier_file)
-                    save = False
-                    compute = False
+                    swindow_config_space = np.loadtxt(self.window_configspace_file)
                 except:
-                    print("Can't load mask: %s \n instead," % window_fourier_file)
-                    load = False
-
-            if not load:  # do not change to else
-                print("Computing new mask.")
-                if self.window_configspace_file is None:
-                    print("Error: please specify a configuration-space mask file.")
+                    print ('Error: can\'t load mask file: %s.'%self.window_configspace_file)
                     compute = False
-                else:
-                    try:
-                        swindow_config_space = np.loadtxt(self.window_configspace_file)
-                    except:
-                        print("Error: can't load mask file: %s." % self.window_configspace_file)
-                        compute = False
-
+        
         if compute is True:
             Calp = np.array(
                 [
@@ -308,48 +302,41 @@ class Projection(object):
             Qp = np.moveaxis(swindow_config_space[:, 1:].reshape(-1, 3), 0, -1)[:Nl]
             Qal = np.einsum("alp,ps->als", Calp[:Nl, :Nl, :Nl], Qp)
 
-            if self.co.with_cf:
-                self.Qal = interp1d(sw, Qal, axis=-1, kind="cubic", bounds_error=False, fill_value="extrapolate")(
-                    self.co.s
-                )
+            # if self.cf: # no window for cf estimator
+            #     self.Qal = interp1d(sw, Qal, axis=-1, kind='cubic', bounds_error=False, fill_value='extrapolate')(self.co.s)
 
-            else:
-                self.fftsettings = dict(Nmax=4096, xmin=sw[0], xmax=sw[-1] * 100.0, bias=-1.6)  # 1e-2 - 1e6 [Mpc/h]
-                self.fft = FFTLog(**self.fftsettings)
-                self.pPow = exp(np.einsum("n,s->ns", -self.fft.Pow - 3.0, log(self.p)))
-                self.M = np.empty(shape=(Nl, self.fft.Pow.shape[0]), dtype="complex")
+            # else:
+            self.fftsettings = dict(Nmax=4096, xmin=sw[0], xmax=sw[-1]*100., bias=-1.6) # 1e-2 - 1e6 [Mpc/h]
+            self.fft = FFTLog(**self.fftsettings)
+            self.pPow = exp(np.einsum('n,s->ns', -self.fft.Pow-3., log(self.p)))
+            self.M = np.empty(shape=(Nl, self.fft.Pow.shape[0]), dtype='complex')
+            for l in range(Nl): self.M[l] = 4*pi * MPC(2*l, -0.5*self.fft.Pow)
+
+            self.Coef = np.empty(shape=(self.co.Nl, Nl, self.co.Nk, self.fft.Pow.shape[0]), dtype='complex')
+            for a in range(self.co.Nl):
                 for l in range(Nl):
-                    self.M[l] = 4 * pi * MPC(2 * l, -0.5 * self.fft.Pow)
+                    for i,k in enumerate(self.co.k):
+                        self.Coef[a,l,i] = (-1j)**(2*a) * 1j**(2*l) * self.fft.Coef(sw, Qal[a,l]*spherical_jn(2*a, k*sw), extrap = 'padding')
 
-                self.Coef = np.empty(shape=(self.co.Nl, Nl, self.co.Nk, self.fft.Pow.shape[0]), dtype="complex")
-                for a in range(self.co.Nl):
-                    for l in range(Nl):
-                        for i, k in enumerate(self.co.k):
-                            self.Coef[a, l, i] = (
-                                (-1j) ** (2 * a)
-                                * 1j ** (2 * l)
-                                * self.fft.Coef(sw, Qal[a, l] * spherical_jn(2 * a, k * sw), extrap="padding")
-                            )
+            self.Wal = self.p**2 * np.real( np.einsum('alkn,np,ln->alkp', self.Coef, self.pPow, self.M) )
 
-                self.Wal = self.p ** 2 * np.real(np.einsum("alkn,np,ln->alkp", self.Coef, self.pPow, self.M))
+            if save:
+                print ( 'Saving mask: %s' % window_fourier_file )
+                np.save(window_fourier_file, self.Wal)
 
-                if save:
-                    print("Saving mask: %s" % window_fourier_file)
-                    np.save(window_fourier_file, self.Wal)
+        # if not self.cf: # no window for cf estimator
+        self.Wal = self.Wal[:,:self.co.Nl]
 
-        if not self.co.with_cf:
-            self.Wal = self.Wal[:, : self.co.Nl]
+        # Apply masking centered around the value of k
+        if withmask:
+            kpgrid, kgrid = np.meshgrid(self.p, self.co.k, indexing='ij')
+            mask = (kpgrid < kgrid + windowk) & (kpgrid > kgrid - windowk)
+            Wal_masked = np.einsum('alkp,pk->alkp', self.Wal, mask)
 
-            # Apply masking centered around the value of k
-            if withmask:
-                kpgrid, kgrid = np.meshgrid(self.p, self.co.k, indexing="ij")
-                mask = (kpgrid < kgrid + windowk) & (kpgrid > kgrid - windowk)
-                Wal_masked = np.einsum("alkp,pk->alkp", self.Wal, mask)
-
-            # the spacing (needed to do the convolution as a sum)
-            deltap = self.p[1:] - self.p[:-1]
-            deltap = np.concatenate([[0], deltap])
-            self.Waldk = np.einsum("alkp,p->alkp", Wal_masked, deltap)
+        # the spacing (needed to do the convolution as a sum)
+        deltap = self.p[1:] - self.p[:-1]
+        deltap = np.concatenate([[0], deltap])
+        self.Waldk = np.einsum('alkp,p->alkp', Wal_masked, deltap)
 
     def integrWindow(self, P, many=False):
         """
@@ -368,7 +355,7 @@ class Projection(object):
         Apply the survey window function to the bird power spectrum
         """
         if self.with_window:
-            if self.co.with_cf:
+            if self.cf:
                 if bird.with_bias:
                     bird.fullCf = np.einsum("als,ls->as", self.Qal, bird.fullCf)
                 else:
@@ -523,28 +510,24 @@ class Projection(object):
         """
         Integrate over each bin of the data k's
         """
-        if self.co.with_cf:
-            integrand = interp1d(self.co.s, P, axis=-1, kind="cubic", bounds_error=False, fill_value="extrapolate")
-        else:
-            integrand = interp1d(self.co.k, P, axis=-1, kind="cubic", bounds_error=False, fill_value="extrapolate")
-        res = np.array([np.trapz(integrand(pts) * pts ** 2, x=pts) for pts in self.points])
+        if self.cf: integrand = interp1d(self.co.s, P, axis=-1, kind='cubic', bounds_error=False)
+        else: integrand = interp1d(self.co.k, P, axis=-1, kind='cubic', bounds_error=False)
+        res = np.array([np.trapz(integrand(pts) * pts**2, x=pts) for pts in self.points])
         return np.moveaxis(res, 0, -1) / self.binvol
 
     def xbinning(self, bird):
         """
         Apply binning in k-space for linear-spaced data k-array
         """
-        if self.co.with_cf:
+        if self.cf:
             if bird.with_bias:
                 bird.fullCf = self.integrBinning(bird.fullCf)
             else:
                 bird.C11l = self.integrBinning(bird.C11l)
                 bird.Cctl = self.integrBinning(bird.Cctl)
                 bird.Cloopl = self.integrBinning(bird.Cloopl)
-                if bird.with_stoch:
-                    bird.Cstl = self.integrBinning(bird.Cstl)
-                if bird.with_nlo_bias:
-                    bird.Cnlol = self.integrBinning(bird.Cnlol)
+                # if bird.with_stoch: bird.Cstl = self.integrBinning(bird.Cstl)
+                if bird.with_nnlo_counterterm: bird.Cnnlol = self.integrBinning(bird.Cnnlol)
         else:
             if bird.with_bias:
                 bird.fullPs = self.integrBinning(bird.fullPs)
@@ -552,10 +535,9 @@ class Projection(object):
                 bird.P11l = self.integrBinning(bird.P11l)
                 bird.Pctl = self.integrBinning(bird.Pctl)
                 bird.Ploopl = self.integrBinning(bird.Ploopl)
-                if bird.with_stoch:
-                    bird.Pstl = self.integrBinning(bird.Pstl)
-                if bird.with_nlo_bias:
-                    bird.Pnlol = self.integrBinning(bird.Pnlol)
+                if bird.with_stoch: bird.Pstl = self.integrBinning(bird.Pstl)
+                if bird.with_nnlo_counterterm: bird.Pnnlol = self.integrBinning(bird.Pnnlol)
+
 
     def xdata(self, bird):
         """
@@ -565,24 +547,20 @@ class Projection(object):
             if bird.with_bias:
                 bird.fullCf = interp1d(self.co.s, bird.fullCf, axis=-1, kind="cubic", bounds_error=False)(self.xout)
             else:
-                bird.C11l = interp1d(self.co.s, bird.C11l, axis=-1, kind="cubic", bounds_error=False)(self.xout)
-                bird.Cctl = interp1d(self.co.s, bird.Cctl, axis=-1, kind="cubic", bounds_error=False)(self.xout)
-                bird.Cloopl = interp1d(self.co.s, bird.Cloopl, axis=-1, kind="cubic", bounds_error=False)(self.xout)
-                if bird.with_stoch:
-                    bird.Cstl = interp1d(self.co.s, bird.Cstl, axis=-1, kind="cubic", bounds_error=False)(self.xout)
-                if bird.with_nlo_bias:
-                    bird.Cnlol = interp1d(self.co.s, bird.Cnlol, axis=-1, kind="cubic", bounds_error=False)(self.xout)
+                bird.C11l = interp1d(self.co.s, bird.C11l, axis=-1, kind='cubic', bounds_error=False)(self.xout)
+                bird.Cctl = interp1d(self.co.s, bird.Cctl, axis=-1, kind='cubic', bounds_error=False)(self.xout)
+                bird.Cloopl = interp1d(self.co.s, bird.Cloopl, axis=-1, kind='cubic', bounds_error=False)(self.xout)
+                # if bird.with_stoch: bird.Cstl = interp1d(self.co.s, bird.Cstl, axis=-1, kind='cubic', bounds_error=False)(self.xout)
+                if bird.with_nnlo_counterterm: bird.Cnnlol = interp1d(self.co.s, bird.Cnnlol, axis=-1, kind='cubic', bounds_error=False)(self.xout)
         else:
             if bird.with_bias:
                 bird.fullPs = interp1d(self.co.k, bird.fullPs, axis=-1, kind="cubic", bounds_error=False)(self.xout)
             else:
-                bird.P11l = interp1d(self.co.k, bird.P11l, axis=-1, kind="cubic", bounds_error=False)(self.xout)
-                bird.Pctl = interp1d(self.co.k, bird.Pctl, axis=-1, kind="cubic", bounds_error=False)(self.xout)
-                bird.Ploopl = interp1d(self.co.k, bird.Ploopl, axis=-1, kind="cubic", bounds_error=False)(self.xout)
-                if bird.with_stoch:
-                    bird.Pstl = interp1d(self.co.k, bird.Pstl, kind="cubic", bounds_error=False)(self.xout)
-                if bird.with_nlo_bias:
-                    bird.Pnlol = interp1d(self.co.k, bird.Pnlol, axis=-1, kind="cubic", bounds_error=False)(self.xout)
+                bird.P11l = interp1d(self.co.k, bird.P11l, axis=-1, kind='cubic', bounds_error=False)(self.xout)
+                bird.Pctl = interp1d(self.co.k, bird.Pctl, axis=-1, kind='cubic', bounds_error=False)(self.xout)
+                bird.Ploopl = interp1d(self.co.k, bird.Ploopl, axis=-1, kind='cubic', bounds_error=False)(self.xout)
+                if bird.with_stoch: bird.Pstl = interp1d(self.co.k, bird.Pstl, kind='cubic', bounds_error=False)(self.xout)
+                if bird.with_nnlo_counterterm: bird.Pnnlol = interp1d(self.co.k, bird.Pnnlol, axis=-1, kind='cubic', bounds_error=False)(self.xout)
 
     def IntegralLegendre(self, l, a, b):
         if l == 0:
@@ -596,13 +574,14 @@ class Projection(object):
                 / (b - a)
             )
 
-    def IntegralLegendreArray(self, Nw=3, Nl=2):
-        deltamu = 1.0 / float(Nw)
-        boundsmu = np.arange(0.0, 1.0, deltamu)
+    def IntegralLegendreArray(self, Nw=3, Nl=2, bounds=None):
+        deltamu = 1./float(Nw)
+        if bounds is None: boundsmu = np.arange(0., 1.+deltamu, deltamu)
+        else: boundsmu = bounds
         IntegrLegendreArray = np.empty(shape=(Nw, Nl))
-        for w, boundmu in enumerate(boundsmu):
+        for w in range(Nw):
             for l in range(Nl):
-                IntegrLegendreArray[w, l] = self.IntegralLegendre(2 * l, boundmu, boundmu + deltamu)
+                IntegrLegendreArray[w,l] = self.IntegralLegendre(2*l, boundsmu[w], boundsmu[w+1])
         return IntegrLegendreArray
 
     def integrWedges(self, P, many=False):
@@ -639,100 +618,104 @@ class Projection(object):
         return self.integrWedges(P, many=False)
 
     def mesheval1d(self, z1d, zm, func):
-        ifunc = interp1d(z1d, func, axis=-1, kind="cubic")
+        ifunc = interp1d(z1d, func, axis=-1, kind='cubic', bounds_error=False, fill_value=0.)
         return ifunc(zm)
 
-    def mesheval2d(self, z1d, z1, z2, func):
-        ifunc = interp1d(z1d, func, axis=-1, kind="cubic")
-        return ifunc(z1), ifunc(z2)
+    def redshift(self, bird, rz, Dz, fz, pk='Pk'):
 
-    def redshift(self, bird, Dz, fz, DAz, Hz):
+        if 'Pk' in pk: # for the Pk, we use the endpoint LOS. We first do the line-of-sight integral in configuration space, then Fourier transform the integrated Cf to get the integrated Pk
+            D1 = self.mesheval1d(self.zz, self.z1, Dz/bird.D)
+            f1 = self.mesheval1d(self.zz, self.z1, fz/bird.f)
+            s1 = self.mesheval1d(self.zz, self.z1, rz)
+            s2 = (self.s**2 + s1**2 + 2*self.s*s1*self.mu)**0.5
+            n2 = self.mesheval1d(rz, s2, self.nz)
+            D2 = self.mesheval1d(rz, s2, Dz/bird.D)
+            f2 = self.mesheval1d(rz, s2, fz/bird.f)
+            # in principle, 13-type and 22-type loops have different time dependence, however, using the time dependence D1^2 x D^2 for both 22 and 13 gives a ~1e-4 relative difference ; similarly, we do some approximations in powers of f ;
+            # if self.co.nonequaltime:
+            #     Dp2 = D1 * D2
+            #     Dp22 = Dp2 * Dp2
+            #     Dp13 = Dp22 # 0.5 * (D1**2 + D2**2) * Dp2
+            #     fp0 = np.ones_like(f1)  # f1**0
+            #     fp1 = 0.5 * (f1 + f2)   # this one is exact,
+            #     fp2 = fp1**2            # but this one is approximate, since f**2 = f1 * f2 or 0.5 * (f1**2+f2**2), instead we use mean f approximation
+            #     fp3 = fp1 * fp2         # and similar here
+            #     fp4 = f1**2 * f2**2     # however this one is exact
+            #     f11 = np.array([fp0, fp1, fp2])
+            #     fct = np.array([fp0, fp0, fp0, fp1, fp1, fp1])
+            #     floop = np.concatenate([6*[fp0], 6*[fp1], 9*[fp2], 4*[fp3], 3*[fp4], 2*[fp0],  3*[fp1], 3*[fp2], 2*[fp3]])
+            #     tlin = np.einsum('n...,...->n...', f11, Dp2 * self.n1 * n2)
+            #     tct = np.einsum('n...,...->n...', fct, Dp2 * self.n1 * n2)
+            #     tloop = np.empty_like(floop)
+            #     tloop[:self.co.N22] = np.einsum('n...,...->n...', floop[:self.co.N22], Dp22 * self.n1 * n2)
+            #     tloop[self.co.N22:] = np.einsum('n...,...->n...', floop[self.co.N22:], Dp13 * self.n1 * n2)
+            # else:
+            Dp2 = D1 * D2
+            Dp4 = Dp2**2
+            fp0 = np.ones_like(f1)
+            fp1 = 0.5 * (f1 + f2)
+            fp2 = fp1**2
+            fp3 = fp1 * fp2
+            fp4 = f1**2 * f2**2
+            f11 = np.array([fp0, fp1, fp2])
+            fct = np.array([fp0, fp0, fp0, fp1, fp1, fp1])
+            floop = np.array([fp2, fp3, fp4, fp1, fp2, fp3, fp1, fp2, fp1, fp1, fp2, fp0, fp1, fp2, fp0, fp1, fp0, fp0, fp1, fp0, fp0, fp0])
+            tlin = np.einsum('n...,...->n...', f11, Dp2 * self.n1 * n2)
+            tct = np.einsum('n...,...->n...', fct, Dp2 * self.n1 * n2)
+            tloop = np.einsum('n...,...->n...', floop, Dp4 * self.n1 * n2)
 
-        Dm = self.mesheval1d(self.zz, self.zm, Dz / bird.D)
-        fm = self.mesheval1d(self.zz, self.zm, fz / bird.f)
+            norm = np.trapz(self.nz**2 * rz**2, x=rz) # FKP normalization
+            # norm = np.trapz(np.trapz(self.n1 * n2 * s1**2, x=self.mu, axis=-1), x=rz, axis=-1) # for CF with endpoint LOS
+            def integrand(t, c):
+                cmesh = self.mesheval1d(self.co.s, self.s, c)
+                return np.einsum('p...,l...,ln...,n...,...->pn...', self.Lp, self.L, cmesh, t, s1**2) # p: legendre polynomial order, l: multipole, n: number of linear/loop terms, (s, z1, mu)
+            def integration(t, c):
+                return np.trapz(np.trapz(integrand(t, c), x=self.mu, axis=-1), x=rz, axis=-1) / norm
 
-        Dp2 = Dm ** 2
-        Dp4 = Dp2 ** 2
-        fp0 = fm ** 0
-        fp1 = fm
-        fp2 = fm ** 2
-        fp3 = fp2 * fm
-        fp4 = fp2 ** 2
+            bird.C11l = integration(tlin, bird.C11l)
+            bird.Cctl = integration(tct, bird.Cctl)
+            bird.Cloopl = integration(tloop, bird.Cloopl)
 
-        f11 = np.array([fp0, fp1, fp2])
-        fct = np.array([fp0, fp0, fp0, fp1, fp1, fp1])
-        floop = np.array(
-            [
-                fp2,
-                fp3,
-                fp4,
-                fp1,
-                fp2,
-                fp3,
-                fp1,
-                fp2,
-                fp1,
-                fp1,
-                fp2,
-                fp0,
-                fp1,
-                fp2,
-                fp0,
-                fp1,
-                fp0,
-                fp0,
-                fp1,
-                fp0,
-                fp0,
-                fp0,
-            ]
-        )
+            self.cf = False # This is a hack, such that later on when another function from the projection class is called, it is evaluated for the Pk instead of the Cf
+            self.ft.Cf2Ps(bird)
 
-        tlin = np.einsum("n...,...->n...", f11, Dp2 * self.np2)
-        tct = np.einsum("n...,...->n...", fct, Dp2 * self.np2)
-        tloop = np.einsum("n...,...->n...", floop, Dp4 * self.np2)
+        else: # for CF, we use the mean LOS
+            r = self.mesheval1d(self.zz, self.z1, rz)
+            s1 = (r**2 + (.5*self.s)**2 - self.s*r*self.mu)**0.5
+            s2 = (r**2 + (.5*self.s)**2 + self.s*r*self.mu)**0.5
+            D1 = self.mesheval1d(rz, s1, Dz/bird.D)
+            D2 = self.mesheval1d(rz, s2, Dz/bird.D)
+            f1 = self.mesheval1d(rz, s1, fz/bird.f)
+            f2 = self.mesheval1d(rz, s2, fz/bird.f)
+            n1 = self.mesheval1d(rz, s1, self.nz)
+            n2 = self.mesheval1d(rz, s2, self.nz)
 
-        if self.co.with_cf:
-            C11l = np.empty(shape=(len(self.zz), self.co.Nl, self.co.N11, self.co.Ns))
-            Cctl = np.empty(shape=(len(self.zz), self.co.Nl, self.co.Nct, self.co.Ns))
-            Cloopl = np.empty(shape=(len(self.zz), self.co.Nl, self.co.Nloop, self.co.Ns))
-        else:
-            P11l = np.empty(shape=(len(self.zz), self.co.Nl, self.co.N11, self.co.Nk))
-            Pctl = np.empty(shape=(len(self.zz), self.co.Nl, self.co.Nct, self.co.Nk))
-            Ploopl = np.empty(shape=(len(self.zz), self.co.Nl, self.co.Nloop, self.co.Nk))
+            Dp2 = D1 * D2
+            Dp4 = Dp2**2
+            fp0 = np.ones_like(f1)
+            fp1 = 0.5 * (f1 + f2)
+            fp2 = fp1**2
+            fp3 = fp1 * fp2
+            fp4 = f1**2 * f2**2
+            f11 = np.array([fp0, fp1, fp2])
+            fct = np.array([fp0, fp0, fp0, fp1, fp1, fp1])
+            floop = np.array([fp2, fp3, fp4, fp1, fp2, fp3, fp1, fp2, fp1, fp1, fp2, fp0, fp1, fp2, fp0, fp1, fp0, fp0, fp1, fp0, fp0, fp0])
+            tlin = np.einsum('n...,...->n...', f11, Dp2 * n1 * n2)
+            tct = np.einsum('n...,...->n...', fct, Dp2 * n1 * n2)
+            tloop = np.einsum('n...,...->n...', floop, Dp4 * n1 * n2)
 
-        for i, (zi, DAi, Hi) in enumerate(zip(self.zz, DAz, Hz)):
+            norm = np.trapz(np.trapz(n1 * n2 * r**2, x=self.mu, axis=-1), x=rz, axis=-1)
+            #norm = np.trapz(self.nz**2 * rz**2, x=rz)
+            def integrand(t, c):
+                cmesh = self.mesheval1d(self.co.s, self.s, c)
+                return np.einsum('p...,l...,ln...,n...,...->pn...', self.Lp, self.L, cmesh, t, r**2) # p: legendre polynomial order, l: multipole, n: number of linear/loop terms, (s, z1, mu)
+            def integration(t, c):
+                return np.trapz(np.trapz(integrand(t, c), x=self.mu, axis=-1), x=rz, axis=-1) / norm
 
-            self.DA = DA(self.Om_AP, zi)
-            self.H = Hubble(self.Om_AP, zi)
-            qperp, qpar = self.get_AP_param(DA=DAi, H=Hi)
-            birdi = deepcopy(bird)
-            self.AP(birdi, q=(qperp, qpar))
+            bird.C11l = integration(tlin, bird.C11l)
+            bird.Cctl = integration(tct, bird.Cctl)
+            bird.Cloopl = integration(tloop, bird.Cloopl)
 
-            if self.co.with_cf:
-                C11l[i] = birdi.C11l
-                Cctl[i] = birdi.Cctl
-                Cloopl[i] = birdi.Cloopl
-            else:
-                P11l[i] = birdi.P11l
-                Pctl[i] = birdi.Pctl
-                Ploopl[i] = birdi.Ploopl
 
-        if self.co.with_cf:
-            C11l = np.einsum("nyz,yzlnk->lnkyz", tlin, interp1d(self.zz, C11l, axis=0, kind="cubic")(self.zm))
-            bird.C11l = np.trapz(np.trapz(C11l, x=self.z2, axis=-1), x=self.zz, axis=-1)
 
-            Cctl = np.einsum("nyz,yzlnk->lnkyz", tct, interp1d(self.zz, Cctl, axis=0, kind="cubic")(self.zm))
-            bird.Cctl = np.trapz(np.trapz(Cctl, x=self.z2, axis=-1), x=self.zz, axis=-1)
 
-            Cloopl = np.einsum("nyz,yzlnk->lnkyz", tloop, interp1d(self.zz, Cloopl, axis=0, kind="cubic")(self.zm))
-            bird.Cloopl = np.trapz(np.trapz(Cloopl, x=self.z2, axis=-1), x=self.zz, axis=-1)
-        else:
-            P11l = np.einsum("nyz,yzlnk->lnkyz", tlin, interp1d(self.zz, P11l, axis=0, kind="cubic")(self.zm))
-            bird.P11l = np.trapz(np.trapz(P11l, x=self.z2, axis=-1), x=self.zz, axis=-1)
-
-            Pctl = np.einsum("nyz,yzlnk->lnkyz", tct, interp1d(self.zz, Pctl, axis=0, kind="cubic")(self.zm))
-            bird.Pctl = np.trapz(np.trapz(Pctl, x=self.z2, axis=-1), x=self.zz, axis=-1)
-
-            Ploopl = np.einsum("nyz,yzlnk->lnkyz", tloop, interp1d(self.zz, Ploopl, axis=0, kind="cubic")(self.zm))
-            bird.Ploopl = np.trapz(np.trapz(Ploopl, x=self.z2, axis=-1), x=self.zz, axis=-1)

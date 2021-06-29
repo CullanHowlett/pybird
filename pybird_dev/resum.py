@@ -134,32 +134,35 @@ class Resum(object):
 
     def setXM(self):
         """ Compute the matrices to evaluate the IR-filters X and Y. Called at instantiation. """
-        self.XM = np.empty(shape=(2, self.Xfft.Pow.shape[0]), dtype="complex")
-        for l in range(2):
-            self.XM[l] = MPC(2 * l, -0.5 * self.Xfft.Pow)
+        self.XM = np.empty(shape=(2, self.Xfft.Pow.shape[0]), dtype='complex')
+        for l in range(2): self.XM[l] = MPC(2 * l, -0.5 * self.Xfft.Pow)
 
     def IRFilters(self, bird, soffset=1.0, LambdaIR=None, RescaleIR=1.0, window=None):
         """ Compute the IR-filters X and Y. """
-        if LambdaIR is None:
-            LambdaIR = self.LambdaIR
-        Coef = self.Xfft.Coef(bird.kin, bird.Pin * exp(-bird.kin ** 2 / LambdaIR ** 2) / bird.kin ** 2, window=window)
-        CoefsPow = np.einsum("n,ns->ns", Coef, self.XsPow)
-        X02 = np.real(np.einsum("ns,ln->ls", CoefsPow, self.XM))
-        X0offset = np.real(np.einsum("n,n->", np.einsum("n,n->n", Coef, soffset ** (-self.Xfft.Pow - 3.0)), self.XM[0]))
+        if LambdaIR is None: LambdaIR = self.LambdaIR
+        if self.co.exact_time and self.co.quintessence: Pin = bird.G1**2 * bird.Pin
+        else: Pin = bird.Pin
+        Coef = self.Xfft.Coef(bird.kin, Pin * exp(-bird.kin**2 / LambdaIR**2) / bird.kin**2, window=window)
+        CoefsPow = np.einsum('n,ns->ns', Coef, self.XsPow)
+        X02 = np.real(np.einsum('ns,ln->ls', CoefsPow, self.XM))
+        X0offset = np.real(np.einsum('n,n->', np.einsum('n,n->n', Coef, soffset**(-self.Xfft.Pow - 3.)), self.XM[0]))
         X02[0] = X0offset - X02[0]
-        X = RescaleIR * 2.0 / 3.0 * (X02[0] - X02[1])
-        Y = 2.0 * X02[1]
+        # if self.co.nonequaltime:
+        #     X = RescaleIR * 2/3. * bird.D1*bird.D2/bird.D**2 * (X02[0] - X02[1]) + 1/3. * (bird.D1-bird.D2)**2/bird.D**2 * X0offset
+        #     Y = 2. * bird.D1*bird.D2/bird.D**2 * X02[1]
+        # else:
+        X = RescaleIR * 2. / 3. * (X02[0] - X02[1])
+        Y = 2. * X02[1]
         return X, Y
 
     def setkPow(self):
         """ Multiply the coefficients with the k's to the powers of the FFTLog to evaluate the IR-corrections. """
-        self.kPow = exp(np.einsum("n,s->ns", -self.fft.Pow - 3.0, log(self.kr)))
+        self.kPow = exp(np.einsum('n,s->ns', -self.fft.Pow - 3., log(self.kr)))
 
     def setM(self, Nl=3):
         """ Compute the matrices to evaluate the IR-corrections. Called at instantiation. """
-        self.M = np.empty(shape=(Nl, self.fft.Pow.shape[0]), dtype="complex")
-        for l in range(Nl):
-            self.M[l] = 8.0 * pi ** 3 * MPC(2 * l, -0.5 * self.fft.Pow)
+        self.M = np.empty(shape=(Nl, self.fft.Pow.shape[0]), dtype='complex')
+        for l in range(Nl): self.M[l] = 8.*pi**3 * MPC(2 * l, -0.5 * self.fft.Pow)
 
     def IRn(self, XpYpC, window=None):
         """ Compute the spherical Bessel transform in the IR correction of order n given [XY]^n """
