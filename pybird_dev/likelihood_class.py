@@ -49,16 +49,15 @@ class Likelihood(object):
         """
 
         self.name = self.__class__.__name__
-        self.folder = os.path.abspath(os.path.join(
-            data.path['MontePython'], 'likelihoods', self.name))
+        self.folder = os.path.abspath(os.path.join(data.path["MontePython"], "likelihoods", self.name))
         if not data.log_flag:
-            path = os.path.join(command_line.folder, 'log.param')
+            path = os.path.join(command_line.folder, "log.param")
 
         # Define some default fields
-        self.data_directory = ''
+        self.data_directory = ""
 
         # Store all the default fields stored, for the method read_file.
-        self.default_values = ['data_directory']
+        self.default_values = ["data_directory"]
 
         # Recover the values potentially read in the input.param file.
         if hasattr(data, self.name):
@@ -77,11 +76,11 @@ class Likelihood(object):
         error_flag = False
         try:
             for nuisance in self.use_nuisance:
-                if nuisance not in data.get_mcmc_parameters(['nuisance']):
+                if nuisance not in data.get_mcmc_parameters(["nuisance"]):
                     error_flag = True
                     warnings.warn(
-                        nuisance + " must be defined, either fixed or " +
-                        "varying, for %s likelihood" % self.name)
+                        nuisance + " must be defined, either fixed or " + "varying, for %s likelihood" % self.name
+                    )
             self.nuisance = self.use_nuisance
         except AttributeError:
             self.use_nuisance = []
@@ -89,8 +88,7 @@ class Likelihood(object):
 
         # If at least one is missing, raise an exception.
         if error_flag:
-            raise io_mp.LikelihoodError(
-                "Check your nuisance parameter list for your set of experiments")
+            raise io_mp.LikelihoodError("Check your nuisance parameter list for your set of experiments")
 
         # Append to the log.param the value used (WARNING: so far no comparison
         # is done to ensure that the experiments share the same parameters)
@@ -107,8 +105,7 @@ class Likelihood(object):
         NotImplementedError
 
         """
-        raise NotImplementedError(
-            'Must implement method loglkl() in your likelihood')
+        raise NotImplementedError("Must implement method loglkl() in your likelihood")
 
     def read_from_file(self, path, data, command_line):
         """
@@ -143,15 +140,13 @@ class Likelihood(object):
         self.path = path
         self.dictionary = {}
         if os.path.isfile(path):
-            data_file = open(path, 'r')
+            data_file = open(path, "r")
             for line in data_file:
-                if line.find('#') == -1:
-                    if line.find(self.name + '.') != -1:
+                if line.find("#") == -1:
+                    if line.find(self.name + ".") != -1:
                         # Recover the name and value from the .data file
-                        regexp = re.match(
-                            "%s.(.*)\s*=\s*(.*)" % self.name, line)
-                        name, value = (
-                            elem.strip() for elem in regexp.groups())
+                        regexp = re.match("%s.(.*)\s*=\s*(.*)" % self.name, line)
+                        name, value = (elem.strip() for elem in regexp.groups())
                         # If this name was already defined in the parameter
                         # file, be sure to take this value instead. Beware,
                         # there are a few parameters which are always
@@ -165,7 +160,7 @@ class Likelihood(object):
                             except AttributeError:
                                 pass
                         if not is_ignored:
-                            exec('self.' + name + ' = ' + value)
+                            exec("self." + name + " = " + value)
                         value = getattr(self, name)
                         counter += 1
                         self.dictionary[name] = value
@@ -175,12 +170,13 @@ class Likelihood(object):
         # Checking that at least one line was read, exiting otherwise
         if counter == 0:
             raise io_mp.ConfigurationError(
-                "No information on %s likelihood " % self.name +
-                "was found in the %s file.\n" % path +
-                "This can result from a failed initialization of a previous " +
-                "run. To solve this, you can do a \n " +
-                "]$ rm -rf %s \n " % command_line.folder +
-                "Be sure there is noting in it before doing this !")
+                "No information on %s likelihood " % self.name
+                + "was found in the %s file.\n" % path
+                + "This can result from a failed initialization of a previous "
+                + "run. To solve this, you can do a \n "
+                + "]$ rm -rf %s \n " % command_line.folder
+                + "Be sure there is noting in it before doing this !"
+            )
 
     def get_cl(self, cosmo, l_max=-1):
         """
@@ -197,10 +193,10 @@ class Likelihood(object):
             # All quantities need to be multiplied by this factor, except the
             # phi-phi term, that is already dimensionless
             # phi cross-terms should only be multiplied with this factor once
-            if key not in ['pp', 'ell', 'tp', 'ep']:
-                cl[key] *= (T * 1.e6)**2
-            elif key in ['tp', 'ep']:
-                cl[key] *= (T * 1.e6)
+            if key not in ["pp", "ell", "tp", "ep"]:
+                cl[key] *= (T * 1.0e6) ** 2
+            elif key in ["tp", "ep"]:
+                cl[key] *= T * 1.0e6
 
         return cl
 
@@ -219,10 +215,10 @@ class Likelihood(object):
             # All quantities need to be multiplied by this factor, except the
             # phi-phi term, that is already dimensionless
             # phi cross-terms should only be multiplied with this factor once
-            if key not in ['pp', 'ell', 'tp', 'ep']:
-                cl[key] *= (T * 1.e6)**2
-            elif key in ['tp', 'ep']:
-                cl[key] *= (T * 1.e6)
+            if key not in ["pp", "ell", "tp", "ep"]:
+                cl[key] *= (T * 1.0e6) ** 2
+            elif key in ["tp", "ep"]:
+                cl[key] *= T * 1.0e6
 
         return cl
 
@@ -265,21 +261,21 @@ class Likelihood(object):
                     data.cosmo_arguments[key] = 0
                 except ValueError:
                     num_flag = False
-                    data.cosmo_arguments[key] = ''
+                    data.cosmo_arguments[key] = ""
                 except TypeError:
                     num_flag = True
                     array_flag = True
             if num_flag is False:
                 if data.cosmo_arguments[key].find(value) == -1:
-                    data.cosmo_arguments[key] += ' ' + value + ' '
+                    data.cosmo_arguments[key] += " " + value + " "
             else:
                 if array_flag is False:
                     if float(data.cosmo_arguments[key]) < value:
                         data.cosmo_arguments[key] = value
                 else:
-                    data.cosmo_arguments[key] = '%.2g' % value[0]
+                    data.cosmo_arguments[key] = "%.2g" % value[0]
                     for i in range(1, len(value)):
-                        data.cosmo_arguments[key] += ',%.2g' % (value[i])
+                        data.cosmo_arguments[key] += ",%.2g" % (value[i])
 
     def read_contamination_spectra(self, data):
 
@@ -287,29 +283,28 @@ class Likelihood(object):
             # read spectrum contamination (so far, assumes only temperature
             # contamination; will be trivial to generalize to polarization when
             # such templates will become relevant)
-            setattr(self, "%s_contamination" % nuisance,
-                    np.zeros(self.l_max + 1, 'float64'))
+            setattr(self, "%s_contamination" % nuisance, np.zeros(self.l_max + 1, "float64"))
             try:
-                File = open(os.path.join(
-                    self.data_directory, getattr(self, "%s_file" % nuisance)),
-                    'r')
+                File = open(os.path.join(self.data_directory, getattr(self, "%s_file" % nuisance)), "r")
                 for line in File:
                     l = int(float(line.split()[0]))
-                    if ((l >= 2) and (l <= self.l_max)):
+                    if (l >= 2) and (l <= self.l_max):
                         exec("self.%s_contamination[l]=float(line.split()[1])/(l*(l+1.)/2./math.pi)" % nuisance)
             except:
-                print('Warning: you did not pass a file name containing ')
-                print('a contamination spectrum regulated by the nuisance ')
-                print('parameter ' + nuisance)
+                print("Warning: you did not pass a file name containing ")
+                print("a contamination spectrum regulated by the nuisance ")
+                print("parameter " + nuisance)
 
             # read renormalization factor
             # if it is not there, assume it is one, i.e. do not renormalize
             try:
                 # do the following operation:
                 # self.nuisance_contamination *= float(self.nuisance_scale)
-                setattr(self, "%s_contamination" % nuisance,
-                        getattr(self, "%s_contamination" % nuisance) *
-                        float(getattr(self, "%s_scale" % nuisance)))
+                setattr(
+                    self,
+                    "%s_contamination" % nuisance,
+                    getattr(self, "%s_contamination" % nuisance) * float(getattr(self, "%s_scale" % nuisance)),
+                )
             except AttributeError:
                 pass
 
@@ -318,7 +313,7 @@ class Likelihood(object):
             try:
                 getattr(self, "%s_prior_center" % nuisance)
             except AttributeError:
-                setattr(self, "%s_prior_center" % nuisance, 1.)
+                setattr(self, "%s_prior_center" % nuisance, 1.0)
 
             # read variance of nuisance parameter
             # if it is not there, assume flat prior (encoded through
@@ -326,15 +321,13 @@ class Likelihood(object):
             try:
                 getattr(self, "%s_prior_variance" % nuisance)
             except:
-                setattr(self, "%s_prior_variance" % nuisance, 0.)
+                setattr(self, "%s_prior_variance" % nuisance, 0.0)
 
     def add_contamination_spectra(self, cl, data):
 
         # Recover the current value of the nuisance parameter.
         for nuisance in self.use_nuisance:
-            nuisance_value = float(
-                data.mcmc_parameters[nuisance]['current'] *
-                data.mcmc_parameters[nuisance]['scale'])
+            nuisance_value = float(data.mcmc_parameters[nuisance]["current"] * data.mcmc_parameters[nuisance]["scale"])
 
             # add contamination spectra multiplied by nuisance parameters
             for l in range(2, self.l_max):
@@ -346,16 +339,14 @@ class Likelihood(object):
 
         # Recover the current value of the nuisance parameter.
         for nuisance in self.use_nuisance:
-            nuisance_value = float(
-                data.mcmc_parameters[nuisance]['current'] *
-                data.mcmc_parameters[nuisance]['scale'])
+            nuisance_value = float(data.mcmc_parameters[nuisance]["current"] * data.mcmc_parameters[nuisance]["scale"])
 
             # add prior on nuisance parameters
             if getattr(self, "%s_prior_variance" % nuisance) > 0:
                 # convenience variables
                 prior_center = getattr(self, "%s_prior_center" % nuisance)
                 prior_variance = getattr(self, "%s_prior_variance" % nuisance)
-                lkl += -0.5 * ((nuisance_value - prior_center) / prior_variance)**2
+                lkl += -0.5 * ((nuisance_value - prior_center) / prior_variance) ** 2
 
         return lkl
 
@@ -391,9 +382,8 @@ class Likelihood(object):
 # --> H0,...
 ###################################
 class Likelihood_prior(Likelihood):
-
     def loglkl(self):
-        raise NotImplementedError('Must implement method loglkl() in your likelihood')
+        raise NotImplementedError("Must implement method loglkl() in your likelihood")
 
 
 ###################################
@@ -401,25 +391,22 @@ class Likelihood_prior(Likelihood):
 # --> spt,boomerang,etc.
 ###################################
 class Likelihood_newdat(Likelihood):
-
     def __init__(self, path, data, command_line):
 
         Likelihood.__init__(self, path, data, command_line)
 
-        self.need_cosmo_arguments(
-            data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
+        self.need_cosmo_arguments(data, {"lensing": "yes", "output": "tCl lCl pCl"})
 
         # open .newdat file
-        newdatfile = open(
-            os.path.join(self.data_directory, self.file), 'r')
+        newdatfile = open(os.path.join(self.data_directory, self.file), "r")
 
         # find beginning of window functions file names
-        window_name = newdatfile.readline().strip('\n').replace(' ', '')
+        window_name = newdatfile.readline().strip("\n").replace(" ", "")
 
         # initialize list of fist and last band for each type
-        band_num = np.zeros(6, 'int')
-        band_min = np.zeros(6, 'int')
-        band_max = np.zeros(6, 'int')
+        band_num = np.zeros(6, "int")
+        band_min = np.zeros(6, "int")
+        band_max = np.zeros(6, "int")
 
         # read number of bands for each of the six types TT, EE, BB, EB, TE, TB
         line = newdatfile.readline()
@@ -427,10 +414,10 @@ class Likelihood_newdat(Likelihood):
             band_num[i] = int(line.split()[i])
 
         # read string equal to 'BAND_SELECTION' or not
-        line = str(newdatfile.readline()).strip('\n').replace(' ', '')
+        line = str(newdatfile.readline()).strip("\n").replace(" ", "")
 
         # if yes, read 6 lines containing 'min, max'
-        if (line == 'BAND_SELECTION'):
+        if line == "BAND_SELECTION":
             for i in range(6):
                 line = newdatfile.readline()
                 band_min[i] = int(line.split()[0])
@@ -445,7 +432,7 @@ class Likelihood_newdat(Likelihood):
         # contains: flag (=0 or 1), calib, calib_uncertainty
         line = newdatfile.readline()
         calib = float(line.split()[1])
-        if (int(line.split()[0]) == 0):
+        if int(line.split()[0]) == 0:
             self.calib_uncertainty = 0
         else:
             self.calib_uncertainty = float(line.split()[2])
@@ -454,7 +441,7 @@ class Likelihood_newdat(Likelihood):
         # contains: flag (=0, 1 or 2), beam_width, beam_sigma
         line = newdatfile.readline()
         beam_type = int(line.split()[0])
-        if (beam_type > 0):
+        if beam_type > 0:
             self.has_beam_uncertainty = True
         else:
             self.has_beam_uncertainty = False
@@ -464,7 +451,7 @@ class Likelihood_newdat(Likelihood):
         # read flag (= 0, 1 or 2) for lognormal distributions and xfactors
         line = newdatfile.readline()
         likelihood_type = int(line.split()[0])
-        if (likelihood_type > 0):
+        if likelihood_type > 0:
             self.has_xfactors = True
         else:
             self.has_xfactors = False
@@ -472,20 +459,20 @@ class Likelihood_newdat(Likelihood):
         # declare array of quantitites describing each point of measurement
         # size yet unknown, it will be found later and stored as
         # self.num_points
-        self.obs = np.array([], 'float64')
-        self.var = np.array([], 'float64')
-        self.beam_error = np.array([], 'float64')
-        self.has_xfactor = np.array([], 'bool')
-        self.xfactor = np.array([], 'float64')
+        self.obs = np.array([], "float64")
+        self.var = np.array([], "float64")
+        self.beam_error = np.array([], "float64")
+        self.has_xfactor = np.array([], "bool")
+        self.xfactor = np.array([], "float64")
 
         # temporary array to know which bands are actually used
-        used_index = np.array([], 'int')
+        used_index = np.array([], "int")
 
         index = -1
 
         # scan the lines describing each point of measurement
         for cltype in range(6):
-            if (int(band_num[cltype]) != 0):
+            if int(band_num[cltype]) != 0:
                 # read name (but do not use it)
                 newdatfile.readline()
                 for band in range(int(band_num[cltype])):
@@ -494,51 +481,36 @@ class Likelihood_newdat(Likelihood):
                     index += 1
 
                     # if we wish to actually use this measurement
-                    if ((band >= band_min[cltype] - 1) and
-                            (band <= band_max[cltype] - 1)):
+                    if (band >= band_min[cltype] - 1) and (band <= band_max[cltype] - 1):
 
                         used_index = np.append(used_index, index)
 
-                        self.obs = np.append(
-                            self.obs, float(line.split()[1]) * calib**2)
+                        self.obs = np.append(self.obs, float(line.split()[1]) * calib ** 2)
 
                         self.var = np.append(
-                            self.var,
-                            (0.5 * (float(line.split()[2]) +
-                                    float(line.split()[3])) * calib**2)**2)
+                            self.var, (0.5 * (float(line.split()[2]) + float(line.split()[3])) * calib ** 2) ** 2
+                        )
 
-                        self.xfactor = np.append(
-                            self.xfactor, float(line.split()[4]) * calib**2)
+                        self.xfactor = np.append(self.xfactor, float(line.split()[4]) * calib ** 2)
 
-                        if ((likelihood_type == 0) or
-                                ((likelihood_type == 2) and
-                                 (int(line.split()[7]) == 0))):
-                            self.has_xfactor = np.append(
-                                self.has_xfactor, [False])
-                        if ((likelihood_type == 1) or
-                                ((likelihood_type == 2) and
-                                 (int(line.split()[7]) == 1))):
-                            self.has_xfactor = np.append(
-                                self.has_xfactor, [True])
+                        if (likelihood_type == 0) or ((likelihood_type == 2) and (int(line.split()[7]) == 0)):
+                            self.has_xfactor = np.append(self.has_xfactor, [False])
+                        if (likelihood_type == 1) or ((likelihood_type == 2) and (int(line.split()[7]) == 1)):
+                            self.has_xfactor = np.append(self.has_xfactor, [True])
 
-                        if (beam_type == 0):
-                            self.beam_error = np.append(self.beam_error, 0.)
-                        if (beam_type == 1):
-                            l_mid = float(line.split()[5]) +\
-                                0.5 * (float(line.split()[5]) +
-                                       float(line.split()[6]))
+                        if beam_type == 0:
+                            self.beam_error = np.append(self.beam_error, 0.0)
+                        if beam_type == 1:
+                            l_mid = float(line.split()[5]) + 0.5 * (float(line.split()[5]) + float(line.split()[6]))
                             self.beam_error = np.append(
                                 self.beam_error,
-                                abs(math.exp(
-                                    -l_mid * (l_mid + 1) * 1.526e-8 * 2. * beam_sigma *
-                                    beam_width) - 1.))
-                        if (beam_type == 2):
-                            if (likelihood_type == 2):
-                                self.beam_error = np.append(
-                                    self.beam_error, float(line.split()[8]))
+                                abs(math.exp(-l_mid * (l_mid + 1) * 1.526e-8 * 2.0 * beam_sigma * beam_width) - 1.0),
+                            )
+                        if beam_type == 2:
+                            if likelihood_type == 2:
+                                self.beam_error = np.append(self.beam_error, float(line.split()[8]))
                             else:
-                                self.beam_error = np.append(
-                                    self.beam_error, float(line.split()[7]))
+                                self.beam_error = np.append(self.beam_error, float(line.split()[7]))
 
                 # now, skip and unused part of the file (with sub-correlation
                 # matrices)
@@ -552,33 +524,33 @@ class Likelihood_newdat(Likelihood):
         full_num_points = index + 1
 
         # read full correlation matrix
-        full_covmat = np.zeros((full_num_points, full_num_points), 'float64')
+        full_covmat = np.zeros((full_num_points, full_num_points), "float64")
         for point in range(full_num_points):
             full_covmat[point] = newdatfile.readline().split()
 
         # extract smaller correlation matrix for points actually used
-        covmat = np.zeros((self.num_points, self.num_points), 'float64')
+        covmat = np.zeros((self.num_points, self.num_points), "float64")
         for point in range(self.num_points):
             covmat[point] = full_covmat[used_index[point], used_index]
 
         # recalibrate this correlation matrix
-        covmat *= calib**4
+        covmat *= calib ** 4
 
         # redefine the correlation matrix, the observed points and their
         # variance in case of lognormal likelihood
-        if (self.has_xfactors):
+        if self.has_xfactors:
 
             for i in range(self.num_points):
 
                 for j in range(self.num_points):
-                    if (self.has_xfactor[i]):
-                        covmat[i, j] /= (self.obs[i] + self.xfactor[i])
-                    if (self.has_xfactor[j]):
-                        covmat[i, j] /= (self.obs[j] + self.xfactor[j])
+                    if self.has_xfactor[i]:
+                        covmat[i, j] /= self.obs[i] + self.xfactor[i]
+                    if self.has_xfactor[j]:
+                        covmat[i, j] /= self.obs[j] + self.xfactor[j]
 
             for i in range(self.num_points):
-                if (self.has_xfactor[i]):
-                    self.var[i] /= (self.obs[i] + self.xfactor[i])**2
+                if self.has_xfactor[i]:
+                    self.var[i] /= (self.obs[i] + self.xfactor[i]) ** 2
                     self.obs[i] = math.log(self.obs[i] + self.xfactor[i])
 
         # invert correlation matrix
@@ -586,70 +558,65 @@ class Likelihood_newdat(Likelihood):
 
         # read window function files a first time, only for finding the
         # smallest and largest l's for each point
-        self.win_min = np.zeros(self.num_points, 'int')
-        self.win_max = np.zeros(self.num_points, 'int')
+        self.win_min = np.zeros(self.num_points, "int")
+        self.win_max = np.zeros(self.num_points, "int")
         for point in range(self.num_points):
-            for line in open(os.path.join(
-                    self.data_directory, 'windows', window_name) +
-                    str(used_index[point] + 1), 'r'):
-                if any([float(line.split()[i]) != 0.
-                        for i in range(1, len(line.split()))]):
-                    if (self.win_min[point] == 0):
+            for line in open(
+                os.path.join(self.data_directory, "windows", window_name) + str(used_index[point] + 1), "r"
+            ):
+                if any([float(line.split()[i]) != 0.0 for i in range(1, len(line.split()))]):
+                    if self.win_min[point] == 0:
                         self.win_min[point] = int(line.split()[0])
                     self.win_max[point] = int(line.split()[0])
 
         # infer from format of window function files whether we will use
         # polarisation spectra or not
         num_col = len(line.split())
-        if (num_col == 2):
+        if num_col == 2:
             self.has_pol = False
         else:
-            if (num_col == 5):
+            if num_col == 5:
                 self.has_pol = True
             else:
                 raise io_mp.LikelihoodError(
-                    "In likelihood %s. " % self.name +
-                    "Window function files are understood if they contain " +
-                    "2 columns (l TT), or 5 columns (l TT TE EE BB)." +
-                    "In this case the number of columns is %d" % num_col)
+                    "In likelihood %s. " % self.name
+                    + "Window function files are understood if they contain "
+                    + "2 columns (l TT), or 5 columns (l TT TE EE BB)."
+                    + "In this case the number of columns is %d" % num_col
+                )
 
         # define array of window functions
-        self.window = np.zeros(
-            (self.num_points, max(self.win_max) + 1, num_col - 1), 'float64')
+        self.window = np.zeros((self.num_points, max(self.win_max) + 1, num_col - 1), "float64")
 
         # go again through window function file, this time reading window
         # functions; that are distributed as: l TT (TE EE BB) where the last
         # columns contaim W_l/l, not W_l we mutiply by l in order to store the
         # actual W_l
         for point in range(self.num_points):
-            for line in open(os.path.join(
-                    self.data_directory, 'windows', window_name) +
-                    str(used_index[point] + 1), 'r'):
+            for line in open(
+                os.path.join(self.data_directory, "windows", window_name) + str(used_index[point] + 1), "r"
+            ):
                 l = int(line.split()[0])
-                if (((self.has_pol is False) and (len(line.split()) != 2))
-                        or ((self.has_pol is True) and
-                            (len(line.split()) != 5))):
+                if ((self.has_pol is False) and (len(line.split()) != 2)) or (
+                    (self.has_pol is True) and (len(line.split()) != 5)
+                ):
                     raise io_mp.LikelihoodError(
-                        "In likelihood %s. " % self.name +
-                        "for a given experiment, all window functions should" +
-                        " have the same number of columns, 2 or 5. " +
-                        "This is not the case here.")
-                if ((l >= self.win_min[point]) and (l <= self.win_max[point])):
-                    self.window[point, l, :] = [
-                        float(line.split()[i])
-                        for i in range(1, len(line.split()))]
+                        "In likelihood %s. " % self.name
+                        + "for a given experiment, all window functions should"
+                        + " have the same number of columns, 2 or 5. "
+                        + "This is not the case here."
+                    )
+                if (l >= self.win_min[point]) and (l <= self.win_max[point]):
+                    self.window[point, l, :] = [float(line.split()[i]) for i in range(1, len(line.split()))]
                     self.window[point, l, :] *= l
 
         # eventually, initialise quantitites used in the marginalization over
         # nuisance parameters
-        if ((self.has_xfactors) and
-                ((self.calib_uncertainty > 1.e-4) or
-                 (self.has_beam_uncertainty))):
+        if (self.has_xfactors) and ((self.calib_uncertainty > 1.0e-4) or (self.has_beam_uncertainty)):
             self.halfsteps = 5
-            self.margeweights = np.zeros(2 * self.halfsteps + 1, 'float64')
+            self.margeweights = np.zeros(2 * self.halfsteps + 1, "float64")
             for i in range(-self.halfsteps, self.halfsteps + 1):
-                self.margeweights[i + self.halfsteps] = np.exp(
-                    -(float(i) * 3. / float(self.halfsteps))**2 / 2)
+                self.margeweights[i + self.halfsteps] = np.exp(-((float(i) * 3.0 / float(self.halfsteps)) ** 2) / 2)
             self.margenorm = sum(self.margeweights)
 
         # store maximum value of l needed by window functions
@@ -657,7 +624,7 @@ class Likelihood_newdat(Likelihood):
 
         # impose that the cosmological code computes Cl's up to maximum l
         # needed by the window function
-        self.need_cosmo_arguments(data, {'l_max_scalars': self.l_max})
+        self.need_cosmo_arguments(data, {"l_max_scalars": self.l_max})
 
         # deal with nuisance parameters
         try:
@@ -689,105 +656,103 @@ class Likelihood_newdat(Likelihood):
         # checks that Cl's have been computed up to high enough l given window
         # function range. Normally this has been imposed before, so this test
         # could even be supressed.
-        if (np.shape(cl['tt'])[0] - 1 < self.l_max):
+        if np.shape(cl["tt"])[0] - 1 < self.l_max:
             raise io_mp.LikelihoodError(
-                "%s computed Cls till l=" % data.cosmological_module_name +
-                "%d " % (np.shape(cl['tt'])[0] - 1) +
-                "while window functions need %d." % self.l_max)
+                "%s computed Cls till l=" % data.cosmological_module_name
+                + "%d " % (np.shape(cl["tt"])[0] - 1)
+                + "while window functions need %d." % self.l_max
+            )
 
         # compute theoretical bandpowers, store them in theo[points]
-        theo = np.zeros(self.num_points, 'float64')
+        theo = np.zeros(self.num_points, "float64")
 
         for point in range(self.num_points):
 
             # find bandpowers B_l by convolving C_l's with [(l+1/2)/2pi W_l]
             for l in range(self.win_min[point], self.win_max[point]):
 
-                theo[point] += cl['tt'][l] * self.window[point, l, 0] *\
-                    (l + 0.5) / 2. / math.pi
+                theo[point] += cl["tt"][l] * self.window[point, l, 0] * (l + 0.5) / 2.0 / math.pi
 
-                if (self.has_pol):
+                if self.has_pol:
                     theo[point] += (
-                        cl['te'][l] * self.window[point, l, 1] +
-                        cl['ee'][l] * self.window[point, l, 2] +
-                        cl['bb'][l] * self.window[point, l, 3]) *\
-                        (l + 0.5) / 2. / math.pi
+                        (
+                            cl["te"][l] * self.window[point, l, 1]
+                            + cl["ee"][l] * self.window[point, l, 2]
+                            + cl["bb"][l] * self.window[point, l, 3]
+                        )
+                        * (l + 0.5)
+                        / 2.0
+                        / math.pi
+                    )
 
         # allocate array for differencve between observed and theoretical
         # bandpowers
-        difference = np.zeros(self.num_points, 'float64')
+        difference = np.zeros(self.num_points, "float64")
 
         # depending on the presence of lognormal likelihood, calibration
         # uncertainty and beam uncertainity, use several methods for
         # marginalising over nuisance parameters:
 
         # first method: numerical integration over calibration uncertainty:
-        if (self.has_xfactors and
-                ((self.calib_uncertainty > 1.e-4) or
-                 self.has_beam_uncertainty)):
+        if self.has_xfactors and ((self.calib_uncertainty > 1.0e-4) or self.has_beam_uncertainty):
 
-            chisq_tmp = np.zeros(2 * self.halfsteps + 1, 'float64')
-            chisqcalib = np.zeros(2 * self.halfsteps + 1, 'float64')
-            beam_error = np.zeros(self.num_points, 'float64')
+            chisq_tmp = np.zeros(2 * self.halfsteps + 1, "float64")
+            chisqcalib = np.zeros(2 * self.halfsteps + 1, "float64")
+            beam_error = np.zeros(self.num_points, "float64")
 
             # loop over various beam errors
             for ibeam in range(2 * self.halfsteps + 1):
 
                 # beam error
                 for point in range(self.num_points):
-                    if (self.has_beam_uncertainty):
-                        beam_error[point] = 1. + self.beam_error[point] *\
-                            (ibeam - self.halfsteps) * 3 / float(self.halfsteps)
+                    if self.has_beam_uncertainty:
+                        beam_error[point] = 1.0 + self.beam_error[point] * (ibeam - self.halfsteps) * 3 / float(
+                            self.halfsteps
+                        )
                     else:
-                        beam_error[point] = 1.
+                        beam_error[point] = 1.0
 
                 # loop over various calibraion errors
                 for icalib in range(2 * self.halfsteps + 1):
 
                     # calibration error
-                    calib_error = 1 + self.calib_uncertainty * (
-                        icalib - self.halfsteps) * 3 / float(self.halfsteps)
+                    calib_error = 1 + self.calib_uncertainty * (icalib - self.halfsteps) * 3 / float(self.halfsteps)
 
                     # compute difference between observed and theoretical
                     # points, after correcting the later for errors
                     for point in range(self.num_points):
 
                         # for lognormal likelihood, use log(B_l+X_l)
-                        if (self.has_xfactor[point]):
-                            difference[point] = self.obs[point] -\
-                                math.log(
-                                    theo[point] * beam_error[point] *
-                                    calib_error + self.xfactor[point])
+                        if self.has_xfactor[point]:
+                            difference[point] = self.obs[point] - math.log(
+                                theo[point] * beam_error[point] * calib_error + self.xfactor[point]
+                            )
                         # otherwise use B_l
                         else:
-                            difference[point] = self.obs[point] -\
-                                theo[point] * beam_error[point] * calib_error
+                            difference[point] = self.obs[point] - theo[point] * beam_error[point] * calib_error
 
                     # find chisq with those corrections
                     # chisq_tmp[icalib] = np.dot(np.transpose(difference),
                     # np.dot(self.inv_covmat, difference))
-                    chisq_tmp[icalib] = np.dot(
-                        difference, np.dot(self.inv_covmat, difference))
+                    chisq_tmp[icalib] = np.dot(difference, np.dot(self.inv_covmat, difference))
 
                 minchisq = min(chisq_tmp)
 
-            # find chisq marginalized over calibration uncertainty (if any)
+                # find chisq marginalized over calibration uncertainty (if any)
                 tot = 0
                 for icalib in range(2 * self.halfsteps + 1):
-                    tot += self.margeweights[icalib] * math.exp(
-                        max(-30., -(chisq_tmp[icalib] - minchisq) / 2.))
+                    tot += self.margeweights[icalib] * math.exp(max(-30.0, -(chisq_tmp[icalib] - minchisq) / 2.0))
 
                 chisqcalib[ibeam] = -2 * math.log(tot / self.margenorm) + minchisq
 
             # find chisq marginalized over beam uncertainty (if any)
-            if (self.has_beam_uncertainty):
+            if self.has_beam_uncertainty:
 
                 minchisq = min(chisqcalib)
 
                 tot = 0
                 for ibeam in range(2 * self.halfsteps + 1):
-                    tot += self.margeweights[ibeam] * math.exp(
-                        max(-30., -(chisqcalib[ibeam] - minchisq) / 2.))
+                    tot += self.margeweights[ibeam] * math.exp(max(-30.0, -(chisqcalib[ibeam] - minchisq) / 2.0))
 
                 chisq = -2 * math.log(tot / self.margenorm) + minchisq
 
@@ -799,9 +764,9 @@ class Likelihood_newdat(Likelihood):
         else:
 
             # for lognormal likelihood, theo[point] should contain log(B_l+X_l)
-            if (self.has_xfactors):
+            if self.has_xfactors:
                 for point in range(self.num_points):
-                    if (self.has_xfactor[point]):
+                    if self.has_xfactor[point]:
                         theo[point] = math.log(theo[point] + self.xfactor[point])
 
             # find vector of difference between observed and theoretical
@@ -809,20 +774,19 @@ class Likelihood_newdat(Likelihood):
             difference = self.obs - theo
 
             # find chisq
-            chisq = np.dot(
-                np.transpose(difference), np.dot(self.inv_covmat, difference))
+            chisq = np.dot(np.transpose(difference), np.dot(self.inv_covmat, difference))
 
             # correct eventually for effect of analytic marginalization over
             # nuisance parameters
-            if ((self.calib_uncertainty > 1.e-4) or self.has_beam_uncertainty):
+            if (self.calib_uncertainty > 1.0e-4) or self.has_beam_uncertainty:
 
-                denom = 1.
+                denom = 1.0
                 tmpi = np.dot(self.inv_covmat, theo)
                 chi2op = np.dot(np.transpose(difference), tmp)
                 chi2pp = np.dot(np.transpose(theo), tmp)
 
                 # TODO beam is not defined here !
-                if (self.has_beam_uncertainty):
+                if self.has_beam_uncertainty:
                     for points in range(self.num_points):
                         beam[point] = self.beam_error[point] * theo[point]
                     tmp = np.dot(self.inv_covmat, beam)
@@ -830,16 +794,16 @@ class Likelihood_newdat(Likelihood):
                     chi2pd = np.dot(np.transpose(theo), tmp)
                     chi2od = np.dot(np.transpose(difference), tmp)
 
-                if (self.calib_uncertainty > 1.e-4):
-                    wpp = 1 / (chi2pp + 1 / self.calib_uncertainty**2)
-                    chisq = chisq - wpp * chi2op**2
-                    denom = denom / wpp * self.calib_uncertainty**2
+                if self.calib_uncertainty > 1.0e-4:
+                    wpp = 1 / (chi2pp + 1 / self.calib_uncertainty ** 2)
+                    chisq = chisq - wpp * chi2op ** 2
+                    denom = denom / wpp * self.calib_uncertainty ** 2
                 else:
                     wpp = 0
 
-                if (self.has_beam_uncertainty):
-                    wdd = 1 / (chi2dd - wpp * chi2pd**2 + 1)
-                    chisq = chisq - wdd * (chi2od - wpp * chi2op * chi2pd)**2
+                if self.has_beam_uncertainty:
+                    wdd = 1 / (chi2dd - wpp * chi2pd ** 2 + 1)
+                    chisq = chisq - wdd * (chi2od - wpp * chi2op * chi2pd) ** 2
                     denom = denom / wdd
 
                 chisq += math.log(denom)
@@ -855,25 +819,24 @@ class Likelihood_newdat(Likelihood):
 # --> clik_fake_planck,clik_wmap,etc.
 ###################################
 class Likelihood_clik(Likelihood):
-
     def __init__(self, path, data, command_line):
 
         Likelihood.__init__(self, path, data, command_line)
-        self.need_cosmo_arguments(
-            data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
+        self.need_cosmo_arguments(data, {"lensing": "yes", "output": "tCl lCl pCl"})
 
         try:
             import clik
         except ImportError:
             raise io_mp.MissingLibraryError(
-                "You must first activate the binaries from the Clik " +
-                "distribution. Please run : \n " +
-                "]$ source /path/to/clik/bin/clik_profile.sh \n " +
-                "and try again.")
+                "You must first activate the binaries from the Clik "
+                + "distribution. Please run : \n "
+                + "]$ source /path/to/clik/bin/clik_profile.sh \n "
+                + "and try again."
+            )
         # for lensing, some routines change. Intializing a flag for easier
         # testing of this condition
         # if self.name == 'Planck_lensing':
-        if 'lensing' in self.name and 'Planck' in self.name:
+        if "lensing" in self.name and "Planck" in self.name:
             self.lensing = True
         else:
             self.lensing = False
@@ -894,44 +857,44 @@ class Likelihood_clik(Likelihood):
         except clik.lkl.CError:
             raise io_mp.LikelihoodError(
                 "The path to the .clik file for the likelihood "
-                "%s was not found where indicated:\n%s\n"
-                % (self.name, self.path_clik) +
-                " Note that the default path to search for it is"
+                "%s was not found where indicated:\n%s\n" % (self.name, self.path_clik)
+                + " Note that the default path to search for it is"
                 " one directory above the path['clik'] field. You"
                 " can change this behaviour in all the "
                 "Planck_something.data, to reflect your local configuration, "
-                "or alternatively, move your .clik files to this place.")
+                "or alternatively, move your .clik files to this place."
+            )
         except KeyError:
             raise io_mp.LikelihoodError(
-                "In the %s.data file, the field 'clik' of the " % self.name +
-                "path dictionary is expected to be defined. Please make sure"
-                " it is the case in you configuration file")
+                "In the %s.data file, the field 'clik' of the " % self.name
+                + "path dictionary is expected to be defined. Please make sure"
+                " it is the case in you configuration file"
+            )
 
-        self.need_cosmo_arguments(
-            data, {'l_max_scalars': self.l_max})
+        self.need_cosmo_arguments(data, {"l_max_scalars": self.l_max})
 
         self.nuisance = list(self.clik.extra_parameter_names)
 
         # line added to deal with a bug in planck likelihood release: A_planck called A_Planck in plik_lite
-        if (self.name == 'Planck_highl_lite') or (self.name == 'Planck_highl_TTTEEE_lite'):
+        if (self.name == "Planck_highl_lite") or (self.name == "Planck_highl_TTTEEE_lite"):
             for i in range(len(self.nuisance)):
-                if (self.nuisance[i] == 'A_Planck'):
-                    self.nuisance[i] = 'A_planck'
+                if self.nuisance[i] == "A_Planck":
+                    self.nuisance[i] = "A_planck"
             print("In %s, MontePython corrected nuisance parameter name A_Planck to A_planck" % self.name)
 
         # testing if the nuisance parameters are defined. If there is at least
         # one non defined, raise an exception.
         exit_flag = False
-        nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
+        nuisance_parameter_names = data.get_mcmc_parameters(["nuisance"])
         for nuisance in self.nuisance:
             if nuisance not in nuisance_parameter_names:
                 exit_flag = True
-                print('%20s\tmust be a fixed or varying nuisance parameter' % nuisance)
+                print("%20s\tmust be a fixed or varying nuisance parameter" % nuisance)
 
         if exit_flag:
             raise io_mp.LikelihoodError(
-                "The likelihood %s " % self.name +
-                "expected some nuisance parameters that were not provided")
+                "The likelihood %s " % self.name + "expected some nuisance parameters that were not provided"
+            )
 
         # deal with nuisance parameters
         try:
@@ -941,12 +904,12 @@ class Likelihood_clik(Likelihood):
 
         # Add in use_nuisance all the parameters that have non-flat prior
         for nuisance in self.nuisance:
-            if hasattr(self, '%s_prior_center' % nuisance):
+            if hasattr(self, "%s_prior_center" % nuisance):
                 self.use_nuisance.append(nuisance)
 
     def loglkl(self, cosmo, data):
 
-        nuisance_parameter_names = data.get_mcmc_parameters(['nuisance'])
+        nuisance_parameter_names = data.get_mcmc_parameters(["nuisance"])
 
         # get Cl's from the cosmological code
         cl = self.get_cl(cosmo)
@@ -955,9 +918,7 @@ class Likelihood_clik(Likelihood):
         if self.lensing:
             try:
                 length = len(self.clik.get_lmax())
-                tot = np.zeros(
-                    np.sum(self.clik.get_lmax()) + length +
-                    len(self.clik.get_extra_parameter_names()))
+                tot = np.zeros(np.sum(self.clik.get_lmax()) + length + len(self.clik.get_extra_parameter_names()))
             # following 3 lines for compatibility with lensing likelihoods of 2013 and before
             # (then, clik.get_lmax() just returns an integer for lensing likelihoods,
             # and the length is always 2 for cl['pp'], cl['tt'])
@@ -966,27 +927,25 @@ class Likelihood_clik(Likelihood):
                 tot = np.zeros(2 * self.l_max + length + len(self.clik.get_extra_parameter_names()))
         else:
             length = len(self.clik.get_has_cl())
-            tot = np.zeros(
-                np.sum(self.clik.get_lmax()) + length +
-                len(self.clik.get_extra_parameter_names()))
+            tot = np.zeros(np.sum(self.clik.get_lmax()) + length + len(self.clik.get_extra_parameter_names()))
 
         # fill with Cl's
         index = 0
         if not self.lensing:
             for i in range(length):
-                if (self.clik.get_lmax()[i] > -1):
+                if self.clik.get_lmax()[i] > -1:
                     for j in range(self.clik.get_lmax()[i] + 1):
-                        if (i == 0):
-                            tot[index + j] = cl['tt'][j]
-                        if (i == 1):
-                            tot[index + j] = cl['ee'][j]
-                        if (i == 2):
-                            tot[index + j] = cl['bb'][j]
-                        if (i == 3):
-                            tot[index + j] = cl['te'][j]
-                        if (i == 4):
+                        if i == 0:
+                            tot[index + j] = cl["tt"][j]
+                        if i == 1:
+                            tot[index + j] = cl["ee"][j]
+                        if i == 2:
+                            tot[index + j] = cl["bb"][j]
+                        if i == 3:
+                            tot[index + j] = cl["te"][j]
+                        if i == 4:
                             tot[index + j] = 0  # cl['tb'][j] class does not compute tb
-                        if (i == 5):
+                        if i == 5:
                             tot[index + j] = 0  # cl['eb'][j] class does not compute eb
 
                     index += self.clik.get_lmax()[i] + 1
@@ -994,21 +953,21 @@ class Likelihood_clik(Likelihood):
         else:
             try:
                 for i in range(length):
-                    if (self.clik.get_lmax()[i] > -1):
+                    if self.clik.get_lmax()[i] > -1:
                         for j in range(self.clik.get_lmax()[i] + 1):
-                            if (i == 0):
-                                tot[index + j] = cl['pp'][j]
-                            if (i == 1):
-                                tot[index + j] = cl['tt'][j]
-                            if (i == 2):
-                                tot[index + j] = cl['ee'][j]
-                            if (i == 3):
-                                tot[index + j] = cl['bb'][j]
-                            if (i == 4):
-                                tot[index + j] = cl['te'][j]
-                            if (i == 5):
+                            if i == 0:
+                                tot[index + j] = cl["pp"][j]
+                            if i == 1:
+                                tot[index + j] = cl["tt"][j]
+                            if i == 2:
+                                tot[index + j] = cl["ee"][j]
+                            if i == 3:
+                                tot[index + j] = cl["bb"][j]
+                            if i == 4:
+                                tot[index + j] = cl["te"][j]
+                            if i == 5:
                                 tot[index + j] = 0  # cl['tb'][j] class does not compute tb
-                            if (i == 6):
+                            if i == 6:
                                 tot[index + j] = 0  # cl['eb'][j] class does not compute eb
 
                         index += self.clik.get_lmax()[i] + 1
@@ -1019,28 +978,28 @@ class Likelihood_clik(Likelihood):
             except:
                 for i in range(length):
                     for j in range(self.l_max):
-                        if (i == 0):
-                            tot[index + j] = cl['pp'][j]
-                        if (i == 1):
-                            tot[index + j] = cl['tt'][j]
+                        if i == 0:
+                            tot[index + j] = cl["pp"][j]
+                        if i == 1:
+                            tot[index + j] = cl["tt"][j]
                     index += self.l_max + 1
 
         # fill with nuisance parameters
         for nuisance in self.clik.get_extra_parameter_names():
 
             # line added to deal with a bug in planck likelihood release: A_planck called A_Planck in plik_lite
-            if (self.name == 'Planck_highl_lite') or (self.name == 'Planck_highl_TTTEEE_lite'):
-                if nuisance == 'A_Planck':
-                    nuisance = 'A_planck'
+            if (self.name == "Planck_highl_lite") or (self.name == "Planck_highl_TTTEEE_lite"):
+                if nuisance == "A_Planck":
+                    nuisance = "A_planck"
 
             if nuisance in nuisance_parameter_names:
-                nuisance_value = data.mcmc_parameters[nuisance]['current'] *\
-                    data.mcmc_parameters[nuisance]['scale']
+                nuisance_value = data.mcmc_parameters[nuisance]["current"] * data.mcmc_parameters[nuisance]["scale"]
             else:
                 raise io_mp.LikelihoodError(
-                    "the likelihood needs a parameter %s. " % nuisance +
-                    "You must pass it through the input file " +
-                    "(as a free nuisance parameter or a fixed parameter)")
+                    "the likelihood needs a parameter %s. " % nuisance
+                    + "You must pass it through the input file "
+                    + "(as a free nuisance parameter or a fixed parameter)"
+                )
             # print("found one nuisance with name",nuisance)
             tot[index] = nuisance_value
             index += 1
@@ -1057,31 +1016,35 @@ class Likelihood_clik(Likelihood):
         # Behaviour (True/False), centre, and variance set in the .data files (default = True).
 
         # Check if the joint prior has been requested
-        if getattr(self, 'joint_sz_prior', False):
+        if getattr(self, "joint_sz_prior", False):
 
             # Check that the joint_sz prior is only requested when A_sz and ksz_norm are present
-            if not ('A_sz' in self.clik.get_extra_parameter_names() and 'ksz_norm' in self.clik.get_extra_parameter_names()):
+            if not (
+                "A_sz" in self.clik.get_extra_parameter_names() and "ksz_norm" in self.clik.get_extra_parameter_names()
+            ):
                 raise io_mp.LikelihoodError(
-                    "You requested a gaussian prior on ksz_norm + 1.6 * A_sz," +
-                    "however A_sz or ksz_norm are not present in your param file.")
+                    "You requested a gaussian prior on ksz_norm + 1.6 * A_sz,"
+                    + "however A_sz or ksz_norm are not present in your param file."
+                )
 
             # Recover the current values of the two sz nuisance parameters
-            A_sz = data.mcmc_parameters['A_sz']['current'] * data.mcmc_parameters['A_sz']['scale']
-            ksz_norm = data.mcmc_parameters['ksz_norm']['current'] * data.mcmc_parameters['ksz_norm']['scale']
+            A_sz = data.mcmc_parameters["A_sz"]["current"] * data.mcmc_parameters["A_sz"]["scale"]
+            ksz_norm = data.mcmc_parameters["ksz_norm"]["current"] * data.mcmc_parameters["ksz_norm"]["scale"]
 
             # Combine the two into one new nuisance-like variable
             joint_sz = ksz_norm + 1.6 * A_sz
 
             # Check if the user has passed the prior center and variance on sz, otherwise abort
-            if not (hasattr(self, 'joint_sz_prior_center') and hasattr(self, 'joint_sz_prior_variance')):
+            if not (hasattr(self, "joint_sz_prior_center") and hasattr(self, "joint_sz_prior_variance")):
                 raise io_mp.LikelihoodError(
-                    " You requested a gaussian prior on ksz_norm + 1.6 * A_sz," +
-                    " however you did not pass the center and variance." +
-                    " You can pass this in the .data file.")
+                    " You requested a gaussian prior on ksz_norm + 1.6 * A_sz,"
+                    + " however you did not pass the center and variance."
+                    + " You can pass this in the .data file."
+                )
 
             # add prior on joint_sz parameter
             if not self.joint_sz_prior_variance == 0:
-                lkl += -0.5 * ((joint_sz - self.joint_sz_prior_center) / self.joint_sz_prior_variance)**2
+                lkl += -0.5 * ((joint_sz - self.joint_sz_prior_center) / self.joint_sz_prior_variance) ** 2
 
             # End of block for joint sz prior.
 
@@ -1093,13 +1056,11 @@ class Likelihood_clik(Likelihood):
 # --> mock planck, cmbpol, etc.
 ###################################
 class Likelihood_mock_cmb(Likelihood):
-
     def __init__(self, path, data, command_line):
 
         Likelihood.__init__(self, path, data, command_line)
 
-        self.need_cosmo_arguments(
-            data, {'lensing': 'yes', 'output': 'tCl lCl pCl'})
+        self.need_cosmo_arguments(data, {"lensing": "yes", "output": "tCl lCl pCl"})
 
         ################
         # Noise spectrum
@@ -1117,16 +1078,15 @@ class Likelihood_mock_cmb(Likelihood):
             except:
                 raise io_mp.LikelihoodError("For reading noise from file, you must provide noise_file")
 
-            self.noise_T = np.zeros(self.l_max + 1, 'float64')
-            self.noise_P = np.zeros(self.l_max + 1, 'float64')
+            self.noise_T = np.zeros(self.l_max + 1, "float64")
+            self.noise_P = np.zeros(self.l_max + 1, "float64")
             if self.LensingExtraction:
-                self.Nldd = np.zeros(self.l_max + 1, 'float64')
+                self.Nldd = np.zeros(self.l_max + 1, "float64")
 
             if os.path.exists(os.path.join(self.data_directory, self.noise_file)):
-                noise = open(os.path.join(
-                    self.data_directory, self.noise_file), 'r')
+                noise = open(os.path.join(self.data_directory, self.noise_file), "r")
                 line = noise.readline()
-                while line.find('#') != -1:
+                while line.find("#") != -1:
                     line = noise.readline()
 
                 for l in range(self.l_min, self.l_max + 1):
@@ -1140,20 +1100,23 @@ class Likelihood_mock_cmb(Likelihood):
                                 ll = int(float(line.split()[0]))
                             except:
                                 raise io_mp.LikelihoodError(
-                                    "Mismatch between required values of l in the code and in the noise file")
+                                    "Mismatch between required values of l in the code and in the noise file"
+                                )
                         if l < ll:
                             raise io_mp.LikelihoodError(
-                                "Mismatch between required values of l in the code and in the noise file")
+                                "Mismatch between required values of l in the code and in the noise file"
+                            )
                     # read noise for C_l in muK**2
                     self.noise_T[l] = float(line.split()[1])
                     self.noise_P[l] = float(line.split()[2])
                     if self.LensingExtraction:
                         try:
                             # read noise for C_l^dd = l(l+1) C_l^pp
-                            self.Nldd[l] = float(line.split()[3]) / (l * (l + 1) / 2. / math.pi)
+                            self.Nldd[l] = float(line.split()[3]) / (l * (l + 1) / 2.0 / math.pi)
                         except:
                             raise io_mp.LikelihoodError(
-                                "For reading lensing noise from file, you must provide one more column")
+                                "For reading lensing noise from file, you must provide one more column"
+                            )
                     line = noise.readline()
             else:
                 raise io_mp.LikelihoodError("Could not find file ", self.noise_file)
@@ -1165,19 +1128,19 @@ class Likelihood_mock_cmb(Likelihood):
             self.sigma_P *= np.array([math.pi / 60 / 180])
 
             # compute noise in muK**2
-            self.noise_T = np.zeros(self.l_max + 1, 'float64')
-            self.noise_P = np.zeros(self.l_max + 1, 'float64')
+            self.noise_T = np.zeros(self.l_max + 1, "float64")
+            self.noise_P = np.zeros(self.l_max + 1, "float64")
 
             for l in range(self.l_min, self.l_max + 1):
                 self.noise_T[l] = 0
                 self.noise_P[l] = 0
                 for channel in range(self.num_channels):
-                    self.noise_T[l] += self.sigma_T[channel]**-2 *\
-                        math.exp(
-                        -l * (l + 1) * self.theta_fwhm[channel]**2 / 8 / math.log(2))
-                    self.noise_P[l] += self.sigma_P[channel]**-2 *\
-                        math.exp(
-                        -l * (l + 1) * self.theta_fwhm[channel]**2 / 8 / math.log(2))
+                    self.noise_T[l] += self.sigma_T[channel] ** -2 * math.exp(
+                        -l * (l + 1) * self.theta_fwhm[channel] ** 2 / 8 / math.log(2)
+                    )
+                    self.noise_P[l] += self.sigma_P[channel] ** -2 * math.exp(
+                        -l * (l + 1) * self.theta_fwhm[channel] ** 2 / 8 / math.log(2)
+                    )
                 self.noise_T[l] = 1 / self.noise_T[l]
                 self.noise_P[l] = 1 / self.noise_P[l]
 
@@ -1190,7 +1153,7 @@ class Likelihood_mock_cmb(Likelihood):
         if self.no_small_l_pol:
             for l in range(self.l_min, 30):
                 # plug a noise level of 100 muK**2, equivalent to no detection at all of polarisation
-                self.noise_P[l] = 100.
+                self.noise_P[l] = 100.0
 
         # trick to remove any information from temperature above l_max_TT
         try:
@@ -1201,11 +1164,11 @@ class Likelihood_mock_cmb(Likelihood):
         if self.l_max_TT:
             for l in range(self.l_max_TT + 1, l_max + 1):
                 # plug a noise level of 100 muK**2, equivalent to no detection at all of temperature
-                self.noise_T[l] = 100.
+                self.noise_T[l] = 100.0
 
         # impose that the cosmological code computes Cl's up to maximum l
         # needed by the window function
-        self.need_cosmo_arguments(data, {'l_max_scalars': self.l_max})
+        self.need_cosmo_arguments(data, {"l_max_scalars": self.l_max})
 
         # if you want to print the noise spectra:
         # test = open('noise_T_P','w')
@@ -1245,13 +1208,15 @@ class Likelihood_mock_cmb(Likelihood):
         try:
             self.ExcludeTTTEEE
             if self.ExcludeTTTEEE and not self.LensingExtraction:
-                raise io_mp.LikelihoodError("Mock CMB likelihoods where TTTEEE is not used have only been "
-                                            "implemented for the deflection spectrum (i.e. not for B-modes), "
-                                            "but you do not seem to have lensing extraction enabled")
+                raise io_mp.LikelihoodError(
+                    "Mock CMB likelihoods where TTTEEE is not used have only been "
+                    "implemented for the deflection spectrum (i.e. not for B-modes), "
+                    "but you do not seem to have lensing extraction enabled"
+                )
         except:
             self.ExcludeTTTEEE = False
 
-    # added by Siavash Yasini
+        # added by Siavash Yasini
         try:
             self.OnlyTT
             if self.OnlyTT and self.ExcludeTTTEEE:
@@ -1272,10 +1237,9 @@ class Likelihood_mock_cmb(Likelihood):
 
             self.noise_delensing = np.zeros(self.l_max + 1)
             if os.path.exists(os.path.join(self.data_directory, self.delensing_file)):
-                delensing_file = open(os.path.join(
-                    self.data_directory, self.delensing_file), 'r')
+                delensing_file = open(os.path.join(self.data_directory, self.delensing_file), "r")
                 line = delensing_file.readline()
-                while line.find('#') != -1:
+                while line.find("#") != -1:
                     line = delensing_file.readline()
 
                 for l in range(self.l_min, self.l_max + 1):
@@ -1289,11 +1253,13 @@ class Likelihood_mock_cmb(Likelihood):
                                 ll = int(float(line.split()[0]))
                             except:
                                 raise io_mp.LikelihoodError(
-                                    "Mismatch between required values of l in the code and in the delensing file")
+                                    "Mismatch between required values of l in the code and in the delensing file"
+                                )
                         if l < ll:
                             raise io_mp.LikelihoodError(
-                                "Mismatch between required values of l in the code and in the delensing file")
-                    self.noise_delensing[ll] = float(line.split()[2]) / (ll * (ll + 1) / 2. / math.pi)
+                                "Mismatch between required values of l in the code and in the delensing file"
+                            )
+                    self.noise_delensing[ll] = float(line.split()[2]) / (ll * (ll + 1) / 2.0 / math.pi)
                     # change 3 to 4 in the above line for CMBxCIB delensing
                     line = delensing_file.readline()
 
@@ -1335,14 +1301,14 @@ class Likelihood_mock_cmb(Likelihood):
                     raise io_mp.LikelihoodError("For lensing extraction, you must provide a temporary_Nldd_file")
 
                 # read the NlDD file
-                self.Nldd = np.zeros(self.l_max + 1, 'float64')
+                self.Nldd = np.zeros(self.l_max + 1, "float64")
 
                 if os.path.exists(os.path.join(self.data_directory, self.temporary_Nldd_file)):
-                    fid_file = open(os.path.join(self.data_directory, self.temporary_Nldd_file), 'r')
+                    fid_file = open(os.path.join(self.data_directory, self.temporary_Nldd_file), "r")
                     line = fid_file.readline()
-                    while line.find('#') != -1:
+                    while line.find("#") != -1:
                         line = fid_file.readline()
-                    while (line.find('\n') != -1 and len(line) == 1):
+                    while line.find("\n") != -1 and len(line) == 1:
                         line = fid_file.readline()
                     for l in range(self.l_min, self.l_max + 1):
                         ll = int(float(line.split()[0]))
@@ -1355,30 +1321,30 @@ class Likelihood_mock_cmb(Likelihood):
                                     ll = int(float(line.split()[0]))
                                 except:
                                     raise io_mp.LikelihoodError(
-                                        "Mismatch between required values of l in the code and in the delensing file")
+                                        "Mismatch between required values of l in the code and in the delensing file"
+                                    )
                             if l < ll:
                                 raise io_mp.LikelihoodError(
-                                    "Mismatch between required values of l in the code and in the delensing file")
+                                    "Mismatch between required values of l in the code and in the delensing file"
+                                )
                         # this lines assumes that Nldd is stored in the
                         # 4th column (can be customised)
-                        self.Nldd[ll] = float(line.split()[3]) / (l * (l + 1.) / 2. / math.pi)
+                        self.Nldd[ll] = float(line.split()[3]) / (l * (l + 1.0) / 2.0 / math.pi)
                         line = fid_file.readline()
                 else:
                     raise io_mp.LikelihoodError("Could not find file ", self.temporary_Nldd_file)
 
         # deal with fiducial model:
         # If the file exists, initialize the fiducial values
-        self.Cl_fid = np.zeros((numCls, self.l_max + 1), 'float64')
+        self.Cl_fid = np.zeros((numCls, self.l_max + 1), "float64")
         self.fid_values_exist = False
-        if os.path.exists(os.path.join(
-                self.data_directory, self.fiducial_file)):
+        if os.path.exists(os.path.join(self.data_directory, self.fiducial_file)):
             self.fid_values_exist = True
-            fid_file = open(os.path.join(
-                self.data_directory, self.fiducial_file), 'r')
+            fid_file = open(os.path.join(self.data_directory, self.fiducial_file), "r")
             line = fid_file.readline()
-            while line.find('#') != -1:
+            while line.find("#") != -1:
                 line = fid_file.readline()
-            while (line.find('\n') != -1 and len(line) == 1):
+            while line.find("\n") != -1 and len(line) == 1:
                 line = fid_file.readline()
             for l in range(self.l_min, self.l_max + 1):
                 ll = int(line.split()[0])
@@ -1391,8 +1357,7 @@ class Likelihood_mock_cmb(Likelihood):
                     try:
                         self.Cl_fid[self.index_B, ll] = float(line.split()[self.index_B + 1])
                     except:
-                        raise io_mp.LikelihoodError(
-                            "The fiducial model does not have enough columns.")
+                        raise io_mp.LikelihoodError("The fiducial model does not have enough columns.")
                 # read DD, TD (D = deflection field):
                 if self.LensingExtraction:
                     try:
@@ -1400,8 +1365,7 @@ class Likelihood_mock_cmb(Likelihood):
                         if not self.ExcludeTTTEEE:
                             self.Cl_fid[self.index_tp, ll] = float(line.split()[self.index_tp + 1])
                     except:
-                        raise io_mp.LikelihoodError(
-                            "The fiducial model does not have enough columns.")
+                        raise io_mp.LikelihoodError("The fiducial model does not have enough columns.")
 
                 line = fid_file.readline()
 
@@ -1454,7 +1418,7 @@ class Likelihood_mock_cmb(Likelihood):
             if self.Bmodes and (not self.delensing):
                 cl_lensed = self.get_cl(cosmo)
                 for l in range(self.lmax + 1):
-                    cl[l]['bb'] = cl_lensed[l]['bb']
+                    cl[l]["bb"] = cl_lensed[l]["bb"]
 
         # if we want lensed Cl's
         else:
@@ -1463,7 +1427,7 @@ class Likelihood_mock_cmb(Likelihood):
             if self.Bmodes and self.delensing:
                 cl_unlensed = self.get_unlensed_cl(cosmo)
                 for l in range(self.lmax + 1):
-                    cl[l]['bb'] = cl_unlensed[l]['bb']
+                    cl[l]["bb"] = cl_unlensed[l]["bb"]
 
         # get likelihood
         lkl = self.compute_lkl(cl, cosmo, data)
@@ -1476,36 +1440,35 @@ class Likelihood_mock_cmb(Likelihood):
         # that case)
         if self.fid_values_exist is False:
             # Store the values now.
-            fid_file = open(os.path.join(
-                self.data_directory, self.fiducial_file), 'w')
-            fid_file.write('# Fiducial parameters')
+            fid_file = open(os.path.join(self.data_directory, self.fiducial_file), "w")
+            fid_file.write("# Fiducial parameters")
             for key, value in dictitems(data.mcmc_parameters):
-                fid_file.write(', %s = %.5g' % (
-                    key, value['current'] * value['scale']))
-            fid_file.write('\n')
+                fid_file.write(", %s = %.5g" % (key, value["current"] * value["scale"]))
+            fid_file.write("\n")
             for l in range(self.l_min, self.l_max + 1):
                 fid_file.write("%5d  " % l)
                 if not self.ExcludeTTTEEE:
-                    fid_file.write("%.8g  " % (cl['tt'][l] + self.noise_T[l]))
-                    fid_file.write("%.8g  " % (cl['ee'][l] + self.noise_P[l]))
-                    fid_file.write("%.8g  " % cl['te'][l])
+                    fid_file.write("%.8g  " % (cl["tt"][l] + self.noise_T[l]))
+                    fid_file.write("%.8g  " % (cl["ee"][l] + self.noise_P[l]))
+                    fid_file.write("%.8g  " % cl["te"][l])
                 if self.Bmodes:
                     # next three lines added by S. Clesse for delensing
                     if self.delensing:
-                        fid_file.write("%.8g  " % (cl['bb'][l] + self.noise_P[l] + self.noise_delensing[l]))
+                        fid_file.write("%.8g  " % (cl["bb"][l] + self.noise_P[l] + self.noise_delensing[l]))
                     else:
-                        fid_file.write("%.8g  " % (cl['bb'][l] + self.noise_P[l]))
+                        fid_file.write("%.8g  " % (cl["bb"][l] + self.noise_P[l]))
                 if self.LensingExtraction:
                     # we want to store clDD = l(l+1) clpp
                     # and ClTD = sqrt(l(l+1)) Cltp
-                    fid_file.write("%.8g  " % (l * (l + 1.) * cl['pp'][l] + self.Nldd[l]))
+                    fid_file.write("%.8g  " % (l * (l + 1.0) * cl["pp"][l] + self.Nldd[l]))
                     if not self.ExcludeTTTEEE:
-                        fid_file.write("%.8g  " % (math.sqrt(l * (l + 1.)) * cl['tp'][l]))
+                        fid_file.write("%.8g  " % (math.sqrt(l * (l + 1.0)) * cl["tp"][l]))
                 fid_file.write("\n")
-            print('\n')
+            print("\n")
             warnings.warn(
-                "Writing fiducial model in %s, for %s likelihood\n" % (
-                    self.data_directory + '/' + self.fiducial_file, self.name))
+                "Writing fiducial model in %s, for %s likelihood\n"
+                % (self.data_directory + "/" + self.fiducial_file, self.name)
+            )
             return 1j
 
         # compute likelihood
@@ -1532,33 +1495,43 @@ class Likelihood_mock_cmb(Likelihood):
         if self.LensingExtraction:
             num_modes += 1
 
-        Cov_obs = np.zeros((num_modes, num_modes), 'float64')
-        Cov_the = np.zeros((num_modes, num_modes), 'float64')
-        Cov_mix = np.zeros((num_modes, num_modes), 'float64')
+        Cov_obs = np.zeros((num_modes, num_modes), "float64")
+        Cov_the = np.zeros((num_modes, num_modes), "float64")
+        Cov_mix = np.zeros((num_modes, num_modes), "float64")
 
         for l in range(self.l_min, self.l_max + 1):
 
             if self.Bmodes and self.LensingExtraction:
                 raise io_mp.LikelihoodError(
-                    "We have implemented a version of the likelihood with B modes, a version with lensing extraction, but not yet a version with both at the same time. You can implement it.")
+                    "We have implemented a version of the likelihood with B modes, a version with lensing extraction, but not yet a version with both at the same time. You can implement it."
+                )
 
             # case with B modes:
             elif self.Bmodes:
-                Cov_obs = np.array([
-                    [self.Cl_fid[0, l], self.Cl_fid[2, l], 0],
-                    [self.Cl_fid[2, l], self.Cl_fid[1, l], 0],
-                    [0, 0, self.Cl_fid[3, l]]])
+                Cov_obs = np.array(
+                    [
+                        [self.Cl_fid[0, l], self.Cl_fid[2, l], 0],
+                        [self.Cl_fid[2, l], self.Cl_fid[1, l], 0],
+                        [0, 0, self.Cl_fid[3, l]],
+                    ]
+                )
                 # next 5 lines added by S. Clesse for delensing
                 if self.delensing:
-                    Cov_the = np.array([
-                        [cl['tt'][l] + self.noise_T[l], cl['te'][l], 0],
-                        [cl['te'][l], cl['ee'][l] + self.noise_P[l], 0],
-                        [0, 0, cl['bb'][l] + self.noise_P[l] + self.noise_delensing[l]]])
+                    Cov_the = np.array(
+                        [
+                            [cl["tt"][l] + self.noise_T[l], cl["te"][l], 0],
+                            [cl["te"][l], cl["ee"][l] + self.noise_P[l], 0],
+                            [0, 0, cl["bb"][l] + self.noise_P[l] + self.noise_delensing[l]],
+                        ]
+                    )
                 else:
-                    Cov_the = np.array([
-                        [cl['tt'][l] + self.noise_T[l], cl['te'][l], 0],
-                        [cl['te'][l], cl['ee'][l] + self.noise_P[l], 0],
-                        [0, 0, cl['bb'][l] + self.noise_P[l]]])
+                    Cov_the = np.array(
+                        [
+                            [cl["tt"][l] + self.noise_T[l], cl["te"][l], 0],
+                            [cl["te"][l], cl["ee"][l] + self.noise_P[l], 0],
+                            [0, 0, cl["bb"][l] + self.noise_P[l]],
+                        ]
+                    )
 
             # case with lensing
             # note that the likelihood is based on ClDD (deflection spectrum)
@@ -1570,44 +1543,48 @@ class Likelihood_mock_cmb(Likelihood):
             # just DD, i.e. no TT or EE.
             elif self.LensingExtraction and self.ExcludeTTTEEE:
                 cldd_fid = self.Cl_fid[self.index_pp, l]
-                cldd = l * (l + 1.) * cl['pp'][l]
+                cldd = l * (l + 1.0) * cl["pp"][l]
                 Cov_obs = np.array([[cldd_fid]])
                 Cov_the = np.array([[cldd + self.Nldd[l]]])
 
             # Usual TTTEEE plus DD and TD
             elif self.LensingExtraction:
                 cldd_fid = self.Cl_fid[self.index_pp, l]
-                cldd = l * (l + 1.) * cl['pp'][l]
+                cldd = l * (l + 1.0) * cl["pp"][l]
                 if self.neglect_TD:
-                    cltd_fid = 0.
-                    cltd = 0.
+                    cltd_fid = 0.0
+                    cltd = 0.0
                 else:
                     cltd_fid = self.Cl_fid[self.index_tp, l]
-                    cltd = math.sqrt(l * (l + 1.)) * cl['tp'][l]
+                    cltd = math.sqrt(l * (l + 1.0)) * cl["tp"][l]
 
-                Cov_obs = np.array([
-                    [self.Cl_fid[0, l], self.Cl_fid[2, l], 0. * self.Cl_fid[self.index_tp, l]],
-                    [self.Cl_fid[2, l], self.Cl_fid[1, l], 0],
-                    [cltd_fid, 0, cldd_fid]])
-                Cov_the = np.array([
-                    [cl['tt'][l] + self.noise_T[l], cl['te'][l], 0. * math.sqrt(l * (l + 1.)) * cl['tp'][l]],
-                    [cl['te'][l], cl['ee'][l] + self.noise_P[l], 0],
-                    [cltd, 0, cldd + self.Nldd[l]]])
+                Cov_obs = np.array(
+                    [
+                        [self.Cl_fid[0, l], self.Cl_fid[2, l], 0.0 * self.Cl_fid[self.index_tp, l]],
+                        [self.Cl_fid[2, l], self.Cl_fid[1, l], 0],
+                        [cltd_fid, 0, cldd_fid],
+                    ]
+                )
+                Cov_the = np.array(
+                    [
+                        [cl["tt"][l] + self.noise_T[l], cl["te"][l], 0.0 * math.sqrt(l * (l + 1.0)) * cl["tp"][l]],
+                        [cl["te"][l], cl["ee"][l] + self.noise_P[l], 0],
+                        [cltd, 0, cldd + self.Nldd[l]],
+                    ]
+                )
 
-        # case with TT only (Added by Siavash Yasini)
+            # case with TT only (Added by Siavash Yasini)
             elif self.OnlyTT:
                 Cov_obs = np.array([[self.Cl_fid[0, l]]])
 
-                Cov_the = np.array([[cl['tt'][l] + self.noise_T[l]]])
+                Cov_the = np.array([[cl["tt"][l] + self.noise_T[l]]])
 
             # case without B modes nor lensing:
             else:
-                Cov_obs = np.array([
-                    [self.Cl_fid[0, l], self.Cl_fid[2, l]],
-                    [self.Cl_fid[2, l], self.Cl_fid[1, l]]])
-                Cov_the = np.array([
-                    [cl['tt'][l] + self.noise_T[l], cl['te'][l]],
-                    [cl['te'][l], cl['ee'][l] + self.noise_P[l]]])
+                Cov_obs = np.array([[self.Cl_fid[0, l], self.Cl_fid[2, l]], [self.Cl_fid[2, l], self.Cl_fid[1, l]]])
+                Cov_the = np.array(
+                    [[cl["tt"][l] + self.noise_T[l], cl["te"][l]], [cl["te"][l], cl["ee"][l] + self.noise_P[l]]]
+                )
 
             # get determinant of observational and theoretical covariance matrices
             det_obs = np.linalg.det(Cov_obs)
@@ -1616,14 +1593,13 @@ class Likelihood_mock_cmb(Likelihood):
             # get determinant of mixed matrix (= sum of N theoretical
             # matrices with, in each of them, the nth column replaced
             # by that of the observational matrix)
-            det_mix = 0.
+            det_mix = 0.0
             for i in range(num_modes):
                 Cov_mix = np.copy(Cov_the)
                 Cov_mix[:, i] = Cov_obs[:, i]
                 det_mix += np.linalg.det(Cov_mix)
 
-            chi2 += (2. * l + 1.) * self.f_sky *\
-                (det_mix / det_the + math.log(det_the / det_obs) - num_modes)
+            chi2 += (2.0 * l + 1.0) * self.f_sky * (det_mix / det_the + math.log(det_the / det_obs) - num_modes)
 
         return -chi2 / 2
 
@@ -1633,13 +1609,12 @@ class Likelihood_mock_cmb(Likelihood):
 # --> sdss, wigglez, etc.
 ###################################
 class Likelihood_mpk(Likelihood):
-
     def __init__(self, path, data, command_line, common=False, common_dict={}):
 
         Likelihood.__init__(self, path, data, command_line)
 
         # require P(k) from class
-        self.need_cosmo_arguments(data, {'output': 'mPk'})
+        self.need_cosmo_arguments(data, {"output": "mPk"})
 
         if common:
             self.add_common_knowledge(common_dict)
@@ -1650,7 +1625,7 @@ class Likelihood_mpk(Likelihood):
             self.use_halofit = False
 
         if self.use_halofit:
-            self.need_cosmo_arguments(data, {'non linear': 'halofit'})
+            self.need_cosmo_arguments(data, {"non linear": "halofit"})
 
         # sdssDR7 by T. Brinckmann
         # Based on Reid et al. 2010 arXiv:0907.1659 - Note: arXiv version not updated
@@ -1662,13 +1637,13 @@ class Likelihood_mpk(Likelihood):
         # read values of k (in h/Mpc)
         self.k_size = self.max_mpk_kbands_use - self.min_mpk_kbands_use + 1
         self.mu_size = 1
-        self.k = np.zeros((self.k_size), 'float64')
-        self.kh = np.zeros((self.k_size), 'float64')
+        self.k = np.zeros((self.k_size), "float64")
+        self.kh = np.zeros((self.k_size), "float64")
 
-        datafile = open(os.path.join(self.data_directory, self.kbands_file), 'r')
+        datafile = open(os.path.join(self.data_directory, self.kbands_file), "r")
         for i in range(self.num_mpk_kbands_full):
             line = datafile.readline()
-            while line.find('#') != -1:
+            while line.find("#") != -1:
                 line = datafile.readline()
             if i + 2 > self.min_mpk_kbands_use and i < self.max_mpk_kbands_use:
                 self.kh[i - self.min_mpk_kbands_use + 1] = float(line.split()[0])
@@ -1697,25 +1672,26 @@ class Likelihood_mpk(Likelihood):
         # If the flag use_giggleZPP0 is set to True, the nuisance parameters
         # P0_a, P0_b, P0_c and P0_d are expected.
         if self.use_giggleZPP0:
-            if 'P0_a' not in data.get_mcmc_parameters(['nuisance']):
+            if "P0_a" not in data.get_mcmc_parameters(["nuisance"]):
                 raise io_mp.LikelihoodError(
-                    "In likelihood %s. " % self.name +
-                    "P0_a is not defined in the .param file, whereas this " +
-                    "nuisance parameter is required when the flag " +
-                    "'use_giggleZPP0' is set to true for WiggleZ")
+                    "In likelihood %s. " % self.name
+                    + "P0_a is not defined in the .param file, whereas this "
+                    + "nuisance parameter is required when the flag "
+                    + "'use_giggleZPP0' is set to true for WiggleZ"
+                )
 
         if self.use_giggleZ:
-            datafile = open(os.path.join(self.data_directory, self.giggleZ_fidpk_file), 'r')
+            datafile = open(os.path.join(self.data_directory, self.giggleZ_fidpk_file), "r")
 
             line = datafile.readline()
             k = float(line.split()[0])
             line_number = 1
-            while (k < self.kh[0]):
+            while k < self.kh[0]:
                 line = datafile.readline()
                 k = float(line.split()[0])
                 line_number += 1
             ifid_discard = line_number - 2
-            while (k < khmax):
+            while k < khmax:
                 line = datafile.readline()
                 k = float(line.split()[0])
                 line_number += 1
@@ -1728,11 +1704,10 @@ class Likelihood_mpk(Likelihood):
 
         # require k_max and z_max from the cosmological module
         if self.use_sdssDR7:
-            self.need_cosmo_arguments(data, {'z_max_pk': self.zmax})
-            self.need_cosmo_arguments(data, {'P_k_max_h/Mpc': 7.5 * self.kmax})
+            self.need_cosmo_arguments(data, {"z_max_pk": self.zmax})
+            self.need_cosmo_arguments(data, {"P_k_max_h/Mpc": 7.5 * self.kmax})
         else:
-            self.need_cosmo_arguments(
-                data, {'P_k_max_h/Mpc': khmax, 'z_max_pk': self.redshift})
+            self.need_cosmo_arguments(data, {"P_k_max_h/Mpc": khmax, "z_max_pk": self.redshift})
 
         # read information on different regions in the sky
         try:
@@ -1740,16 +1715,16 @@ class Likelihood_mpk(Likelihood):
         except:
             self.has_regions = False
 
-        if (self.has_regions):
+        if self.has_regions:
             self.num_regions = len(self.used_region)
             self.num_regions_used = 0
             for i in range(self.num_regions):
-                if (self.used_region[i]):
+                if self.used_region[i]:
                     self.num_regions_used += 1
-            if (self.num_regions_used == 0):
+            if self.num_regions_used == 0:
                 raise io_mp.LikelihoodError(
-                    "In likelihood %s. " % self.name +
-                    "Mpk: no regions begin used in this data set")
+                    "In likelihood %s. " % self.name + "Mpk: no regions begin used in this data set"
+                )
         else:
             self.num_regions = 1
             self.num_regions_used = 1
@@ -1758,33 +1733,32 @@ class Likelihood_mpk(Likelihood):
         # read window functions
         self.n_size = self.max_mpk_points_use - self.min_mpk_points_use + 1
 
-        self.window = np.zeros(
-            (self.num_regions, self.n_size, self.k_size), 'float64')
+        self.window = np.zeros((self.num_regions, self.n_size, self.k_size), "float64")
 
-        datafile = open(os.path.join(self.data_directory, self.windows_file), 'r')
+        datafile = open(os.path.join(self.data_directory, self.windows_file), "r")
         for i_region in range(self.num_regions):
             for i in range(self.num_mpk_points_full):
                 line = datafile.readline()
-                while line.find('#') != -1:
+                while line.find("#") != -1:
                     line = datafile.readline()
-                if (i + 2 > self.min_mpk_points_use and i < self.max_mpk_points_use):
+                if i + 2 > self.min_mpk_points_use and i < self.max_mpk_points_use:
                     for j in range(self.k_size):
-                        self.window[i_region, i - self.min_mpk_points_use + 1,
-                                    j] = float(line.split()[j + self.min_mpk_kbands_use - 1])
+                        self.window[i_region, i - self.min_mpk_points_use + 1, j] = float(
+                            line.split()[j + self.min_mpk_kbands_use - 1]
+                        )
         datafile.close()
 
         # read measurements
-        self.P_obs = np.zeros((self.num_regions, self.n_size), 'float64')
-        self.P_err = np.zeros((self.num_regions, self.n_size), 'float64')
+        self.P_obs = np.zeros((self.num_regions, self.n_size), "float64")
+        self.P_err = np.zeros((self.num_regions, self.n_size), "float64")
 
-        datafile = open(os.path.join(self.data_directory, self.measurements_file), 'r')
+        datafile = open(os.path.join(self.data_directory, self.measurements_file), "r")
         for i_region in range(self.num_regions):
             for i in range(self.num_mpk_points_full):
                 line = datafile.readline()
-                while line.find('#') != -1:
+                while line.find("#") != -1:
                     line = datafile.readline()
-                if (i + 2 > self.min_mpk_points_use and
-                        i < self.max_mpk_points_use):
+                if i + 2 > self.min_mpk_points_use and i < self.max_mpk_points_use:
                     self.P_obs[i_region, i - self.min_mpk_points_use + 1] = float(line.split()[3])
                     self.P_err[i_region, i - self.min_mpk_points_use + 1] = float(line.split()[4])
         datafile.close()
@@ -1801,24 +1775,24 @@ class Likelihood_mpk(Likelihood):
         except:
             self.use_invcov = False
 
-        self.invcov = np.zeros(
-            (self.num_regions, self.n_size, self.n_size), 'float64')
+        self.invcov = np.zeros((self.num_regions, self.n_size, self.n_size), "float64")
 
         if self.use_covmat:
-            cov = np.zeros((self.n_size, self.n_size), 'float64')
-            invcov_tmp = np.zeros((self.n_size, self.n_size), 'float64')
+            cov = np.zeros((self.n_size, self.n_size), "float64")
+            invcov_tmp = np.zeros((self.n_size, self.n_size), "float64")
 
-            datafile = open(os.path.join(self.data_directory, self.covmat_file), 'r')
+            datafile = open(os.path.join(self.data_directory, self.covmat_file), "r")
             for i_region in range(self.num_regions):
                 for i in range(self.num_mpk_points_full):
                     line = datafile.readline()
-                    while line.find('#') != -1:
+                    while line.find("#") != -1:
                         line = datafile.readline()
-                    if (i + 2 > self.min_mpk_points_use and i < self.max_mpk_points_use):
+                    if i + 2 > self.min_mpk_points_use and i < self.max_mpk_points_use:
                         for j in range(self.num_mpk_points_full):
-                            if (j + 2 > self.min_mpk_points_use and j < self.max_mpk_points_use):
-                                cov[i - self.min_mpk_points_use + 1, j -
-                                    self.min_mpk_points_use + 1] = float(line.split()[j])
+                            if j + 2 > self.min_mpk_points_use and j < self.max_mpk_points_use:
+                                cov[i - self.min_mpk_points_use + 1, j - self.min_mpk_points_use + 1] = float(
+                                    line.split()[j]
+                                )
 
                 if self.use_invcov:
                     invcov_tmp = cov
@@ -1831,14 +1805,13 @@ class Likelihood_mpk(Likelihood):
         else:
             for i_region in range(self.num_regions):
                 for j in range(self.n_size):
-                    self.invcov[i_region, j, j] = \
-                        1. / (self.P_err[i_region, j]**2)
+                    self.invcov[i_region, j, j] = 1.0 / (self.P_err[i_region, j] ** 2)
 
         # read fiducial model
         if self.use_giggleZ:
-            self.P_fid = np.zeros((self.k_fid_size), 'float64')
-            self.k_fid = np.zeros((self.k_fid_size), 'float64')
-            datafile = open(os.path.join(self.data_directory, self.giggleZ_fidpk_file), 'r')
+            self.P_fid = np.zeros((self.k_fid_size), "float64")
+            self.k_fid = np.zeros((self.k_fid_size), "float64")
+            datafile = open(os.path.join(self.data_directory, self.giggleZ_fidpk_file), "r")
             for i in range(ifid_discard):
                 line = datafile.readline()
             for i in range(self.k_fid_size):
@@ -1849,14 +1822,14 @@ class Likelihood_mpk(Likelihood):
 
         # read integral constraint
         if self.use_sdssDR7:
-            self.zerowindowfxn = np.zeros((self.k_size), 'float64')
-            datafile = open(os.path.join(self.data_directory, self.zerowindowfxn_file), 'r')
+            self.zerowindowfxn = np.zeros((self.k_size), "float64")
+            datafile = open(os.path.join(self.data_directory, self.zerowindowfxn_file), "r")
             for i in range(self.k_size):
                 line = datafile.readline()
                 self.zerowindowfxn[i] = float(line.split()[0])
             datafile.close()
-            self.zerowindowfxnsubtractdat = np.zeros((self.n_size), 'float64')
-            datafile = open(os.path.join(self.data_directory, self.zerowindowfxnsubtractdat_file), 'r')
+            self.zerowindowfxnsubtractdat = np.zeros((self.n_size), "float64")
+            datafile = open(os.path.join(self.data_directory, self.zerowindowfxnsubtractdat_file), "r")
             line = datafile.readline()
             self.zerowindowfxnsubtractdatnorm = float(line.split()[0])
             for i in range(self.n_size):
@@ -1878,16 +1851,18 @@ class Likelihood_mpk(Likelihood):
                 for j in range(-nptsa2 // 2, nptsa2 // 2 + 1):
                     a1val = da1 * i
                     a2val = da2 * j
-                    if ((a2val >= 0.0 and a2val <= self.a2maxpos(a1val) and a2val >= self.a2minfinalpos(a1val)) or
-                            (a2val <= 0.0 and a2val <= self.a2maxfinalneg(a1val) and a2val >= self.a2minneg(a1val))):
-                        if (self.testa1a2(a1val, a2val) == False):
+                    if (a2val >= 0.0 and a2val <= self.a2maxpos(a1val) and a2val >= self.a2minfinalpos(a1val)) or (
+                        a2val <= 0.0 and a2val <= self.a2maxfinalneg(a1val) and a2val >= self.a2minneg(a1val)
+                    ):
+                        if self.testa1a2(a1val, a2val) == False:
                             raise io_mp.LikelihoodError(
-                                'Error in likelihood %s ' % (self.name) +
-                                'Nuisance parameter values not valid: %s %s' % (a1, a2))
-                        if(count >= self.nptstot):
+                                "Error in likelihood %s " % (self.name)
+                                + "Nuisance parameter values not valid: %s %s" % (a1, a2)
+                            )
+                        if count >= self.nptstot:
                             raise io_mp.LikelihoodError(
-                                'Error in likelihood %s ' % (self.name) +
-                                'count > nptstot failure')
+                                "Error in likelihood %s " % (self.name) + "count > nptstot failure"
+                            )
                         self.a1list[count] = a1val
                         self.a2list[count] = a2val
                         count = count + 1
@@ -1897,26 +1872,26 @@ class Likelihood_mpk(Likelihood):
     # functions added for nuisance parameter space checks.
     def a2maxpos(self, a1val):
         a2max = -1.0
-        if (a1val <= min(self.s1 / self.k1, self.s2 / self.k2)):
-            a2max = min(self.s1 / self.k1**2 - a1val / self.k1, self.s2 / self.k2**2 - a1val / self.k2)
+        if a1val <= min(self.s1 / self.k1, self.s2 / self.k2):
+            a2max = min(self.s1 / self.k1 ** 2 - a1val / self.k1, self.s2 / self.k2 ** 2 - a1val / self.k2)
         return a2max
 
     def a2min1pos(self, a1val):
         a2min1 = 0.0
-        if(a1val <= 0.0):
-            a2min1 = max(-self.s1 / self.k1**2 - a1val / self.k1, -self.s2 / self.k2**2 - a1val / self.k2, 0.0)
+        if a1val <= 0.0:
+            a2min1 = max(-self.s1 / self.k1 ** 2 - a1val / self.k1, -self.s2 / self.k2 ** 2 - a1val / self.k2, 0.0)
         return a2min1
 
     def a2min2pos(self, a1val):
         a2min2 = 0.0
-        if(abs(a1val) >= 2.0 * self.s1 / self.k1 and a1val <= 0.0):
-            a2min2 = a1val**2 / self.s1 * 0.25
+        if abs(a1val) >= 2.0 * self.s1 / self.k1 and a1val <= 0.0:
+            a2min2 = a1val ** 2 / self.s1 * 0.25
         return a2min2
 
     def a2min3pos(self, a1val):
         a2min3 = 0.0
-        if(abs(a1val) >= 2.0 * self.s2 / self.k2 and a1val <= 0.0):
-            a2min3 = a1val**2 / self.s2 * 0.25
+        if abs(a1val) >= 2.0 * self.s2 / self.k2 and a1val <= 0.0:
+            a2min3 = a1val ** 2 / self.s2 * 0.25
         return a2min3
 
     def a2minfinalpos(self, a1val):
@@ -1924,29 +1899,29 @@ class Likelihood_mpk(Likelihood):
         return a2minpos
 
     def a2minneg(self, a1val):
-        if (a1val >= max(-self.s1 / self.k1, -self.s2 / self.k2)):
-            a2min = max(-self.s1 / self.k1**2 - a1val / self.k1, -self.s2 / self.k2**2 - a1val / self.k2)
+        if a1val >= max(-self.s1 / self.k1, -self.s2 / self.k2):
+            a2min = max(-self.s1 / self.k1 ** 2 - a1val / self.k1, -self.s2 / self.k2 ** 2 - a1val / self.k2)
         else:
             a2min = 1.0
         return a2min
 
     def a2max1neg(self, a1val):
-        if(a1val >= 0.0):
-            a2max1 = min(self.s1 / self.k1**2 - a1val / self.k1, self.s2 / self.k2**2 - a1val / self.k2, 0.0)
+        if a1val >= 0.0:
+            a2max1 = min(self.s1 / self.k1 ** 2 - a1val / self.k1, self.s2 / self.k2 ** 2 - a1val / self.k2, 0.0)
         else:
             a2max1 = 0.0
         return a2max1
 
     def a2max2neg(self, a1val):
         a2max2 = 0.0
-        if(abs(a1val) >= 2.0 * self.s1 / self.k1 and a1val >= 0.0):
-            a2max2 = -a1val**2 / self.s1 * 0.25
+        if abs(a1val) >= 2.0 * self.s1 / self.k1 and a1val >= 0.0:
+            a2max2 = -(a1val ** 2) / self.s1 * 0.25
         return a2max2
 
     def a2max3neg(self, a1val):
         a2max3 = 0.0
-        if(abs(a1val) >= 2.0 * self.s2 / self.k2 and a1val >= 0.0):
-            a2max3 = -a1val**2 / self.s2 * 0.25
+        if abs(a1val) >= 2.0 * self.s2 / self.k2 and a1val >= 0.0:
+            a2max3 = -(a1val ** 2) / self.s2 * 0.25
         return a2max3
 
     def a2maxfinalneg(self, a1val):
@@ -1956,17 +1931,17 @@ class Likelihood_mpk(Likelihood):
     def testa1a2(self, a1val, a2val):
         testresult = True
         # check if there's an extremum; either a1val or a2val has to be negative, not both
-        if (a2val == 0.):
+        if a2val == 0.0:
             return testresult  # not in the original code, but since a2val=0 returns True this way I avoid zerodivisionerror
         kext = -a1val / 2.0 / a2val
-        diffval = abs(a1val * kext + a2val * kext**2)
-        if(kext > 0.0 and kext <= self.k1 and diffval > self.s1):
+        diffval = abs(a1val * kext + a2val * kext ** 2)
+        if kext > 0.0 and kext <= self.k1 and diffval > self.s1:
             testresult = False
-        if(kext > 0.0 and kext <= self.k2 and diffval > self.s2):
+        if kext > 0.0 and kext <= self.k2 and diffval > self.s2:
             testresult = False
-        if (abs(a1val * self.k1 + a2val * self.k1**2) > self.s1):
+        if abs(a1val * self.k1 + a2val * self.k1 ** 2) > self.s1:
             testresult = False
-        if (abs(a1val * self.k2 + a2val * self.k2**2) > self.s2):
+        if abs(a1val * self.k2 + a2val * self.k2 ** 2) > self.s2:
             testresult = False
         return testresult
 
@@ -1985,10 +1960,11 @@ class Likelihood_mpk(Likelihood):
             try:
                 exec("self.%s" % key)
                 warnings.warn(
-                    "parameter %s from likelihood %s will be replaced by " +
-                    "the common knowledge routine" % (key, self.name))
+                    "parameter %s from likelihood %s will be replaced by "
+                    + "the common knowledge routine" % (key, self.name)
+                )
             except:
-                if type(value) != type('foo'):
+                if type(value) != type("foo"):
                     exec("self.%s = %s" % (key, value))
                 else:
                     exec("self.%s = '%s'" % (key, value))
@@ -2015,47 +1991,45 @@ class Likelihood_mpk(Likelihood):
             # The fiducial values are stored in the .data files for
             # each experiment, and are truly in Mpc. Beware for a potential
             # difference with CAMB conventions here.
-            scaling = pow(
-                (self.d_angular_fid / d_angular)**2 *
-                (self.d_radial_fid / d_radial), 1. / 3.)
+            scaling = pow((self.d_angular_fid / d_angular) ** 2 * (self.d_radial_fid / d_radial), 1.0 / 3.0)
         else:
             scaling = 1
         # get rescaled values of k in 1/Mpc
         self.k = self.kh * h * scaling
 
         # get P(k) at right values of k, convert it to (Mpc/h)^3 and rescale it
-        P_lin = np.zeros((self.k_size), 'float64')
+        P_lin = np.zeros((self.k_size), "float64")
 
         # If the flag use_giggleZ is set to True, the power spectrum retrieved
         # from Class will get rescaled by the fiducial power spectrum given by
         # the GiggleZ N-body simulations CITE
         if self.use_giggleZ:
-            P = np.zeros((self.k_fid_size), 'float64')
+            P = np.zeros((self.k_fid_size), "float64")
             for i in range(self.k_fid_size):
                 P[i] = cosmo.pk(self.k_fid[i] * h, self.redshift)
                 power = 0
                 # The following create a polynome in k, which coefficients are
                 # stored in the .data files of the experiments.
                 for j in range(6):
-                    power += self.giggleZ_fidpoly[j] * self.k_fid[i]**j
+                    power += self.giggleZ_fidpoly[j] * self.k_fid[i] ** j
                 # rescale P by fiducial model and get it in (Mpc/h)**3
-                P[i] *= pow(10, power) * (h / scaling)**3 / self.P_fid[i]
+                P[i] *= pow(10, power) * (h / scaling) ** 3 / self.P_fid[i]
 
             if self.use_giggleZPP0:
                 # Shot noise parameter addition to GiggleZ model. It should
                 # recover the proper nuisance parameter, depending on the name.
                 # I.e., Wigglez_A should recover P0_a, etc...
                 tag = self.name[-2:]  # circle over "_a", "_b", etc...
-                P0_value = data.mcmc_parameters['P0' + tag]['current'] *\
-                    data.mcmc_parameters['P0' + tag]['scale']
+                P0_value = data.mcmc_parameters["P0" + tag]["current"] * data.mcmc_parameters["P0" + tag]["scale"]
                 P_lin = np.interp(self.kh, self.k_fid, P + P0_value)
             else:
                 # get P_lin by interpolation. It is still in (Mpc/h)**3
                 P_lin = np.interp(self.kh, self.k_fid, P)
 
         elif self.use_sdssDR7:
-            kh = np.logspace(math.log(1e-3), math.log(1.0), num=(math.log(1.0) -
-                                                                 math.log(1e-3)) / 0.01 + 1, base=math.exp(1.0))  # k in h/Mpc
+            kh = np.logspace(
+                math.log(1e-3), math.log(1.0), num=(math.log(1.0) - math.log(1e-3)) / 0.01 + 1, base=math.exp(1.0)
+            )  # k in h/Mpc
             # Rescale the scaling factor by the fiducial value for h divided by the sampled value
             # h=0.701 was used for the N-body calibration simulations
             scaling = scaling * (0.701 / h)
@@ -2068,16 +2042,16 @@ class Likelihood_mpk(Likelihood):
             # Analytical growth factor for each redshift bin
             D_growth = np.zeros(len(z))
             # P(k) *with* wiggles, both linear and nonlinear
-            Plin = np.zeros(len(k), 'float64')
-            Pnl = np.zeros(len(k), 'float64')
+            Plin = np.zeros(len(k), "float64")
+            Pnl = np.zeros(len(k), "float64")
             # P(k) *without* wiggles, both linear and nonlinear
-            Psmooth = np.zeros(len(k), 'float64')
-            Psmooth_nl = np.zeros(len(k), 'float64')
+            Psmooth = np.zeros(len(k), "float64")
+            Psmooth_nl = np.zeros(len(k), "float64")
             # Damping function and smeared P(k)
-            fdamp = np.zeros([len(k), len(z)], 'float64')
-            Psmear = np.zeros([len(k), len(z)], 'float64')
+            fdamp = np.zeros([len(k), len(z)], "float64")
+            Psmear = np.zeros([len(k), len(z)], "float64")
             # Ratio of smoothened non-linear to linear P(k)
-            nlratio = np.zeros([len(k), len(z)], 'float64')
+            nlratio = np.zeros([len(k), len(z)], "float64")
             # Loop over each redshift bin
             for j in range(len(z)):
                 # Compute growth factor at each redshift
@@ -2090,13 +2064,13 @@ class Likelihood_mpk(Likelihood):
                     Plin[i] = cosmo.pk_lin(k[i], z[j])
                     Pnl[i] = cosmo.pk(k[i], z[j])
                 # Get rescaled values of P(k) in (Mpc/h)**3
-                Plin *= h**3  # (h/scaling)**3
-                Pnl *= h**3  # (h/scaling)**3
+                Plin *= h ** 3  # (h/scaling)**3
+                Pnl *= h ** 3  # (h/scaling)**3
                 # Compute Pk *without* wiggles, both linear and nonlinear
                 Psmooth = self.remove_bao(kh, Plin)
                 Psmooth_nl = self.remove_bao(kh, Pnl)
                 # Apply Gaussian damping due to non-linearities
-                fdamp[:, j] = np.exp(-0.5 * sigma2bao[j] * kh**2)
+                fdamp[:, j] = np.exp(-0.5 * sigma2bao[j] * kh ** 2)
                 Psmear[:, j] = Plin * fdamp[:, j] + Psmooth * (1.0 - fdamp[:, j])
                 # Take ratio of smoothened non-linear to linear P(k)
                 nlratio[:, j] = Psmooth_nl / Psmooth
@@ -2116,16 +2090,25 @@ class Likelihood_mpk(Likelihood):
                 # Calculate relevant flat fiducial quantities
                 fidnlratio, fidNEAR, fidMID, fidFAR = self.get_flat_fid(cosmo, data, kh, z, sigma2bao)
                 try:
-                    existing_fid = np.loadtxt('data/sdss_lrgDR7/sdss_lrgDR7_fiducialmodel.dat')
-                    print('sdss_lrgDR7: Checking fiducial deviations for near, mid and far bins:', np.sum(
-                        existing_fid[:, 1] - fidNEAR), np.sum(existing_fid[:, 2] - fidMID), np.sum(existing_fid[:, 3] - fidFAR))
-                    if np.sum(existing_fid[:, 1] - fidNEAR) + np.sum(existing_fid[:, 2] - fidMID) + np.sum(existing_fid[:, 3] - fidFAR) < 10**-5:
+                    existing_fid = np.loadtxt("data/sdss_lrgDR7/sdss_lrgDR7_fiducialmodel.dat")
+                    print(
+                        "sdss_lrgDR7: Checking fiducial deviations for near, mid and far bins:",
+                        np.sum(existing_fid[:, 1] - fidNEAR),
+                        np.sum(existing_fid[:, 2] - fidMID),
+                        np.sum(existing_fid[:, 3] - fidFAR),
+                    )
+                    if (
+                        np.sum(existing_fid[:, 1] - fidNEAR)
+                        + np.sum(existing_fid[:, 2] - fidMID)
+                        + np.sum(existing_fid[:, 3] - fidFAR)
+                        < 10 ** -5
+                    ):
                         self.create_fid = False
                 except:
                     pass
                 if self.create_fid == True:
-                    print('sdss_lrgDR7: Creating fiducial file with Omega_b = 0.25, Omega_L = 0.75, h = 0.701')
-                    print('             Required for non-linear modeling')
+                    print("sdss_lrgDR7: Creating fiducial file with Omega_b = 0.25, Omega_L = 0.75, h = 0.701")
+                    print("             Required for non-linear modeling")
                     # Save non-linear corrections from N-body sims for each redshift bin
                     arr = np.zeros((np.size(kh), 7))
                     arr[:, 0] = kh
@@ -2134,28 +2117,33 @@ class Likelihood_mpk(Likelihood):
                     arr[:, 3] = fidFAR
                     # Save non-linear corrections from halofit for each redshift bin
                     arr[:, 4:7] = fidnlratio
-                    np.savetxt('data/sdss_lrgDR7/sdss_lrgDR7_fiducialmodel.dat', arr)
+                    np.savetxt("data/sdss_lrgDR7/sdss_lrgDR7_fiducialmodel.dat", arr)
                     self.create_fid = False
-                    print('             Fiducial created')
+                    print("             Fiducial created")
 
             # Load fiducial model
-            fiducial = np.loadtxt('data/sdss_lrgDR7/sdss_lrgDR7_fiducialmodel.dat')
+            fiducial = np.loadtxt("data/sdss_lrgDR7/sdss_lrgDR7_fiducialmodel.dat")
             fid = fiducial[:, 1:4]
             fidnlratio = fiducial[:, 4:7]
 
             # Put all factors together to obtain the P(k) for each redshift bin
-            Pnear = np.interp(kh, kh, Psmear[:, 0] * (nlratio[:, 0] / fidnlratio[:, 0])
-                              * fid[:, 0] * D_growth[0]**(-2.))
-            Pmid = np.interp(kh, kh, Psmear[:, 1] * (nlratio[:, 1] / fidnlratio[:, 1])
-                             * fid[:, 1] * D_growth[1]**(-2.))
-            Pfar = np.interp(kh, kh, Psmear[:, 2] * (nlratio[:, 2] / fidnlratio[:, 2])
-                             * fid[:, 2] * D_growth[2]**(-2.))
+            Pnear = np.interp(
+                kh, kh, Psmear[:, 0] * (nlratio[:, 0] / fidnlratio[:, 0]) * fid[:, 0] * D_growth[0] ** (-2.0)
+            )
+            Pmid = np.interp(
+                kh, kh, Psmear[:, 1] * (nlratio[:, 1] / fidnlratio[:, 1]) * fid[:, 1] * D_growth[1] ** (-2.0)
+            )
+            Pfar = np.interp(
+                kh, kh, Psmear[:, 2] * (nlratio[:, 2] / fidnlratio[:, 2]) * fid[:, 2] * D_growth[2] ** (-2.0)
+            )
 
             # Define and rescale k
             self.k = self.kh * h * scaling
             # Weighted mean of the P(k) for each redshift bin
-            P_lin = (0.395 * Pnear + 0.355 * Pmid + 0.250 * Pfar)
-            P_lin = np.interp(self.k, kh * h, P_lin) * (1. / scaling)**3  # remember self.k is scaled but self.kh isn't
+            P_lin = 0.395 * Pnear + 0.355 * Pmid + 0.250 * Pfar
+            P_lin = (
+                np.interp(self.k, kh * h, P_lin) * (1.0 / scaling) ** 3
+            )  # remember self.k is scaled but self.kh isn't
 
         else:
             # get rescaled values of k in 1/Mpc
@@ -2164,7 +2152,7 @@ class Likelihood_mpk(Likelihood):
             for i in range(self.k_size):
                 P_lin[i] = cosmo.pk(self.k[i], self.redshift)
             # get rescaled values of P(k) in (Mpc/h)**3
-            P_lin *= (h / scaling)**3
+            P_lin *= (h / scaling) ** 3
 
         # infer P_th from P_lin. It is still in (Mpc/h)**3. TODO why was it
         # called P_lin in the first place ? Couldn't we use now P_th all the
@@ -2177,7 +2165,7 @@ class Likelihood_mpk(Likelihood):
 
             Pth = P_th
             Pth_k = P_th * (self.k / h)  # self.k has the scaling included, so self.k/h != self.kh
-            Pth_k2 = P_th * (self.k / h)**2
+            Pth_k2 = P_th * (self.k / h) ** 2
 
             WPth = np.dot(self.window[0, :], Pth)
             WPth_k = np.dot(self.window[0, :], Pth_k)
@@ -2217,57 +2205,62 @@ class Likelihood_mpk(Likelihood):
                 a2val = self.a2list[i]
                 zerowinsub = -(sumzerow_Pth + a1val * sumzerow_Pth_k + a2val * sumzerow_Pth_k2)
                 sumDT_tot = sumDT + a1val * sumDT_k + a2val * sumDT_k2 + zerowinsub * sumDT_zerowin
-                sumTT_tot = sumTT + a1val**2.0 * sumTT_k_k + a2val**2.0 * sumTT_k2_k2 + \
-                    zerowinsub**2.0 * sumTT_zerowin_zerowin + \
-                    2.0 * a1val * sumTT_k + 2.0 * a2val * sumTT_k2 + 2.0 * a1val * a2val * sumTT_k_k2 + \
-                    2.0 * zerowinsub * sumTT_zerowin + 2.0 * zerowinsub * a1val * sumTT_k_zerowin + \
-                    2.0 * zerowinsub * a2val * sumTT_k2_zerowin
+                sumTT_tot = (
+                    sumTT
+                    + a1val ** 2.0 * sumTT_k_k
+                    + a2val ** 2.0 * sumTT_k2_k2
+                    + zerowinsub ** 2.0 * sumTT_zerowin_zerowin
+                    + 2.0 * a1val * sumTT_k
+                    + 2.0 * a2val * sumTT_k2
+                    + 2.0 * a1val * a2val * sumTT_k_k2
+                    + 2.0 * zerowinsub * sumTT_zerowin
+                    + 2.0 * zerowinsub * a1val * sumTT_k_zerowin
+                    + 2.0 * zerowinsub * a2val * sumTT_k2_zerowin
+                )
                 minchisqtheoryamp = sumDT_tot / sumTT_tot
-                chisq[i] = sumDD - 2.0 * minchisqtheoryamp * sumDT_tot + minchisqtheoryamp**2.0 * sumTT_tot
-                chisqmarg[i] = sumDD - sumDT_tot**2.0 / sumTT_tot + math.log(sumTT_tot) - \
-                    2.0 * math.log(1.0 + math.erf(sumDT_tot / 2.0 / math.sqrt(sumTT_tot)))
-                if(i == 0 or chisq[i] < currminchisq):
+                chisq[i] = sumDD - 2.0 * minchisqtheoryamp * sumDT_tot + minchisqtheoryamp ** 2.0 * sumTT_tot
+                chisqmarg[i] = (
+                    sumDD
+                    - sumDT_tot ** 2.0 / sumTT_tot
+                    + math.log(sumTT_tot)
+                    - 2.0 * math.log(1.0 + math.erf(sumDT_tot / 2.0 / math.sqrt(sumTT_tot)))
+                )
+                if i == 0 or chisq[i] < currminchisq:
                     myminchisqindx = i
                     currminchisq = chisq[i]
                     currminchisqmarg = chisqmarg[i]
                     minchisqtheoryampminnuis = minchisqtheoryamp
-                if(i == int(self.nptstot / 2)):
+                if i == int(self.nptstot / 2):
                     chisqnonuis = chisq[i]
                     minchisqtheoryampnonuis = minchisqtheoryamp
-                    if(abs(a1val) > 0.001 or abs(a2val) > 0.001):
-                        print('sdss_lrgDR7: ahhhh! violation!!', a1val, a2val)
+                    if abs(a1val) > 0.001 or abs(a2val) > 0.001:
+                        print("sdss_lrgDR7: ahhhh! violation!!", a1val, a2val)
 
             # numerically marginalize over a1,a2 now using values stored in chisq
             minchisq = np.min(chisqmarg)
             maxchisq = np.max(chisqmarg)
 
             LnLike = np.sum(np.exp(-(chisqmarg - minchisq) / 2.0) / (self.nptstot * 1.0))
-            if(LnLike == 0):
+            if LnLike == 0:
                 # LnLike = LogZero
-                raise io_mp.LikelihoodError(
-                    'Error in likelihood %s ' % (self.name) +
-                    'LRG LnLike LogZero error.')
+                raise io_mp.LikelihoodError("Error in likelihood %s " % (self.name) + "LRG LnLike LogZero error.")
             else:
-                chisq = -2. * math.log(LnLike) + minchisq
+                chisq = -2.0 * math.log(LnLike) + minchisq
             # print('DR7 chi2/2=',chisq/2.)
 
         # if we are not using DR7
         else:
-            W_P_th = np.zeros((self.n_size), 'float64')
+            W_P_th = np.zeros((self.n_size), "float64")
 
             # starting analytic marginalisation over bias
 
             # Define quantities living in all the regions possible. If only a few
             # regions are selected in the .data file, many elements from these
             # arrays will stay at 0.
-            P_data_large = np.zeros(
-                (self.n_size * self.num_regions_used), 'float64')
-            W_P_th_large = np.zeros(
-                (self.n_size * self.num_regions_used), 'float64')
-            cov_dat_large = np.zeros(
-                (self.n_size * self.num_regions_used), 'float64')
-            cov_th_large = np.zeros(
-                (self.n_size * self.num_regions_used), 'float64')
+            P_data_large = np.zeros((self.n_size * self.num_regions_used), "float64")
+            W_P_th_large = np.zeros((self.n_size * self.num_regions_used), "float64")
+            cov_dat_large = np.zeros((self.n_size * self.num_regions_used), "float64")
+            cov_th_large = np.zeros((self.n_size * self.num_regions_used), "float64")
 
             normV = 0
 
@@ -2288,22 +2281,16 @@ class Likelihood_mpk(Likelihood):
                     for i in range(self.n_size):
                         P_data_large[imin + i] = self.P_obs[i_region, i]
                         W_P_th_large[imin + i] = W_P_th[i]
-                        cov_dat_large[imin + i] = np.dot(
-                            self.invcov[i_region, i, :],
-                            self.P_obs[i_region, :])
-                        cov_th_large[imin + i] = np.dot(
-                            self.invcov[i_region, i, :],
-                            W_P_th[:])
+                        cov_dat_large[imin + i] = np.dot(self.invcov[i_region, i, :], self.P_obs[i_region, :])
+                        cov_th_large[imin + i] = np.dot(self.invcov[i_region, i, :], W_P_th[:])
 
             # Explain what it is TODO
             normV += np.dot(W_P_th_large, cov_th_large)
             # Sort of bias TODO ?
-            b_out = np.sum(W_P_th_large * cov_dat_large) / \
-                np.sum(W_P_th_large * cov_th_large)
+            b_out = np.sum(W_P_th_large * cov_dat_large) / np.sum(W_P_th_large * cov_th_large)
 
             # Explain this formula better, link to article ?
-            chisq = np.dot(P_data_large, cov_dat_large) - \
-                np.dot(W_P_th_large, cov_dat_large)**2 / normV
+            chisq = np.dot(P_data_large, cov_dat_large) - np.dot(W_P_th_large, cov_dat_large) ** 2 / normV
             # print('WiggleZ chi2=',chisq/2.)
 
         return -chisq / 2
@@ -2315,17 +2302,17 @@ class Likelihood_mpk(Likelihood):
         k_ref = [2.8e-2, 4.5e-1]
 
         # Get interpolating function for input P(k) in log-log space:
-        _interp_pk = scipy.interpolate.interp1d(np.log(k_in), np.log(pk_in),
-                                                kind='quadratic', bounds_error=False)
+        _interp_pk = scipy.interpolate.interp1d(np.log(k_in), np.log(pk_in), kind="quadratic", bounds_error=False)
 
-        def interp_pk(x): return np.exp(_interp_pk(np.log(x)))
+        def interp_pk(x):
+            return np.exp(_interp_pk(np.log(x)))
 
         # Spline all (log-log) points outside k_ref range:
         idxs = np.where(np.logical_or(k_in <= k_ref[0], k_in >= k_ref[1]))
-        _pk_smooth = scipy.interpolate.UnivariateSpline(np.log(k_in[idxs]),
-                                                        np.log(pk_in[idxs]), k=3, s=0)
+        _pk_smooth = scipy.interpolate.UnivariateSpline(np.log(k_in[idxs]), np.log(pk_in[idxs]), k=3, s=0)
 
-        def pk_smooth(x): return np.exp(_pk_smooth(np.log(x)))
+        def pk_smooth(x):
+            return np.exp(_pk_smooth(np.log(x)))
 
         # Find second derivative of each spline:
         fwiggle = scipy.interpolate.UnivariateSpline(k_in, pk_in / pk_smooth(k_in), k=3, s=0)
@@ -2336,7 +2323,14 @@ class Likelihood_mpk(Likelihood):
         # low-order spline through zeros to subtract smooth trend from wiggles fn.
         wzeros = d2.roots()
         wzeros = wzeros[np.where(np.logical_and(wzeros >= k_ref[0], wzeros <= k_ref[1]))]
-        wzeros = np.concatenate((wzeros, [k_ref[1], ]))
+        wzeros = np.concatenate(
+            (
+                wzeros,
+                [
+                    k_ref[1],
+                ],
+            )
+        )
         wtrend = scipy.interpolate.UnivariateSpline(wzeros, fwiggle(wzeros), k=3, s=0)
 
         # Construct smooth no-BAO:
@@ -2345,8 +2339,7 @@ class Likelihood_mpk(Likelihood):
         pk_nobao[idxs] *= wtrend(k_in[idxs])
 
         # Construct interpolating functions:
-        ipk = scipy.interpolate.interp1d(k_in, pk_nobao, kind='linear',
-                                         bounds_error=False, fill_value=0.)
+        ipk = scipy.interpolate.interp1d(k_in, pk_nobao, kind="linear", bounds_error=False, fill_value=0.0)
 
         pk_nobao = ipk(k_in)
 
@@ -2357,26 +2350,38 @@ class Likelihood_mpk(Likelihood):
         # Compute fiducial properties for a flat fiducial
         # with Omega_m = 0.25, Omega_L = 0.75, h = 0.701
         param_backup = data.cosmo_arguments
-        data.cosmo_arguments = {'P_k_max_h/Mpc': 1.5, 'ln10^{10}A_s': 3.0, 'N_ur': 3.04, 'h': 0.701,
-                                'omega_b': 0.035 * 0.701**2, 'non linear': ' halofit ', 'YHe': 0.24, 'k_pivot': 0.05,
-                                'n_s': 0.96, 'tau_reio': 0.084, 'z_max_pk': 0.5, 'output': ' mPk ',
-                                'omega_cdm': 0.215 * 0.701**2, 'T_cmb': 2.726}
+        data.cosmo_arguments = {
+            "P_k_max_h/Mpc": 1.5,
+            "ln10^{10}A_s": 3.0,
+            "N_ur": 3.04,
+            "h": 0.701,
+            "omega_b": 0.035 * 0.701 ** 2,
+            "non linear": " halofit ",
+            "YHe": 0.24,
+            "k_pivot": 0.05,
+            "n_s": 0.96,
+            "tau_reio": 0.084,
+            "z_max_pk": 0.5,
+            "output": " mPk ",
+            "omega_cdm": 0.215 * 0.701 ** 2,
+            "T_cmb": 2.726,
+        }
         cosmo.empty()
         cosmo.set(data.cosmo_arguments)
-        cosmo.compute(['lensing'])
-        h = data.cosmo_arguments['h']
+        cosmo.compute(["lensing"])
+        h = data.cosmo_arguments["h"]
         k = kh * h
         # P(k) *with* wiggles, both linear and nonlinear
-        Plin = np.zeros(len(k), 'float64')
-        Pnl = np.zeros(len(k), 'float64')
+        Plin = np.zeros(len(k), "float64")
+        Pnl = np.zeros(len(k), "float64")
         # P(k) *without* wiggles, both linear and nonlinear
-        Psmooth = np.zeros(len(k), 'float64')
-        Psmooth_nl = np.zeros(len(k), 'float64')
+        Psmooth = np.zeros(len(k), "float64")
+        Psmooth_nl = np.zeros(len(k), "float64")
         # Damping function and smeared P(k)
-        fdamp = np.zeros([len(k), len(z)], 'float64')
-        Psmear = np.zeros([len(k), len(z)], 'float64')
+        fdamp = np.zeros([len(k), len(z)], "float64")
+        Psmear = np.zeros([len(k), len(z)], "float64")
         # Ratio of smoothened non-linear to linear P(k)
-        fidnlratio = np.zeros([len(k), len(z)], 'float64')
+        fidnlratio = np.zeros([len(k), len(z)], "float64")
         # Loop over each redshift bin
         for j in range(len(z)):
             # Compute Pk *with* wiggles, both linear and nonlinear
@@ -2386,13 +2391,13 @@ class Likelihood_mpk(Likelihood):
                 Plin[i] = cosmo.pk_lin(k[i], z[j])
                 Pnl[i] = cosmo.pk(k[i], z[j])
             # Get rescaled values of P(k) in (Mpc/h)**3
-            Plin *= h**3  # (h/scaling)**3
-            Pnl *= h**3  # (h/scaling)**3
+            Plin *= h ** 3  # (h/scaling)**3
+            Pnl *= h ** 3  # (h/scaling)**3
             # Compute Pk *without* wiggles, both linear and nonlinear
             Psmooth = self.remove_bao(kh, Plin)
             Psmooth_nl = self.remove_bao(kh, Pnl)
             # Apply Gaussian damping due to non-linearities
-            fdamp[:, j] = np.exp(-0.5 * sigma2bao[j] * kh**2)
+            fdamp[:, j] = np.exp(-0.5 * sigma2bao[j] * kh ** 2)
             Psmear[:, j] = Plin * fdamp[:, j] + Psmooth * (1.0 - fdamp[:, j])
             # Take ratio of smoothened non-linear to linear P(k)
             fidnlratio[:, j] = Psmooth_nl / Psmooth
@@ -2400,20 +2405,34 @@ class Likelihood_mpk(Likelihood):
         # Polynomials to shape small scale behavior from N-body sims
         kdata = kh
         fidpolyNEAR = np.zeros(np.size(kdata))
-        fidpolyNEAR[kdata <= 0.194055] = (1.0 - 0.680886 * kdata[kdata <= 0.194055] +
-                                          6.48151 * kdata[kdata <= 0.194055]**2)
-        fidpolyNEAR[kdata > 0.194055] = (1.0 - 2.13627 * kdata[kdata > 0.194055] + 21.0537 * kdata[kdata > 0.194055]
-                                         ** 2 - 50.1167 * kdata[kdata > 0.194055]**3 + 36.8155 * kdata[kdata > 0.194055]**4) * 1.04482
+        fidpolyNEAR[kdata <= 0.194055] = (
+            1.0 - 0.680886 * kdata[kdata <= 0.194055] + 6.48151 * kdata[kdata <= 0.194055] ** 2
+        )
+        fidpolyNEAR[kdata > 0.194055] = (
+            1.0
+            - 2.13627 * kdata[kdata > 0.194055]
+            + 21.0537 * kdata[kdata > 0.194055] ** 2
+            - 50.1167 * kdata[kdata > 0.194055] ** 3
+            + 36.8155 * kdata[kdata > 0.194055] ** 4
+        ) * 1.04482
         fidpolyMID = np.zeros(np.size(kdata))
-        fidpolyMID[kdata <= 0.19431] = (1.0 - 0.530799 * kdata[kdata <= 0.19431] +
-                                        6.31822 * kdata[kdata <= 0.19431]**2)
-        fidpolyMID[kdata > 0.19431] = (1.0 - 1.97873 * kdata[kdata > 0.19431] + 20.8551 * kdata[kdata > 0.19431]
-                                       ** 2 - 50.0376 * kdata[kdata > 0.19431]**3 + 36.4056 * kdata[kdata > 0.19431]**4) * 1.04384
+        fidpolyMID[kdata <= 0.19431] = 1.0 - 0.530799 * kdata[kdata <= 0.19431] + 6.31822 * kdata[kdata <= 0.19431] ** 2
+        fidpolyMID[kdata > 0.19431] = (
+            1.0
+            - 1.97873 * kdata[kdata > 0.19431]
+            + 20.8551 * kdata[kdata > 0.19431] ** 2
+            - 50.0376 * kdata[kdata > 0.19431] ** 3
+            + 36.4056 * kdata[kdata > 0.19431] ** 4
+        ) * 1.04384
         fidpolyFAR = np.zeros(np.size(kdata))
-        fidpolyFAR[kdata <= 0.19148] = (1.0 - 0.475028 * kdata[kdata <= 0.19148] +
-                                        6.69004 * kdata[kdata <= 0.19148]**2)
-        fidpolyFAR[kdata > 0.19148] = (1.0 - 1.84891 * kdata[kdata > 0.19148] + 21.3479 * kdata[kdata > 0.19148]
-                                       ** 2 - 52.4846 * kdata[kdata > 0.19148]**3 + 38.9541 * kdata[kdata > 0.19148]**4) * 1.03753
+        fidpolyFAR[kdata <= 0.19148] = 1.0 - 0.475028 * kdata[kdata <= 0.19148] + 6.69004 * kdata[kdata <= 0.19148] ** 2
+        fidpolyFAR[kdata > 0.19148] = (
+            1.0
+            - 1.84891 * kdata[kdata > 0.19148]
+            + 21.3479 * kdata[kdata > 0.19148] ** 2
+            - 52.4846 * kdata[kdata > 0.19148] ** 3
+            + 38.9541 * kdata[kdata > 0.19148] ** 4
+        ) * 1.03753
 
         fidNEAR = np.interp(kh, kdata, fidpolyNEAR)
         fidMID = np.interp(kh, kdata, fidpolyMID)
@@ -2422,12 +2441,12 @@ class Likelihood_mpk(Likelihood):
         cosmo.empty()
         data.cosmo_arguments = param_backup
         cosmo.set(data.cosmo_arguments)
-        cosmo.compute(['lensing'])
+        cosmo.compute(["lensing"])
 
         return fidnlratio, fidNEAR, fidMID, fidFAR
 
-class Likelihood_sn(Likelihood):
 
+class Likelihood_sn(Likelihood):
     def __init__(self, path, data, command_line):
 
         Likelihood.__init__(self, path, data, command_line)
@@ -2439,23 +2458,24 @@ class Likelihood_sn(Likelihood):
             raise io_mp.MissingLibraryError(
                 "This likelihood has a lot of IO manipulation. You have "
                 "to install the 'pandas' library to use it. Please type:\n"
-                "`(sudo) pip install pandas --user`")
+                "`(sudo) pip install pandas --user`"
+            )
 
         # check that every conflicting experiments is not present in the list
         # of tested experiments, in which case, complain
-        if hasattr(self, 'conflicting_experiments'):
+        if hasattr(self, "conflicting_experiments"):
             for conflict in self.conflicting_experiments:
                 if conflict in data.experiments:
                     raise io_mp.LikelihoodError(
-                        'conflicting %s measurements, you can ' % conflict +
-                        ' have either %s or %s ' % (self.name, conflict) +
-                        'as an experiment, not both')
+                        "conflicting %s measurements, you can " % conflict
+                        + " have either %s or %s " % (self.name, conflict)
+                        + "as an experiment, not both"
+                    )
 
         # Read the configuration file, supposed to be called self.settings.
         # Note that we unfortunately can not
         # immediatly execute the file, as it is not formatted as strings.
-        assert hasattr(self, 'settings') is True, (
-            "You need to provide a settings file")
+        assert hasattr(self, "settings") is True, "You need to provide a settings file"
         self.read_configuration_file()
 
     def read_configuration_file(self):
@@ -2466,20 +2486,20 @@ class Likelihood_sn(Likelihood):
         original c++ library.
         """
         settings_path = os.path.join(self.data_directory, self.settings)
-        with open(settings_path, 'r') as config:
+        with open(settings_path, "r") as config:
             for line in config:
                 # Dismiss empty lines and commented lines
-                if line and line.find('#') == -1 and line not in ['\n', '\r\n']:
-                    lhs, rhs = [elem.strip() for elem in line.split('=')]
+                if line and line.find("#") == -1 and line not in ["\n", "\r\n"]:
+                    lhs, rhs = [elem.strip() for elem in line.split("=")]
                     # lhs will always be a string, so set the attribute to this
                     # likelihood. The right hand side requires more work.
                     # First case, if set to T or F for True or False
-                    if str(rhs) in ['T', 'F']:
-                        rhs = True if str(rhs) == 'T' else False
+                    if str(rhs) in ["T", "F"]:
+                        rhs = True if str(rhs) == "T" else False
                     # It can also be a path, starting with 'data/'. We remove
                     # this leading folder path
-                    elif str(rhs).find('data/') != -1:
-                        rhs = rhs.replace('data/', '')
+                    elif str(rhs).find("data/") != -1:
+                        rhs = rhs.replace("data/", "")
                     else:
                         # Try  to convert it to a float
                         try:
@@ -2507,9 +2527,10 @@ class Likelihood_sn(Likelihood):
 
         """
         from pandas import read_table
+
         path = os.path.join(self.data_directory, path)
         # The first line should contain the length.
-        with open(path, 'r') as text:
+        with open(path, "r") as text:
             length = int(text.readline())
 
         # Note that this function does not require to skiprows, as it
@@ -2530,17 +2551,16 @@ class Likelihood_sn(Likelihood):
 
         """
         from pandas import read_table
+
         path = os.path.join(self.data_directory, self.data_file)
 
         # Recover the names of the columns. The names '3rdvar' and 'd3rdvar'
         # will be changed, because 3rdvar is not a valid variable name
-        with open(path, 'r') as text:
+        with open(path, "r") as text:
             clean_first_line = text.readline()[1:].strip()
-            names = [e.strip().replace('3rd', 'third')
-                     for e in clean_first_line.split()]
+            names = [e.strip().replace("3rd", "third") for e in clean_first_line.split()]
 
-        lc_parameters = read_table(
-            path, sep=' ', names=names, header=0, index_col=False)
+        lc_parameters = read_table(path, sep=" ", names=names, header=0, index_col=False)
         return lc_parameters
 
 
@@ -2552,8 +2572,7 @@ class Likelihood_clocks(Likelihood):
         Likelihood.__init__(self, path, data, command_line)
 
         # Read the content of the data file, containing z, Hz and error
-        total = np.loadtxt(
-            os.path.join(self.data_directory, self.data_file))
+        total = np.loadtxt(os.path.join(self.data_directory, self.data_file))
 
         # Store the columns separately
         self.z = total[:, 0]
@@ -2563,7 +2582,7 @@ class Likelihood_clocks(Likelihood):
     def loglkl(self, cosmo, data):
 
         # Store the speed of light in km/s
-        c_light_km_per_sec = const.c / 1000.
+        c_light_km_per_sec = const.c / 1000.0
         chi2 = 0
 
         # Loop over the redshifts
@@ -2572,9 +2591,10 @@ class Likelihood_clocks(Likelihood):
             # convert it to km/s/Mpc
             H_cosmo = cosmo.Hubble(z) * c_light_km_per_sec
             # Add to the tota chi2
-            chi2 += (self.Hz[index] - H_cosmo)**2 / self.err[index]**2
+            chi2 += (self.Hz[index] - H_cosmo) ** 2 / self.err[index] ** 2
 
         return -0.5 * chi2
+
 
 ###################################
 # ISW-Likelihood
@@ -2586,39 +2606,45 @@ class Likelihood_isw(Likelihood):
     def __init__(self, path, data, command_line):
         # Initialize
         Likelihood.__init__(self, path, data, command_line)
-        self.need_cosmo_arguments(data, {'output': 'mPk', 'P_k_max_h/Mpc': 300, 'z_max_pk': 5.1})
+        self.need_cosmo_arguments(data, {"output": "mPk", "P_k_max_h/Mpc": 300, "z_max_pk": 5.1})
 
         # Read l,C_l, and the covariance matrix of the autocorrelation of the survey and the crosscorrelation of the survey with the CMB
-        self.l_cross, cl_cross = np.loadtxt(os.path.join(
-            self.data_directory, self.cl_cross_file), unpack=True, usecols=(0, 1))
-        self.l_auto, cl_auto = np.loadtxt(os.path.join(
-            self.data_directory, self.cl_auto_file), unpack=True, usecols=(0, 1))
+        self.l_cross, cl_cross = np.loadtxt(
+            os.path.join(self.data_directory, self.cl_cross_file), unpack=True, usecols=(0, 1)
+        )
+        self.l_auto, cl_auto = np.loadtxt(
+            os.path.join(self.data_directory, self.cl_auto_file), unpack=True, usecols=(0, 1)
+        )
         cov_cross = np.loadtxt(os.path.join(self.data_directory, self.cov_cross_file))
         cov_auto = np.loadtxt(os.path.join(self.data_directory, self.cov_auto_file))
 
         # Extract data in the specified range in l.
-        self.l_cross = self.l_cross[self.l_min_cross:self.l_max_cross + 1]
-        cl_cross = cl_cross[self.l_min_cross:self.l_max_cross + 1]
-        self.l_auto = self.l_auto[self.l_min_auto:self.l_max_auto + 1]
-        cl_auto = cl_auto[self.l_min_auto:self.l_max_auto + 1]
-        cov_cross = cov_cross[self.l_min_cross:self.l_max_cross + 1, self.l_min_cross:self.l_max_cross + 1]
-        cov_auto = cov_auto[self.l_min_auto:self.l_max_auto + 1, self.l_min_auto:self.l_max_auto + 1]
+        self.l_cross = self.l_cross[self.l_min_cross : self.l_max_cross + 1]
+        cl_cross = cl_cross[self.l_min_cross : self.l_max_cross + 1]
+        self.l_auto = self.l_auto[self.l_min_auto : self.l_max_auto + 1]
+        cl_auto = cl_auto[self.l_min_auto : self.l_max_auto + 1]
+        cov_cross = cov_cross[self.l_min_cross : self.l_max_cross + 1, self.l_min_cross : self.l_max_cross + 1]
+        cov_auto = cov_auto[self.l_min_auto : self.l_max_auto + 1, self.l_min_auto : self.l_max_auto + 1]
 
         # Create logarithically spaced bins in l.
-        self.bins_cross = np.ceil(np.logspace(np.log10(self.l_min_cross),
-                                              np.log10(self.l_max_cross), self.n_bins_cross + 1))
-        self.bins_auto = np.ceil(np.logspace(np.log10(self.l_min_auto),
-                                             np.log10(self.l_max_auto), self.n_bins_auto + 1))
+        self.bins_cross = np.ceil(
+            np.logspace(np.log10(self.l_min_cross), np.log10(self.l_max_cross), self.n_bins_cross + 1)
+        )
+        self.bins_auto = np.ceil(
+            np.logspace(np.log10(self.l_min_auto), np.log10(self.l_max_auto), self.n_bins_auto + 1)
+        )
 
         # Bin l,C_l, and covariance matrix in the previously defined bins
         self.l_binned_cross, self.cl_binned_cross, self.cov_binned_cross = self.bin_cl(
-            self.l_cross, cl_cross, self.bins_cross, cov_cross)
+            self.l_cross, cl_cross, self.bins_cross, cov_cross
+        )
         self.l_binned_auto, self.cl_binned_auto, self.cov_binned_auto = self.bin_cl(
-            self.l_auto, cl_auto, self.bins_auto, cov_auto)
+            self.l_auto, cl_auto, self.bins_auto, cov_auto
+        )
 
         # Read the redshift distribution of objects in the survey, perform an interpolation of dN/dz(z), and calculate the normalization in this redshift bin
         zz, dndz = np.loadtxt(os.path.join(self.data_directory, self.dndz_file), unpack=True, usecols=(0, 1))
-        self.dndz = scipy.interpolate.interp1d(zz, dndz, kind='cubic')
+        self.dndz = scipy.interpolate.interp1d(zz, dndz, kind="cubic")
         self.norm = scipy.integrate.quad(self.dndz, self.z_min, self.z_max)[0]
 
     def bin_cl(self, l, cl, bins, cov=None):
@@ -2630,7 +2656,7 @@ class Likelihood_isw(Likelihood):
             else:
                 a = np.where((l <= bins[i]) & (l >= bins[i - 1]))[0]
             c = np.zeros(len(l))
-            c[a] = 1. / len(a)
+            c[a] = 1.0 / len(a)
             B.append(c)
         l_binned = np.dot(B, l)
         cl_binned = np.dot(B, cl)
@@ -2642,35 +2668,85 @@ class Likelihood_isw(Likelihood):
 
     def integrand_cross(self, z, cosmo, l):
         # This function will be integrated to calculate the exspected crosscorrelation between the survey and the CMB
-        c = const.c / 1000.
+        c = const.c / 1000.0
         H0 = cosmo.h() * 100
         Om = cosmo.Omega0_m()
-        def k(z): return (l + 0.5) / (cosmo.angular_distance(z) * (1 + z))
-        return (3 * Om * H0**2) / ((c**2) * (l + 0.5)**2) * self.dndz(z) * cosmo.Hubble(z) * cosmo.scale_independent_growth_factor(z) * scipy.misc.derivative(lambda z: cosmo.scale_independent_growth_factor(z) * (1 + z), x0=z, dx=1e-4) * cosmo.pk(k(z), 0) / self.norm
+
+        def k(z):
+            return (l + 0.5) / (cosmo.angular_distance(z) * (1 + z))
+
+        return (
+            (3 * Om * H0 ** 2)
+            / ((c ** 2) * (l + 0.5) ** 2)
+            * self.dndz(z)
+            * cosmo.Hubble(z)
+            * cosmo.scale_independent_growth_factor(z)
+            * scipy.misc.derivative(lambda z: cosmo.scale_independent_growth_factor(z) * (1 + z), x0=z, dx=1e-4)
+            * cosmo.pk(k(z), 0)
+            / self.norm
+        )
 
     def integrand_auto(self, z, cosmo, l):
         # This function will be integrated to calculate the expected autocorrelation of the survey
-        c = const.c / 1000.
+        c = const.c / 1000.0
         H0 = cosmo.h() * 100
-        def k(z): return (l + 0.5) / (cosmo.angular_distance(z) * (1 + z))
-        return (self.dndz(z))**2 * (cosmo.scale_independent_growth_factor(z))**2 * cosmo.pk(k(z), 0) * cosmo.Hubble(z) / (cosmo.angular_distance(z) * (1 + z))**2 / self.norm**2
+
+        def k(z):
+            return (l + 0.5) / (cosmo.angular_distance(z) * (1 + z))
+
+        return (
+            (self.dndz(z)) ** 2
+            * (cosmo.scale_independent_growth_factor(z)) ** 2
+            * cosmo.pk(k(z), 0)
+            * cosmo.Hubble(z)
+            / (cosmo.angular_distance(z) * (1 + z)) ** 2
+            / self.norm ** 2
+        )
 
     def compute_loglkl(self, cosmo, data, b):
         # Retrieve sampled parameter
-        A = data.mcmc_parameters['A_ISW']['current'] * data.mcmc_parameters['A_ISW']['scale']
+        A = data.mcmc_parameters["A_ISW"]["current"] * data.mcmc_parameters["A_ISW"]["scale"]
 
         # Calculate the expected auto- and crosscorrelation by integrating over the redshift.
-        cl_binned_cross_theory = np.array([(scipy.integrate.quad(self.integrand_cross, self.z_min, self.z_max, args=(cosmo, self.bins_cross[ll]))[0] + scipy.integrate.quad(self.integrand_cross, self.z_min, self.z_max, args=(
-            cosmo, self.bins_cross[ll + 1]))[0] + scipy.integrate.quad(self.integrand_cross, self.z_min, self.z_max, args=(cosmo, self.l_binned_cross[ll]))[0]) / 3 for ll in range(self.n_bins_cross)])
-        cl_binned_auto_theory = np.array([scipy.integrate.quad(
-            self.integrand_auto, self.z_min, self.z_max, args=(cosmo, ll), epsrel=1e-8)[0] for ll in self.l_binned_auto])
+        cl_binned_cross_theory = np.array(
+            [
+                (
+                    scipy.integrate.quad(
+                        self.integrand_cross, self.z_min, self.z_max, args=(cosmo, self.bins_cross[ll])
+                    )[0]
+                    + scipy.integrate.quad(
+                        self.integrand_cross, self.z_min, self.z_max, args=(cosmo, self.bins_cross[ll + 1])
+                    )[0]
+                    + scipy.integrate.quad(
+                        self.integrand_cross, self.z_min, self.z_max, args=(cosmo, self.l_binned_cross[ll])
+                    )[0]
+                )
+                / 3
+                for ll in range(self.n_bins_cross)
+            ]
+        )
+        cl_binned_auto_theory = np.array(
+            [
+                scipy.integrate.quad(self.integrand_auto, self.z_min, self.z_max, args=(cosmo, ll), epsrel=1e-8)[0]
+                for ll in self.l_binned_auto
+            ]
+        )
 
         # Calculate the chi-square of auto- and crosscorrelation
-        chi2_cross = np.asscalar(np.dot(self.cl_binned_cross - A * b * cl_binned_cross_theory,
-                                        np.dot(np.linalg.inv(self.cov_binned_cross), self.cl_binned_cross - A * b * cl_binned_cross_theory)))
-        chi2_auto = np.asscalar(np.dot(self.cl_binned_auto - b**2 * cl_binned_auto_theory,
-                                       np.dot(np.linalg.inv(self.cov_binned_auto), self.cl_binned_auto - b**2 * cl_binned_auto_theory)))
+        chi2_cross = np.asscalar(
+            np.dot(
+                self.cl_binned_cross - A * b * cl_binned_cross_theory,
+                np.dot(np.linalg.inv(self.cov_binned_cross), self.cl_binned_cross - A * b * cl_binned_cross_theory),
+            )
+        )
+        chi2_auto = np.asscalar(
+            np.dot(
+                self.cl_binned_auto - b ** 2 * cl_binned_auto_theory,
+                np.dot(np.linalg.inv(self.cov_binned_auto), self.cl_binned_auto - b ** 2 * cl_binned_auto_theory),
+            )
+        )
         return -0.5 * (chi2_cross + chi2_auto)
+
 
 ############################################################################################################################################
 #
@@ -2684,71 +2760,124 @@ import yaml
 from astropy.io import fits
 from scipy.interpolate import interp1d
 from scipy.linalg import block_diag
+
 try:
     import pybird as pb
 except ImportError:
-    raise Exception('Cannot find pybird library')
+    raise Exception("Cannot find pybird library")
+
 
 class Likelihood_bird(Likelihood):
-
     def __init__(self, path, data, command_line):
 
         Likelihood.__init__(self, path, data, command_line)
 
-        self.config = yaml.full_load(open(os.path.join(self.data_directory, self.configfile), 'r'))
+        self.config = yaml.full_load(open(os.path.join(self.data_directory, self.configfile), "r"))
 
         # Loading data and priors
-        options = [ "with_exact_time", "with_tidal_alignments", "with_nnlo_counterterm", "with_nnlo_higher_derivative", 
-        "get_chi2_from_marg", "with_derived_bias", "with_quintessence", "with_cf_sys", "xmaxspacing"]
+        options = [
+            "with_exact_time",
+            "with_tidal_alignments",
+            "with_nnlo_counterterm",
+            "with_nnlo_higher_derivative",
+            "get_chi2_from_marg",
+            "with_derived_bias",
+            "with_quintessence",
+            "with_cf_sys",
+            "xmaxspacing",
+        ]
 
         for keys in options:
-            if not keys in self.config: self.config[keys] = False
-            print (keys, ':', self.config[keys])
+            if not keys in self.config:
+                self.config[keys] = False
+            print(keys, ":", self.config[keys])
 
-        self.x, self.xmask, self.ydata, self.chi2data, self.invcov, self.invcovdata, self.priormat = [], [], [], [], [], [], []
-        
-        if self.config["skycut"] > 1: self.config["zz"], self.config["nz"] = [], []
-        
-        self.xmax = 0.
+        self.x, self.xmask, self.ydata, self.chi2data, self.invcov, self.invcovdata, self.priormat = (
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
+
+        if self.config["skycut"] > 1:
+            self.config["zz"], self.config["nz"] = [], []
+
+        self.xmax = 0.0
         for i in range(self.config["skycut"]):
 
             if self.config.get("xmax") is None:
                 xmax0, xmax1 = self.config["xmax0"][i], self.config["xmax1"][i]
                 xmax = max(xmax0, xmax1)
-            else: xmax, xmax0, xmax1 = self.config["xmax"][i], None, None
+            else:
+                xmax, xmax0, xmax1 = self.config["xmax"][i], None, None
 
-            if self.xmax < xmax: self.xmax = xmax # to increase the kmax to provide to pybird
+            if self.xmax < xmax:
+                self.xmax = xmax  # to increase the kmax to provide to pybird
 
             if self.config.get("xmin") is None:
                 xmin0, xmin1 = self.config["xmin0"][i], self.config["xmin1"][i]
                 xmin = min(xmin0, xmin1)
-            else: xmin, xmin0, xmin1 = self.config["xmin"][i], None, None
+            else:
+                xmin, xmin0, xmin1 = self.config["xmin"][i], None, None
 
-            if self.config["with_bao"]: baoH, baoD = self.config["baoH"][i], self.config["baoD"][i]
-            else: baoH, baoD = None, None
+            if self.config["with_bao"]:
+                baoH, baoD = self.config["baoH"][i], self.config["baoD"][i]
+            else:
+                baoH, baoD = None, None
 
             if "Pk" in self.config["output"]:
                 xi, xmaski, ydatai, chi2datai, invcovi, invcovdatai = self.__load_data_ps(
-                    self.config["multipole"], self.config["wedge"],
-                    self.data_directory, self.config["spectrum_file"][i], self.config["covmat_file"][i],
-                    xmin=self.config["xmin"][i], xmax=xmax, xmax0=xmax0, xmax1=xmax1, xmaxspacing=self.config["xmaxspacing"], with_bao=self.config["with_bao"], baoH=baoH, baoD=baoD)
+                    self.config["multipole"],
+                    self.config["wedge"],
+                    self.data_directory,
+                    self.config["spectrum_file"][i],
+                    self.config["covmat_file"][i],
+                    xmin=self.config["xmin"][i],
+                    xmax=xmax,
+                    xmax0=xmax0,
+                    xmax1=xmax1,
+                    xmaxspacing=self.config["xmaxspacing"],
+                    with_bao=self.config["with_bao"],
+                    baoH=baoH,
+                    baoD=baoD,
+                )
             else:
                 xi, xmaski, ydatai, chi2datai, invcovi, invcovdatai = self.__load_data_cf(
-                    self.config["multipole"], self.config["wedge"],
-                    self.data_directory, self.config["spectrum_file"][i], self.config["covmat_file"][i],
-                    xmax=self.config["xmax"][i], xmin=xmin, xmin0=xmin0, xmin1=xmin1, with_bao=self.config["with_bao"], baoH=baoH, baoD=baoD)
+                    self.config["multipole"],
+                    self.config["wedge"],
+                    self.data_directory,
+                    self.config["spectrum_file"][i],
+                    self.config["covmat_file"][i],
+                    xmax=self.config["xmax"][i],
+                    xmin=xmin,
+                    xmin0=xmin0,
+                    xmin1=xmin1,
+                    with_bao=self.config["with_bao"],
+                    baoH=baoH,
+                    baoD=baoD,
+                )
 
             priormati = self.__set_prior(self.config["multipole"], model=self.config["model"])
 
             if self.config["with_redshift_bin"]:  # BOSS
                 try:
-                    if "None" in self.config["density"][i]: zz, nz = [0.32], None
+                    if "None" in self.config["density"][i]:
+                        zz, nz = [0.32], None
                     else:
-                        try: z, _, _, nz = np.loadtxt(os.path.join(self.data_directory, self.config["density"][i]), unpack=True)
-                        except: z, nz = np.loadtxt(os.path.join(self.data_directory, self.config["density"][i]), unpack=True)
+                        try:
+                            z, _, _, nz = np.loadtxt(
+                                os.path.join(self.data_directory, self.config["density"][i]), unpack=True
+                            )
+                        except:
+                            z, nz = np.loadtxt(
+                                os.path.join(self.data_directory, self.config["density"][i]), unpack=True
+                            )
                         nz /= np.trapz(nz, x=z)
                         zz = np.linspace(z[0], z[-1], 50)
-                        nz = interp1d(z, nz, kind='cubic')(zz)
+                        nz = interp1d(z, nz, kind="cubic")(zz)
                         nz /= np.trapz(nz, x=zz)
                     if self.config["skycut"] > 1:
                         self.config["zz"].append(zz)
@@ -2756,7 +2885,7 @@ class Likelihood_bird(Likelihood):
                     else:
                         self.config["zz"], self.config["nz"] = zz, nz
                 except:
-                    raise Exception('galaxy count distribution: %s not found!' % self.config["density"][i])
+                    raise Exception("galaxy count distribution: %s not found!" % self.config["density"][i])
 
             # self.Nx.append(Nxi)
             self.x.append(xi)
@@ -2771,67 +2900,102 @@ class Likelihood_bird(Likelihood):
         self.config["xdata"] = self.x
         if self.config["with_window"]:
             if self.config["skycut"] > 1:
-                self.config["windowPk"] = [os.path.join(
-                    self.data_directory, self.config["windowPk"][i]) for i in range(self.config["skycut"])]
-                self.config["windowCf"] = [os.path.join(
-                    self.data_directory, self.config["windowCf"][i]) for i in range(self.config["skycut"])]
+                self.config["windowPk"] = [
+                    os.path.join(self.data_directory, self.config["windowPk"][i]) for i in range(self.config["skycut"])
+                ]
+                self.config["windowCf"] = [
+                    os.path.join(self.data_directory, self.config["windowCf"][i]) for i in range(self.config["skycut"])
+                ]
             else:
                 self.config["windowPk"] = os.path.join(self.data_directory, self.config["windowPk"][i])
                 self.config["windowCf"] = os.path.join(self.data_directory, self.config["windowCf"][i])
         if "Pk" in self.config["output"]:
             self.config["kmax"] = self.xmax + 0.05
 
-        print ("output: %s" % self.config["output"])
-        print ("multipole: %s" % self.config["multipole"])
-        print ("wedge: %s" % self.config["wedge"])
-        print ("skycut: %s" % self.config["skycut"])
+        print("output: %s" % self.config["output"])
+        print("multipole: %s" % self.config["multipole"])
+        print("wedge: %s" % self.config["wedge"])
+        print("skycut: %s" % self.config["skycut"])
 
         # BBN prior?
-        if self.config["with_bbn"] and self.config["omega_b_BBNcenter"] is not None and self.config["omega_b_BBNsigma"] is not None:
-            print ('BBN prior on omega_b: on')
+        if (
+            self.config["with_bbn"]
+            and self.config["omega_b_BBNcenter"] is not None
+            and self.config["omega_b_BBNsigma"] is not None
+        ):
+            print("BBN prior on omega_b: on")
         else:
             self.config["with_bbn"] = False
-            print ('BBN prior on omega_b: none')
+            print("BBN prior on omega_b: none")
 
         # setting pybird correlator configuration
         self.correlator = pb.Correlator()
         self.correlator.set(self.config)
 
         # setting classy for pybird
-        self.need_cosmo_arguments(data, {'output': 'mPk', 'z_max_pk': max(self.config["z"]), 'P_k_max_h/Mpc': 1.})
+        self.need_cosmo_arguments(data, {"output": "mPk", "z_max_pk": max(self.config["z"]), "P_k_max_h/Mpc": 1.0})
         self.kin = np.logspace(-5, 0, 200)
 
     def bias_array_to_dict(self, bs):
         if self.config["with_stoch"]:
-            if self.config["multipole"] == 2: bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5], "ce0": bs[6], "ce1": bs[7], "ce2": bs[8]}
-            elif self.config["multipole"] == 3: bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5], "cr2": bs[6], "ce0": bs[7], "ce1": bs[8], "ce2": bs[9]}
+            if self.config["multipole"] == 2:
+                bdict = {
+                    "b1": bs[0],
+                    "b2": bs[1],
+                    "b3": bs[2],
+                    "b4": bs[3],
+                    "cct": bs[4],
+                    "cr1": bs[5],
+                    "ce0": bs[6],
+                    "ce1": bs[7],
+                    "ce2": bs[8],
+                }
+            elif self.config["multipole"] == 3:
+                bdict = {
+                    "b1": bs[0],
+                    "b2": bs[1],
+                    "b3": bs[2],
+                    "b4": bs[3],
+                    "cct": bs[4],
+                    "cr1": bs[5],
+                    "cr2": bs[6],
+                    "ce0": bs[7],
+                    "ce1": bs[8],
+                    "ce2": bs[9],
+                }
         else:
-            if self.config["multipole"] == 0: bdict = {"cct": bs[0]}
-            if self.config["multipole"] == 2: bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5]}
-            elif self.config["multipole"] == 3: bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5], "cr2": bs[6]}
-        
-        options = ["with_nnlo_counterterm", "with_nnlo_higher_derivative", "with_tidal_alignments"]#, "with_cf_sys"]
-        nparams = [self.config["multipole"], self.config["multipole"], 1]#, 3]
-        paramnames = [  ["cnnlo_l%s" % (2*i) for i in range(self.config["multipole"])], 
-                        ["bnnlo_l%s" % (2*i) for i in range(self.config["multipole"])], 
-                        ["bq"],
-                        #["a0", "a1", "a2"]
-                    ]
+            if self.config["multipole"] == 0:
+                bdict = {"cct": bs[0]}
+            if self.config["multipole"] == 2:
+                bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5]}
+            elif self.config["multipole"] == 3:
+                bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5], "cr2": bs[6]}
+
+        options = ["with_nnlo_counterterm", "with_nnlo_higher_derivative", "with_tidal_alignments"]  # , "with_cf_sys"]
+        nparams = [self.config["multipole"], self.config["multipole"], 1]  # , 3]
+        paramnames = [
+            ["cnnlo_l%s" % (2 * i) for i in range(self.config["multipole"])],
+            ["bnnlo_l%s" % (2 * i) for i in range(self.config["multipole"])],
+            ["bq"],
+            # ["a0", "a1", "a2"]
+        ]
         ntot = sum([n for (option, n) in zip(options, nparams) if self.config[option]])
-        bias_for_options = bs[-ntot:] 
+        bias_for_options = bs[-ntot:]
         counter = 0
         for (option, n, names) in zip(options, nparams, paramnames):
-            if self.config[option]: 
-                for i, name in enumerate(names): 
-                    bdict[name] = bias_for_options[counter+i]
+            if self.config[option]:
+                for i, name in enumerate(names):
+                    bdict[name] = bias_for_options[counter + i]
                 counter += n
         # print (bdict)
 
         return bdict
 
     def bias_custom_to_all(self, bs):
-        if self.config["multipole"] == 0: biaslist = 10*[0]
-        else: biaslist = [bs[0], bs[1] / np.sqrt(2.), 0., bs[1] / np.sqrt(2.), 0., 0., 0., 0., 0., 0.]
+        if self.config["multipole"] == 0:
+            biaslist = 10 * [0]
+        else:
+            biaslist = [bs[0], bs[1] / np.sqrt(2.0), 0.0, bs[1] / np.sqrt(2.0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         biaslist.extend(bs[2:])
         return biaslist
 
@@ -2839,83 +3003,219 @@ class Likelihood_bird(Likelihood):
         biaslist = []
         if self.config["with_stoch"]:
             if self.config["multipole"] == 2:
-                if self.config["model"] == 1: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], 0., bg[4], 0., bg[3]]
-                if self.config["model"] == 2: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], 0., 0., 0., bg[3]]
-                if self.config["model"] == 3: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], 0., 0., bg[4], bg[3]]
-                if self.config["model"] == 4: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], 0., bg[5], bg[4], bg[3]]
+                if self.config["model"] == 1:
+                    biaslist = [
+                        bs[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[1],
+                        bg[2],
+                        0.0,
+                        bg[4],
+                        0.0,
+                        bg[3],
+                    ]
+                if self.config["model"] == 2:
+                    biaslist = [
+                        bs[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[1],
+                        bg[2],
+                        0.0,
+                        0.0,
+                        0.0,
+                        bg[3],
+                    ]
+                if self.config["model"] == 3:
+                    biaslist = [
+                        bs[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[1],
+                        bg[2],
+                        0.0,
+                        0.0,
+                        bg[4],
+                        bg[3],
+                    ]
+                if self.config["model"] == 4:
+                    biaslist = [
+                        bs[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[1],
+                        bg[2],
+                        0.0,
+                        bg[5],
+                        bg[4],
+                        bg[3],
+                    ]
             elif self.config["multipole"] == 3:
-                if self.config["model"] == 1: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], bg[3], bg[5], 0., bg[4]]
-                if self.config["model"] == 2: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], bg[3], 0., 0., bg[4]]
-                if self.config["model"] == 3: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], bg[3], 0., bg[5], bg[4]]
-                if self.config["model"] == 4: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], bg[3], bg[6], bg[5], bg[4]]
+                if self.config["model"] == 1:
+                    biaslist = [
+                        bs[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[1],
+                        bg[2],
+                        bg[3],
+                        bg[5],
+                        0.0,
+                        bg[4],
+                    ]
+                if self.config["model"] == 2:
+                    biaslist = [
+                        bs[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[1],
+                        bg[2],
+                        bg[3],
+                        0.0,
+                        0.0,
+                        bg[4],
+                    ]
+                if self.config["model"] == 3:
+                    biaslist = [
+                        bs[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[1],
+                        bg[2],
+                        bg[3],
+                        0.0,
+                        bg[5],
+                        bg[4],
+                    ]
+                if self.config["model"] == 4:
+                    biaslist = [
+                        bs[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[0],
+                        bs[1] / np.sqrt(2.0),
+                        bg[1],
+                        bg[2],
+                        bg[3],
+                        bg[6],
+                        bg[5],
+                        bg[4],
+                    ]
         else:
-            if self.config["multipole"] == 2: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], 0., 0., 0., 0.]
-            elif self.config["multipole"] == 3: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], bg[3], 0., 0., 0.]
+            if self.config["multipole"] == 2:
+                biaslist = [bs[0], bs[1] / np.sqrt(2.0), bg[0], bs[1] / np.sqrt(2.0), bg[1], bg[2], 0.0, 0.0, 0.0, 0.0]
+            elif self.config["multipole"] == 3:
+                biaslist = [
+                    bs[0],
+                    bs[1] / np.sqrt(2.0),
+                    bg[0],
+                    bs[1] / np.sqrt(2.0),
+                    bg[1],
+                    bg[2],
+                    bg[3],
+                    0.0,
+                    0.0,
+                    0.0,
+                ]
         biaslist.extend(bs[2:])
         return biaslist
 
     def loglkl(self, cosmo, data):
 
-        if self.config["with_derived_bias"]: data.derived_lkl = {}
-        if self.config["with_nnlo_higher_derivative"] or self.config["get_chi2_from_marg"]: bg = []
-        
-        if data.need_cosmo_update: self.correlator.compute(self.__set_cosmo(cosmo, data))
-        
-        bng = np.array([data.mcmc_parameters[k]['current'] * data.mcmc_parameters[k]['scale'] for k in self.use_nuisance]).reshape(self.config["skycut"], -1)
+        if self.config["with_derived_bias"]:
+            data.derived_lkl = {}
+        if self.config["with_nnlo_higher_derivative"] or self.config["get_chi2_from_marg"]:
+            bg = []
+
+        if data.need_cosmo_update:
+            self.correlator.compute(self.__set_cosmo(cosmo, data))
+
+        bng = np.array(
+            [data.mcmc_parameters[k]["current"] * data.mcmc_parameters[k]["scale"] for k in self.use_nuisance]
+        ).reshape(self.config["skycut"], -1)
         bdict = np.array([self.bias_array_to_dict(self.bias_custom_to_all(bs)) for bs in bng])
 
         neat_indent = True
         if neat_indent:
-            chi2 = 0.
+            chi2 = 0.0
             correlator = self.correlator.get(bdict)
             marg_correlator = self.correlator.getmarg(bdict, model=self.config["model"])
             for i in range(self.config["skycut"]):
-                if self.config["skycut"] is 1: modelX = correlator
-                elif self.config["skycut"] > 1: modelX = correlator[i]
-                if self.config["with_cf_sys"]: modelX[0] += bng[i,-1] + bng[i,-2] * self.x[i]**-1 + bng[i,-3] * self.x[i]**-2
+                if self.config["skycut"] is 1:
+                    modelX = correlator
+                elif self.config["skycut"] > 1:
+                    modelX = correlator[i]
+                if self.config["with_cf_sys"]:
+                    modelX[0] += bng[i, -1] + bng[i, -2] * self.x[i] ** -1 + bng[i, -3] * self.x[i] ** -2
                 chi2_i, bg_i = self.__get_chi2(modelX, cosmo, data, marg=True, marg_correlator=marg_correlator, i=i)
                 chi2 += chi2_i
-                if self.config["with_nnlo_higher_derivative"] or self.config["get_chi2_from_marg"]: bg.append(bg_i)
+                if self.config["with_nnlo_higher_derivative"] or self.config["get_chi2_from_marg"]:
+                    bg.append(bg_i)
 
-        if self.config["get_chi2_from_marg"]: 
-            chi2 = 0.
-            nonmarg_bdict = np.array([self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi)) for (bs, bgi) in zip(bng, bg) ])
+        if self.config["get_chi2_from_marg"]:
+            chi2 = 0.0
+            nonmarg_bdict = np.array(
+                [self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi)) for (bs, bgi) in zip(bng, bg)]
+            )
             nonmarg_correlator = self.correlator.get(nonmarg_bdict)
             for i in range(self.config["skycut"]):
-                if self.config["skycut"] is 1: modelX = nonmarg_correlator
-                elif self.config["skycut"] > 1: modelX = nonmarg_correlator[i]
+                if self.config["skycut"] is 1:
+                    modelX = nonmarg_correlator
+                elif self.config["skycut"] > 1:
+                    modelX = nonmarg_correlator[i]
                 chi2_i, _ = self.__get_chi2(modelX, cosmo, data, marg=False, i=i)
                 chi2 += chi2i
 
-        if self.config["with_nnlo_higher_derivative"]: 
-            chi2 = 0.
-            nonmarg_bdict = np.array([self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi)) for (bs, bgi) in zip(bng, bg) ])
+        if self.config["with_nnlo_higher_derivative"]:
+            chi2 = 0.0
+            nonmarg_bdict = np.array(
+                [self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi)) for (bs, bgi) in zip(bng, bg)]
+            )
             nnlo = self.correlator.getnnlo(nonmarg_bdict)
             for i in range(self.config["skycut"]):
-                if self.config["skycut"] is 1: modelX = correlator + nnlo
-                elif self.config["skycut"] > 1: modelX = correlator[i] + nnlo[i]
+                if self.config["skycut"] is 1:
+                    modelX = correlator + nnlo
+                elif self.config["skycut"] > 1:
+                    modelX = correlator[i] + nnlo[i]
                 chi2_i, _ = self.__get_chi2(modelX, cosmo, data, marg=True, marg_correlator=marg_correlator, i=i)
                 chi2 += chi2_i
 
-        prior = 0.
-        if self.config["with_bbn"]: prior += -0.5 * ((data.cosmo_arguments['omega_b'] - self.config["omega_b_BBNcenter"]) / self.config["omega_b_BBNsigma"])**2
+        prior = 0.0
+        if self.config["with_bbn"]:
+            prior += (
+                -0.5
+                * (
+                    (data.cosmo_arguments["omega_b"] - self.config["omega_b_BBNcenter"])
+                    / self.config["omega_b_BBNsigma"]
+                )
+                ** 2
+            )
         # if self.config["model"] == 3 or self.config["model"] == 4: prior += - 0.5 * (bng[0,2]/2.)**2
-        if self.config["with_cf_sys"]: 
-            for i in range(self.config["skycut"]): prior += - 0.5 * ( (bs[i,-1]/0.003)**2 + (bs[i,-2]/3.)**2 + (bs[i,-3]/20.)**2 )
-        if self.config["with_nnlo_counterterm"]: 
-            for i in range(self.config["skycut"]): 
-                cnnlo = np.array([ bdict[i]["cnnlo_l%s" % (2*l)] for l in range(self.config["multipole"]) ])
-                sigma = np.array([ 6., 30., 150. ])[:self.config["multipole"]]
-                prior += - 0.5 * np.sum( (cnnlo/sigma)**2 )
-        if self.config["with_nnlo_higher_derivative"]: 
-            for i in range(self.config["skycut"]): 
-                bnnlo = np.array([ bdict[i]["bnnlo_l%s" % (2*l)] for l in range(self.config["multipole"]) ])
-                sigma = np.array([ 1., 1., 1. ])[:self.config["multipole"]]
-                prior += - 0.5 * np.sum( (bnnlo/sigma)**2 )
+        if self.config["with_cf_sys"]:
+            for i in range(self.config["skycut"]):
+                prior += -0.5 * ((bs[i, -1] / 0.003) ** 2 + (bs[i, -2] / 3.0) ** 2 + (bs[i, -3] / 20.0) ** 2)
+        if self.config["with_nnlo_counterterm"]:
+            for i in range(self.config["skycut"]):
+                cnnlo = np.array([bdict[i]["cnnlo_l%s" % (2 * l)] for l in range(self.config["multipole"])])
+                sigma = np.array([6.0, 30.0, 150.0])[: self.config["multipole"]]
+                prior += -0.5 * np.sum((cnnlo / sigma) ** 2)
+        if self.config["with_nnlo_higher_derivative"]:
+            for i in range(self.config["skycut"]):
+                bnnlo = np.array([bdict[i]["bnnlo_l%s" % (2 * l)] for l in range(self.config["multipole"])])
+                sigma = np.array([1.0, 1.0, 1.0])[: self.config["multipole"]]
+                prior += -0.5 * np.sum((bnnlo / sigma) ** 2)
         if self.config["with_tidal_alignments"]:
-            for i in range(self.config["skycut"]): prior += - 0.5 * ( (bdict[i]["bq"]+0.05)/0.05 )**2
-        
-        lkl = - 0.5 * chi2 + prior
+            for i in range(self.config["skycut"]):
+                prior += -0.5 * ((bdict[i]["bq"] + 0.05) / 0.05) ** 2
+
+        lkl = -0.5 * chi2 + prior
 
         return lkl
 
@@ -2924,7 +3224,7 @@ class Likelihood_bird(Likelihood):
         modelX = modelX.reshape(-1)
 
         if self.config["with_bao"] and self.config["baoH"][i] > 0 and self.config["baoD"][i] > 0:  # BAO
-            DM_at_z = cosmo.angular_distance(self.config["zbao"][i]) * (1. + self.config["zbao"][i])
+            DM_at_z = cosmo.angular_distance(self.config["zbao"][i]) * (1.0 + self.config["zbao"][i])
             H_at_z = cosmo.Hubble(self.config["zbao"][i]) * conts.c / 1000.0
             rd = cosmo.rs_drag() * self.config["rs_rescale"][i]
             theo_DM_rdfid_by_rd_in_Mpc = DM_at_z / rd * self.config["rd_fid_in_Mpc"][i]
@@ -2934,37 +3234,46 @@ class Likelihood_bird(Likelihood):
         modelX = modelX[self.xmask[i]]
 
         if marg:
-            if self.config["skycut"] is 1: Pi = self.__get_Pi_for_marg(marg_correlator, self.xmask[i])
-            elif self.config["skycut"] > 1: Pi = self.__get_Pi_for_marg(marg_correlator[i], self.xmask[i])
-            chi2, bg = self.__get_chi2_marg(modelX, Pi, self.invcov[i], self.invcovdata[i], self.chi2data[i], self.priormat[i], data, isky=i)
-        else: 
+            if self.config["skycut"] is 1:
+                Pi = self.__get_Pi_for_marg(marg_correlator, self.xmask[i])
+            elif self.config["skycut"] > 1:
+                Pi = self.__get_Pi_for_marg(marg_correlator[i], self.xmask[i])
+            chi2, bg = self.__get_chi2_marg(
+                modelX, Pi, self.invcov[i], self.invcovdata[i], self.chi2data[i], self.priormat[i], data, isky=i
+            )
+        else:
             chi2 = self.__get_chi2_non_marg(modelX, self.invcov[i], self.ydata[i])
 
-        return chi2, bg # chi^2, b_gaussian 
-
+        return chi2, bg  # chi^2, b_gaussian
 
     def __get_chi2_non_marg(self, modelX, invcov, ydata):
-        chi2 = np.dot(modelX-ydata, np.dot(invcov, modelX-ydata))
+        chi2 = np.dot(modelX - ydata, np.dot(invcov, modelX - ydata))
         return chi2
 
     def __get_chi2_marg(self, modelX, Pi, invcov, invcovdata, chi2data, priormat, data, isky=0):
         Covbi = np.dot(Pi, np.dot(invcov, Pi.T)) + priormat
         Cinvbi = np.linalg.inv(Covbi)
         vectorbi = np.dot(modelX, np.dot(invcov, Pi.T)) - np.dot(invcovdata, Pi.T)
-        chi2nomar = np.dot(modelX, np.dot(invcov, modelX)) - 2. * np.dot(invcovdata, modelX) + chi2data
-        chi2mar = - np.dot(vectorbi, np.dot(Cinvbi, vectorbi)) + np.log(np.abs(np.linalg.det(Covbi)))
-        chi2tot = chi2mar + chi2nomar - priormat.shape[0] * np.log(2. * np.pi)
+        chi2nomar = np.dot(modelX, np.dot(invcov, modelX)) - 2.0 * np.dot(invcovdata, modelX) + chi2data
+        chi2mar = -np.dot(vectorbi, np.dot(Cinvbi, vectorbi)) + np.log(np.abs(np.linalg.det(Covbi)))
+        chi2tot = chi2mar + chi2nomar - priormat.shape[0] * np.log(2.0 * np.pi)
 
-        if self.config["with_derived_bias"] or self.config["with_nnlo_higher_derivative"] or self.config["get_chi2_from_marg"]: 
-            bg = - np.dot(Cinvbi, vectorbi)
+        if (
+            self.config["with_derived_bias"]
+            or self.config["with_nnlo_higher_derivative"]
+            or self.config["get_chi2_from_marg"]
+        ):
+            bg = -np.dot(Cinvbi, vectorbi)
             if self.config["with_derived_bias"]:
                 Ng = len(bg)
-                for i, elem in enumerate(data.get_mcmc_parameters(['derived_lkl'])):
+                for i, elem in enumerate(data.get_mcmc_parameters(["derived_lkl"])):
                     if i >= isky * Ng and i < (isky + 1) * Ng:
                         data.derived_lkl[elem] = bg[i - isky * Ng]
 
-        if self.config["with_nnlo_higher_derivative"] or self.config["get_chi2_from_marg"]: return chi2tot, bg
-        else: return chi2tot, None
+        if self.config["with_nnlo_higher_derivative"] or self.config["get_chi2_from_marg"]:
+            return chi2tot, bg
+        else:
+            return chi2tot, None
 
     def __get_Pi_for_marg(self, marg_correlator, xmask):
 
@@ -2972,8 +3281,8 @@ class Likelihood_bird(Likelihood):
 
         if self.config["with_bao"]:  # BAO
             newPi = np.zeros(shape=(Pi.shape[0], Pi.shape[1] + 2))
-            newPi[:Pi.shape[0], :Pi.shape[1]] = Pi
-            Pi = 1. * newPi
+            newPi[: Pi.shape[0], : Pi.shape[1]] = Pi
+            Pi = 1.0 * newPi
 
         Pi = Pi[:, xmask]
 
@@ -2986,7 +3295,7 @@ class Likelihood_bird(Likelihood):
         cosmo = {}
 
         cosmo["k11"] = self.kin  # k in h/Mpc
-        cosmo["P11"] = np.array([M.pk(k * M.h(), zfid) * M.h()**3 for k in self.kin])  # P(k) in (Mpc/h)**3
+        cosmo["P11"] = np.array([M.pk(k * M.h(), zfid) * M.h() ** 3 for k in self.kin])  # P(k) in (Mpc/h)**3
 
         if self.config["skycut"] == 1:
             # if self.config["multipole"] is not 0:
@@ -2994,12 +3303,14 @@ class Likelihood_bird(Likelihood):
             if self.config["with_exact_time"] or self.config["with_quintessence"]:
                 cosmo["z"] = self.config["z"][0]
                 cosmo["Omega0_m"] = M.Omega0_m()
-                try: cosmo["w0_fld"] = data.cosmo_arguments['w0_fld']
-                except: pass
+                try:
+                    cosmo["w0_fld"] = data.cosmo_arguments["w0_fld"]
+                except:
+                    pass
 
             if self.config["with_AP"]:
-                cosmo["DA"] = M.angular_distance(zfid) * M.Hubble(0.)
-                cosmo["H"] = M.Hubble(zfid) / M.Hubble(0.)
+                cosmo["DA"] = M.angular_distance(zfid) * M.Hubble(0.0)
+                cosmo["H"] = M.Hubble(zfid) / M.Hubble(0.0)
 
         elif self.config["skycut"] > 1:
             # if self.config["multipole"] is not 0:
@@ -3007,11 +3318,14 @@ class Likelihood_bird(Likelihood):
             cosmo["D"] = np.array([M.scale_independent_growth_factor(z) for z in self.config["z"]])
 
             if self.config["with_AP"]:
-                cosmo["DA"] = np.array([M.angular_distance(z) * M.Hubble(0.) for z in self.config["z"]])
-                cosmo["H"] = np.array([M.Hubble(z) / M.Hubble(0.) for z in self.config["z"]])
+                cosmo["DA"] = np.array([M.angular_distance(z) * M.Hubble(0.0) for z in self.config["z"]])
+                cosmo["H"] = np.array([M.Hubble(z) / M.Hubble(0.0) for z in self.config["z"]])
 
         if self.config["with_redshift_bin"]:
-            def comoving_distance(z): return M.angular_distance(z) * (1+z) * M.h()
+
+            def comoving_distance(z):
+                return M.angular_distance(z) * (1 + z) * M.h()
+
             if self.config["skycut"] == 1:
                 cosmo["D"] = M.scale_independent_growth_factor(self.config["z"])
                 cosmo["Dz"] = np.array([M.scale_independent_growth_factor(z) for z in self.config["zz"]])
@@ -3019,32 +3333,61 @@ class Likelihood_bird(Likelihood):
                 cosmo["rz"] = np.array([comoving_distance(z) for z in self.config["zz"]])
 
             elif self.config["skycut"] > 1:
-                cosmo["Dz"] = np.array([ [M.scale_independent_growth_factor(z) for z in zz] for zz in self.config["zz"] ])
-                cosmo["fz"] = np.array([ [M.scale_independent_growth_factor_f(z) for z in zz] for zz in self.config["zz"] ])
-                cosmo["rz"] = np.array([ [comoving_distance(z) for z in zz] for zz in self.config["zz"] ])
+                cosmo["Dz"] = np.array([[M.scale_independent_growth_factor(z) for z in zz] for zz in self.config["zz"]])
+                cosmo["fz"] = np.array(
+                    [[M.scale_independent_growth_factor_f(z) for z in zz] for zz in self.config["zz"]]
+                )
+                cosmo["rz"] = np.array([[comoving_distance(z) for z in zz] for zz in self.config["zz"]])
 
-        if self.config["with_quintessence"]: 
-            # starting deep inside matter domination and evolving to the total adiabatic linear power spectrum. 
+        if self.config["with_quintessence"]:
+            # starting deep inside matter domination and evolving to the total adiabatic linear power spectrum.
             # This does not work in the general case, e.g. with massive neutrinos (okish for minimal mass though)
             # This does not work for multi skycuts nor for redshift bins.
-            zm = 5. # z in matter domination
-            def scale_factor(z): return 1/(1.+z)
+            zm = 5.0  # z in matter domination
+
+            def scale_factor(z):
+                return 1 / (1.0 + z)
+
             Omega0_m = cosmo["Omega0_m"]
             w = cosmo["w0_fld"]
             GF = pb.GreenFunction(Omega0_m, w=w, quintessence=True)
             Dq = GF.D(scale_factor(zfid)) / GF.D(scale_factor(zm))
             Dm = M.scale_independent_growth_factor(zfid) / M.scale_independent_growth_factor(zm)
-            cosmo["P11"] *= Dq**2 / Dm**2 * ( 1 + (1+w)/(1.-3*w) * (1-Omega0_m)/Omega0_m * (1+zm)**(3*w) )**2 # 1611.07966 eq. (4.15)
-            cosmo["f"] = GF.fplus(1/(1.+cosmo["z"]))
+            cosmo["P11"] *= (
+                Dq ** 2 / Dm ** 2 * (1 + (1 + w) / (1.0 - 3 * w) * (1 - Omega0_m) / Omega0_m * (1 + zm) ** (3 * w)) ** 2
+            )  # 1611.07966 eq. (4.15)
+            cosmo["f"] = GF.fplus(1 / (1.0 + cosmo["z"]))
 
-        if self.config["with_nnlo_counterterm"] or self.config["with_nnlo_higher_derivative"]: 
-            EH_dict = { "Omega0_b": M.Omega_b(), "Omega0_m": M.Omega0_m(), "h": M.h(), "A_s": M.get_current_derived_parameters(["A_s"]), "n_s": M.n_s(), "T_cmb": M.T_cmb(), 
-                "D": M.scale_independent_growth_factor(self.config["z"][0]) }
+        if self.config["with_nnlo_counterterm"] or self.config["with_nnlo_higher_derivative"]:
+            EH_dict = {
+                "Omega0_b": M.Omega_b(),
+                "Omega0_m": M.Omega0_m(),
+                "h": M.h(),
+                "A_s": M.get_current_derived_parameters(["A_s"]),
+                "n_s": M.n_s(),
+                "T_cmb": M.T_cmb(),
+                "D": M.scale_independent_growth_factor(self.config["z"][0]),
+            }
             cosmo["EH"] = EH_dict
 
         return cosmo
 
-    def __load_data_ps(self, multipole, wedge, data_directory, spectrum_file, covmat_file, xmin, xmax=None, xmax0=None, xmax1=None, xmaxspacing='default', with_bao=False, baoH=None, baoD=None):
+    def __load_data_ps(
+        self,
+        multipole,
+        wedge,
+        data_directory,
+        spectrum_file,
+        covmat_file,
+        xmin,
+        xmax=None,
+        xmax0=None,
+        xmax1=None,
+        xmaxspacing="default",
+        with_bao=False,
+        baoH=None,
+        baoD=None,
+    ):
 
         # cov = None
         # try:
@@ -3064,17 +3407,19 @@ class Likelihood_bird(Likelihood):
             xmask0 = np.argwhere((x <= xmax0) & (x >= xmin))[:, 0]
             xmask = xmask0
 
-            if 'linear' in xmaxspacing:
-                dxmax = (xmax1 - xmax0) / (wedge - 1.)
+            if "linear" in xmaxspacing:
+                dxmax = (xmax1 - xmax0) / (wedge - 1.0)
                 for i in range(wedge - 1):
                     xmaski = np.argwhere((x <= xmax0 + (i + 1) * dxmax) & (x >= xmin))[:, 0] + (i + 1) * Nx
                     xmask = np.concatenate((xmask, xmaski))
             else:
+
                 def get_xmax(k0, k1, N=wedge):
-                    a = ((k0 - k1) * (-1 + 2 * N)**2) / (16. * (-1 + N) * N**3)
-                    b = -(k0 - k1 + 4 * k1 * N - 4 * k1 * N**2) / (4. * (-1 + N) * N)
+                    a = ((k0 - k1) * (-1 + 2 * N) ** 2) / (16.0 * (-1 + N) * N ** 3)
+                    b = -(k0 - k1 + 4 * k1 * N - 4 * k1 * N ** 2) / (4.0 * (-1 + N) * N)
                     mu = (np.arange(0, N, 1) + 0.5) / N
-                    return a / mu**2 + b
+                    return a / mu ** 2 + b
+
                 xmaxs = get_xmax(xmax0, xmax1)
                 for i, xmaxi in enumerate(xmaxs[1:]):
                     xmaski = np.argwhere((x <= xmaxi) & (x >= xmin))[:, 0] + (i + 1) * Nx
@@ -3101,9 +3446,9 @@ class Likelihood_bird(Likelihood):
         if with_bao and baoH > 0 and baoD > 0:
             ydata = np.concatenate((ydata, [baoH, baoD]))
             xmask = np.concatenate((xmask, [-2, -1]))
-            print ("BAO recon: on")
+            print("BAO recon: on")
         else:
-            print ("BAO recon: none")
+            print("BAO recon: none")
 
         # if cov is None:
         cov = np.loadtxt(os.path.join(data_directory, covmat_file))
@@ -3115,7 +3460,22 @@ class Likelihood_bird(Likelihood):
 
         return x, xmask, ydata, chi2data, invcov, invcovdata
 
-    def __load_data_cf(self, multipole, wedge, data_directory, spectrum_file, covmat_file, xmax, xmin=None, xmin0=None, xmin1=None, xminspacing='default', with_bao=False, baoH=None, baoD=None):
+    def __load_data_cf(
+        self,
+        multipole,
+        wedge,
+        data_directory,
+        spectrum_file,
+        covmat_file,
+        xmax,
+        xmin=None,
+        xmin0=None,
+        xmin1=None,
+        xminspacing="default",
+        with_bao=False,
+        baoH=None,
+        baoD=None,
+    ):
 
         # cov = None
         # try:
@@ -3135,24 +3495,26 @@ class Likelihood_bird(Likelihood):
             xmask0 = np.argwhere((x <= xmax) & (x >= xmin0))[:, 0]
             xmask = xmask0
 
-            if 'linear' in xminspacing:
-                dxmax = (xmin1 - xmin0) / (wedge - 1.)
+            if "linear" in xminspacing:
+                dxmax = (xmin1 - xmin0) / (wedge - 1.0)
                 for i in range(wedge - 1):
                     xmaski = np.argwhere((x >= xmin0 + (i + 1) * dxmax) & (x <= xmax))[:, 0] + (i + 1) * Nx
                     xmask = np.concatenate((xmask, xmaski))
 
             else:
+
                 def get_xmin(s0, s1, N=wedge):
-                    a = ((s1 - s0) * (-1 + 2 * N)**2) / (16. * (-1 + N) * N**3)
-                    b = -(s1 - s0 + 4 * s0 * N - 4 * s0 * N**2) / (4. * (-1 + N) * N)
+                    a = ((s1 - s0) * (-1 + 2 * N) ** 2) / (16.0 * (-1 + N) * N ** 3)
+                    b = -(s1 - s0 + 4 * s0 * N - 4 * s0 * N ** 2) / (4.0 * (-1 + N) * N)
                     mu = (np.arange(0, N, 1) + 0.5) / N
-                    return a / mu**2 + b
+                    return a / mu ** 2 + b
+
                 xmins = get_xmin(xmin1, xmin0)
                 for i, xmini in enumerate(xmins[1:]):
                     xmaski = np.argwhere((x >= xmini) & (x <= xmax))[:, 0] + (i + 1) * Nx
                     xmask = np.concatenate((xmask, xmaski))
 
-                print (xmins)
+                print(xmins)
 
         elif multipole is not 0:
             x = xdata.reshape(3, -1)[0]
@@ -3170,9 +3532,9 @@ class Likelihood_bird(Likelihood):
         if with_bao and baoH > 0 and baoD > 0:
             ydata = np.concatenate((ydata, [baoH, baoD]))
             xmask = np.concatenate((xmask, [-2, -1]))
-            print ("BAO recon: on")
+            print("BAO recon: on")
         else:
-            print ("BAO recon: none")
+            print("BAO recon: none")
 
         # if cov is None:
         cov = np.loadtxt(os.path.join(data_directory, covmat_file))
@@ -3211,71 +3573,83 @@ class Likelihood_bird(Likelihood):
         allk = np.concatenate([k for i in range(Nd)])
         allPS = np.concatenate([raw[1 + i] for i in range(Nd)])
         diag = np.concatenate([raw[1 + Nd + i] for i in range(Nd)])
-        cov = np.diagflat(diag**2)
+        cov = np.diagflat(diag ** 2)
         # kPS = np.vstack([allkpt, allwpt]).T
         return allk, allPS, cov
 
     def __set_prior(self, multipole, model=5):
 
         if model == 0:
-            priors = np.array([2., 2.])
+            priors = np.array([2.0, 2.0])
             b3, cct = priors
-            print ('EFT priors: b3: %s, cct: %s (default)' % (b3, cct))
+            print("EFT priors: b3: %s, cct: %s (default)" % (b3, cct))
 
         if multipole == 0:
-            priors = np.array([2.])
-            print ('EFT priors: cct: %s' % (priors))
+            priors = np.array([2.0])
+            print("EFT priors: cct: %s" % (priors))
 
         if multipole == 2:
             if model == 1:
-                priors = np.array([2., 2., 8., 2., 2.])
+                priors = np.array([2.0, 2.0, 8.0, 2.0, 2.0])
                 b3, cct, cr1, ce2, sn = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s, shotnoise: %s (default)' %
-                       (b3, cct, cr1, ce2, sn))
+                print(
+                    "EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s, shotnoise: %s (default)"
+                    % (b3, cct, cr1, ce2, sn)
+                )
             elif model == 2:
-                priors = np.array([2., 2., 8., 2.])
+                priors = np.array([2.0, 2.0, 8.0, 2.0])
                 b3, cct, cr1, ce2 = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s (default)' % (b3, cct, cr1, ce2))
+                print("EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s (default)" % (b3, cct, cr1, ce2))
             elif model == 3:
-                priors = np.array([ 10., 4., 8., 4., 2. ]) # np.array([2., 2., 8., 2., 2.]) 
+                priors = np.array([10.0, 4.0, 8.0, 4.0, 2.0])  # np.array([2., 2., 8., 2., 2.])
                 b3, cct, cr1, ce2, ce1 = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s, ce1: %s (default)' % (b3, cct, cr1, ce2, ce1))
+                print(
+                    "EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s, ce1: %s (default)" % (b3, cct, cr1, ce2, ce1)
+                )
             elif model == 4:
-                priors = np.array([ 10., 4., 8., 4., 2., 2. ]) # np.array([2., 2., 8., 2., 2., 2.])
+                priors = np.array([10.0, 4.0, 8.0, 4.0, 2.0, 2.0])  # np.array([2., 2., 8., 2., 2., 2.])
                 b3, cct, cr1, ce2, ce1, sn = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s, ce1: %s, shotnoise: %s (default)' %
-                       (b3, cct, cr1, ce2, ce1, sn))
+                print(
+                    "EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s, ce1: %s, shotnoise: %s (default)"
+                    % (b3, cct, cr1, ce2, ce1, sn)
+                )
             elif model == 5:
-                priors = np.array([2., 2., 8.])
+                priors = np.array([2.0, 2.0, 8.0])
                 b3, cct, cr1 = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1(+cr2): %s (default)' % (b3, cct, cr1))
+                print("EFT priors: b3: %s, cct: %s, cr1(+cr2): %s (default)" % (b3, cct, cr1))
 
         if multipole == 3:
             if model == 1:
-                priors = np.array([2., 2., 4., 4., 2., 2.])
+                priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0])
                 b3, cct, cr1, cr2, ce2, sn = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s, ce2: %s, shotnoise: %s (default)' %
-                       (b3, cct, cr1, cr2, ce2, sn))
+                print(
+                    "EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s, ce2: %s, shotnoise: %s (default)"
+                    % (b3, cct, cr1, cr2, ce2, sn)
+                )
             elif model == 2:
-                priors = np.array([2., 2., 4., 4., 2.])
+                priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0])
                 b3, cct, cr1, cr2, ce2 = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s, ce2: %s (default)' % (b3, cct, cr1, cr2, ce2))
+                print("EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s, ce2: %s (default)" % (b3, cct, cr1, cr2, ce2))
             elif model == 3:
-                priors = np.array([2., 2., 4., 4., 2., 2.])  # np.array([ 10., 4., 8., 4., 2. ])
+                priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0])  # np.array([ 10., 4., 8., 4., 2. ])
                 b3, cct, cr1, cr2, ce2, ce1 = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s, ce2: %s, ce1: %s (default)' %
-                       (b3, cct, cr1, cr2, ce2, ce1))
+                print(
+                    "EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s, ce2: %s, ce1: %s (default)"
+                    % (b3, cct, cr1, cr2, ce2, ce1)
+                )
             elif model == 4:
-                priors = np.array([2., 2., 4., 4., 2., 2., 2.])
+                priors = np.array([2.0, 2.0, 4.0, 4.0, 2.0, 2.0, 2.0])
                 b3, cct, cr1, cr2, ce2, ce1, sn = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s, ce2: %s, ce1: %s, shotnoise: %s (default)' %
-                       (b3, cct, cr1, cr2, ce2, ce1, sn))
+                print(
+                    "EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s, ce2: %s, ce1: %s, shotnoise: %s (default)"
+                    % (b3, cct, cr1, cr2, ce2, ce1, sn)
+                )
             elif model == 5:
-                priors = np.array([2., 2., 4., 4.])
+                priors = np.array([2.0, 2.0, 4.0, 4.0])
                 b3, cct, cr1, cr2 = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s (default)' % (b3, cct, cr1, cr2))
+                print("EFT priors: b3: %s, cct: %s, cr1: %s, cr2: %s (default)" % (b3, cct, cr1, cr2))
 
-        priormat = np.diagflat(1. / priors**2)
+        priormat = np.diagflat(1.0 / priors ** 2)
 
         return priormat
 
@@ -3283,8 +3657,8 @@ class Likelihood_bird(Likelihood):
 #################################################
 #################################################
 
-class Likelihood_cfps(Likelihood):
 
+class Likelihood_cfps(Likelihood):
     def __init__(self, path, data, command_line):
 
         Likelihood.__init__(self, path, data, command_line)
@@ -3298,19 +3672,27 @@ class Likelihood_cfps(Likelihood):
         #     with open(newpath, 'r') as f:
         #         self.config = yaml.full_load(f)
 
-        self.config = yaml.full_load(open(os.path.join(self.data_directory, self.configfile), 'r'))
-        self.config_ps = yaml.full_load(open(os.path.join(self.data_directory, self.configfile_ps), 'r'))
+        self.config = yaml.full_load(open(os.path.join(self.data_directory, self.configfile), "r"))
+        self.config_ps = yaml.full_load(open(os.path.join(self.data_directory, self.configfile_ps), "r"))
 
-        try: self.config["with_derived_bias"]
-        except: self.config["with_derived_bias"] = False
-        try: self.config["with_quintessence"]
-        except: self.config["with_quintessence"] = False
-        try: self.config["get_chi2_from_marg"]
-        except: self.config["get_chi2_from_marg"] = False
-        try: self.config["split"]
-        except: self.config["split"] = 0
+        try:
+            self.config["with_derived_bias"]
+        except:
+            self.config["with_derived_bias"] = False
+        try:
+            self.config["with_quintessence"]
+        except:
+            self.config["with_quintessence"] = False
+        try:
+            self.config["get_chi2_from_marg"]
+        except:
+            self.config["get_chi2_from_marg"] = False
+        try:
+            self.config["split"]
+        except:
+            self.config["split"] = 0
 
-        print ("skycut: %s" % self.config["skycut"])
+        print("skycut: %s" % self.config["skycut"])
 
         self.s = []
         self.k = []
@@ -3331,9 +3713,19 @@ class Likelihood_cfps(Likelihood):
                 baoD = None
 
             si, ki, xmaski, ydatai, chi2datai, invcovi, invcovdatai = self.__load_data(
-                self.config["multipole"], self.data_directory, self.config["spectrum_file"][i], self.config_ps["spectrum_file"][i], self.config["covmat_file"][i],
-                smin=self.config["xmin"][i], smax=self.config["xmax"][i], kmin=self.config_ps["xmin"][i], kmax=self.config_ps["xmax"][i], 
-                with_bao=self.config["with_bao"], baoH=baoH, baoD=baoD)
+                self.config["multipole"],
+                self.data_directory,
+                self.config["spectrum_file"][i],
+                self.config_ps["spectrum_file"][i],
+                self.config["covmat_file"][i],
+                smin=self.config["xmin"][i],
+                smax=self.config["xmax"][i],
+                kmin=self.config_ps["xmin"][i],
+                kmax=self.config_ps["xmax"][i],
+                with_bao=self.config["with_bao"],
+                baoH=baoH,
+                baoD=baoD,
+            )
 
             priormati = self.__set_prior(self.config_ps["multipole"])
 
@@ -3352,19 +3744,30 @@ class Likelihood_cfps(Likelihood):
 
         if self.config_ps["with_window"]:
             if self.config_ps["skycut"] > 1:
-                self.config_ps["windowPk"] = [os.path.join(self.data_directory, self.config_ps["windowPk"][i]) for i in range(self.config_ps["skycut"])]
-                self.config_ps["windowCf"] = [os.path.join(self.data_directory, self.config_ps["windowCf"][i]) for i in range(self.config_ps["skycut"])]
+                self.config_ps["windowPk"] = [
+                    os.path.join(self.data_directory, self.config_ps["windowPk"][i])
+                    for i in range(self.config_ps["skycut"])
+                ]
+                self.config_ps["windowCf"] = [
+                    os.path.join(self.data_directory, self.config_ps["windowCf"][i])
+                    for i in range(self.config_ps["skycut"])
+                ]
             else:
                 self.config_ps["windowPk"] = os.path.join(self.data_directory, self.config_ps["windowPk"][i])
                 self.config_ps["windowCf"] = os.path.join(self.data_directory, self.config_ps["windowCf"][i])
-        if "Pk" in self.config_ps["output"]: self.config_ps["kmax"] = self.config_ps["xmax"][0] + 0.05
+        if "Pk" in self.config_ps["output"]:
+            self.config_ps["kmax"] = self.config_ps["xmax"][0] + 0.05
 
         # BBN prior?
-        if self.config["with_bbn"] and self.config["omega_b_BBNcenter"] is not None and self.config["omega_b_BBNsigma"] is not None:
-            print ('BBN prior on omega_b: on')
+        if (
+            self.config["with_bbn"]
+            and self.config["omega_b_BBNcenter"] is not None
+            and self.config["omega_b_BBNsigma"] is not None
+        ):
+            print("BBN prior on omega_b: on")
         else:
             self.config["with_bbn"] = False
-            print ('BBN prior on omega_b: none')
+            print("BBN prior on omega_b: none")
 
         # setting pybird correlator configuration
         self.correlator = pb.Correlator()
@@ -3373,39 +3776,58 @@ class Likelihood_cfps(Likelihood):
         self.correlator_ps.set(self.config_ps)
 
         # setting classy for pybird
-        self.need_cosmo_arguments(data, {'output': 'mPk', 'z_max_pk': max(self.config["z"]), 'P_k_max_h/Mpc': 1.})
+        self.need_cosmo_arguments(data, {"output": "mPk", "z_max_pk": max(self.config["z"]), "P_k_max_h/Mpc": 1.0})
         self.kin = np.logspace(-5, 0, 200)
 
     def bias_array_to_dict(self, bs, with_stoch=False):
-        if with_stoch: bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5], "ce0": bs[7], "ce1": bs[8], "ce2": bs[9]}
-        else: bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5]}
+        if with_stoch:
+            bdict = {
+                "b1": bs[0],
+                "b2": bs[1],
+                "b3": bs[2],
+                "b4": bs[3],
+                "cct": bs[4],
+                "cr1": bs[5],
+                "ce0": bs[7],
+                "ce1": bs[8],
+                "ce2": bs[9],
+            }
+        else:
+            bdict = {"b1": bs[0], "b2": bs[1], "b3": bs[2], "b4": bs[3], "cct": bs[4], "cr1": bs[5]}
         return bdict
 
     def bias_custom_to_all(self, bs):
         # b1, b2, b3, b4, cct, cr1, cr2, ce0, ce1, ce2, bq (opt), bnlo (opt) # bnlo is actually b_nnlo * k^4 P11
-        ball = [bs[0], bs[1] / np.sqrt(2.), 0., bs[1] / np.sqrt(2.), 0., 0., 0., 0., 0., 0., 0., 0.]
+        ball = [bs[0], bs[1] / np.sqrt(2.0), 0.0, bs[1] / np.sqrt(2.0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         return ball
 
-    def bias_nonmarg_to_all(self, bs, bg, with_stoch=False): 
-        if with_stoch: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], 0., bg[4], 0., bg[3]]
-        else: biaslist = [bs[0], bs[1] / np.sqrt(2.), bg[0], bs[1] / np.sqrt(2.), bg[1], bg[2], 0., 0., 0., 0.]
+    def bias_nonmarg_to_all(self, bs, bg, with_stoch=False):
+        if with_stoch:
+            biaslist = [bs[0], bs[1] / np.sqrt(2.0), bg[0], bs[1] / np.sqrt(2.0), bg[1], bg[2], 0.0, bg[4], 0.0, bg[3]]
+        else:
+            biaslist = [bs[0], bs[1] / np.sqrt(2.0), bg[0], bs[1] / np.sqrt(2.0), bg[1], bg[2], 0.0, 0.0, 0.0, 0.0]
         return biaslist
 
     def loglkl(self, cosmo, data):
 
-        if data.need_cosmo_update: 
+        if data.need_cosmo_update:
             self.correlator.compute(self.__set_cosmo(cosmo, data))
             self.correlator_ps.compute(self.__set_cosmo(cosmo, data))
-        else: pass
+        else:
+            pass
 
-        bng = np.array([data.mcmc_parameters[k]['current'] * data.mcmc_parameters[k]['scale'] for k in self.use_nuisance])
-        
+        bng = np.array(
+            [data.mcmc_parameters[k]["current"] * data.mcmc_parameters[k]["scale"] for k in self.use_nuisance]
+        )
+
         if self.config["split"] == 1:
-            bng = np.swapaxes( bng.reshape(self.config["skycut"], 2, -1), axis1=0, axis2=1 )
+            bng = np.swapaxes(bng.reshape(self.config["skycut"], 2, -1), axis1=0, axis2=1)
             bdict = np.array([self.bias_array_to_dict(self.bias_custom_to_all(bs), with_stoch=False) for bs in bng[0]])
-            bdict_ps = np.array([self.bias_array_to_dict(self.bias_custom_to_all(bs), with_stoch=True) for bs in bng[1]])
-            b1 = np.array([bng[0,i,0] for i in range(self.config["skycut"])])
-            b1_ps = np.array([bng[1,i,0] for i in range(self.config["skycut"])])
+            bdict_ps = np.array(
+                [self.bias_array_to_dict(self.bias_custom_to_all(bs), with_stoch=True) for bs in bng[1]]
+            )
+            b1 = np.array([bng[0, i, 0] for i in range(self.config["skycut"])])
+            b1_ps = np.array([bng[1, i, 0] for i in range(self.config["skycut"])])
 
             correlator = self.correlator.get(bdict)
             correlator_ps = self.correlator_ps.get(bdict_ps)
@@ -3422,57 +3844,82 @@ class Likelihood_cfps(Likelihood):
             marg_correlator = self.correlator.getmarg(b1, model=self.config["model"])
             marg_correlator_ps = self.correlator_ps.getmarg(b1, model=self.config_ps["model"])
 
-
-        chi2 = 0.
-        if self.config["get_chi2_from_marg"]: bg = []
+        chi2 = 0.0
+        if self.config["get_chi2_from_marg"]:
+            bg = []
 
         for i in range(self.config["skycut"]):
-            if self.config["skycut"] is 1: 
-                modelcf = correlator 
+            if self.config["skycut"] is 1:
+                modelcf = correlator
                 modelps = correlator_ps
-            elif self.config["skycut"] > 1: 
+            elif self.config["skycut"] > 1:
                 modelcf = correlator[i]
                 modelps = correlator_ps[i]
-            modelX = np.concatenate(( modelcf.reshape(-1), modelps.reshape(-1) ))
-            
+            modelX = np.concatenate((modelcf.reshape(-1), modelps.reshape(-1)))
+
             if self.config["with_bao"] and self.config["baoH"][i] > 0 and self.config["baoD"][i] > 0:  # BAO
-                DM_at_z = cosmo.angular_distance(self.config["zbao"][i]) * (1. + self.config["zbao"][i])
+                DM_at_z = cosmo.angular_distance(self.config["zbao"][i]) * (1.0 + self.config["zbao"][i])
                 H_at_z = cosmo.Hubble(self.config["zbao"][i]) * conts.c / 1000.0
                 rd = cosmo.rs_drag() * self.config["rs_rescale"][i]
                 theo_DM_rdfid_by_rd_in_Mpc = DM_at_z / rd * self.config["rd_fid_in_Mpc"][i]
                 theo_H_rd_by_rdfid = H_at_z * rd / self.config["rd_fid_in_Mpc"][i]
                 modelX = np.concatenate((modelX, [theo_H_rd_by_rdfid, theo_DM_rdfid_by_rd_in_Mpc]))
-            
-            modelX = modelX[self.xmask[i]]
-            
-            if self.config["skycut"] is 1: Pi = self.__get_Pi_for_marg(marg_correlator, marg_correlator_ps, self.xmask[i])
-            elif self.config["skycut"] > 1: Pi = self.__get_Pi_for_marg(marg_correlator[i], marg_correlator_ps[i], self.xmask[i])
-            
-            c2, bgi = self.__get_chi2(modelX, Pi, self.invcov[i], self.invcovdata[i], self.chi2data[i], self.priormat[i], data, isky=i)
-            chi2 += c2
-            
-            if self.config["get_chi2_from_marg"]: bg.append(bgi)
 
-        if self.config["get_chi2_from_marg"]: 
-            chi2 = 0.
+            modelX = modelX[self.xmask[i]]
+
+            if self.config["skycut"] is 1:
+                Pi = self.__get_Pi_for_marg(marg_correlator, marg_correlator_ps, self.xmask[i])
+            elif self.config["skycut"] > 1:
+                Pi = self.__get_Pi_for_marg(marg_correlator[i], marg_correlator_ps[i], self.xmask[i])
+
+            c2, bgi = self.__get_chi2(
+                modelX, Pi, self.invcov[i], self.invcovdata[i], self.chi2data[i], self.priormat[i], data, isky=i
+            )
+            chi2 += c2
+
+            if self.config["get_chi2_from_marg"]:
+                bg.append(bgi)
+
+        if self.config["get_chi2_from_marg"]:
+            chi2 = 0.0
             if self.config["split"] == 1:
-                nonmarg_bdict = np.array([ self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi, with_stoch=False), with_stoch=False) for (bs, bgi) in zip(bng[0], bg) ])
-                nonmarg_bdict_ps = np.array([ self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi, with_stoch=True), with_stoch=True) for (bs, bgi) in zip(bng[1], bg) ])
+                nonmarg_bdict = np.array(
+                    [
+                        self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi, with_stoch=False), with_stoch=False)
+                        for (bs, bgi) in zip(bng[0], bg)
+                    ]
+                )
+                nonmarg_bdict_ps = np.array(
+                    [
+                        self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi, with_stoch=True), with_stoch=True)
+                        for (bs, bgi) in zip(bng[1], bg)
+                    ]
+                )
             else:
-                nonmarg_bdict = np.array([ self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi, with_stoch=False), with_stoch=False) for (bs, bgi) in zip(bng, bg) ])
-                nonmarg_bdict_ps = np.array([ self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi, with_stoch=True), with_stoch=True) for (bs, bgi) in zip(bng, bg) ])
+                nonmarg_bdict = np.array(
+                    [
+                        self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi, with_stoch=False), with_stoch=False)
+                        for (bs, bgi) in zip(bng, bg)
+                    ]
+                )
+                nonmarg_bdict_ps = np.array(
+                    [
+                        self.bias_array_to_dict(self.bias_nonmarg_to_all(bs, bgi, with_stoch=True), with_stoch=True)
+                        for (bs, bgi) in zip(bng, bg)
+                    ]
+                )
             nonmarg_correlator = self.correlator.get(nonmarg_bdict)
             nonmarg_correlator_ps = self.correlator_ps.get(nonmarg_bdict_ps)
             for i in range(self.config["skycut"]):
-                if self.config["skycut"] is 1: 
-                    modelcf = nonmarg_correlator 
+                if self.config["skycut"] is 1:
+                    modelcf = nonmarg_correlator
                     modelps = nonmarg_correlator_ps
-                elif self.config["skycut"] > 1: 
+                elif self.config["skycut"] > 1:
                     modelcf = nonmarg_correlator[i]
                     modelps = nonmarg_correlator_ps[i]
-                modelX = np.concatenate(( modelcf.reshape(-1), modelps.reshape(-1) ))
+                modelX = np.concatenate((modelcf.reshape(-1), modelps.reshape(-1)))
                 if self.config["with_bao"]:  # BAO
-                    DM_at_z = cosmo.angular_distance(self.config["zbao"][i]) * (1. + self.config["zbao"][i])
+                    DM_at_z = cosmo.angular_distance(self.config["zbao"][i]) * (1.0 + self.config["zbao"][i])
                     H_at_z = cosmo.Hubble(self.config["zbao"][i]) * conts.c / 1000.0
                     rd = cosmo.rs_drag() * self.config["rs_rescale"][i]
                     theo_DM_rdfid_by_rd_in_Mpc = DM_at_z / rd * self.config["rd_fid_in_Mpc"][i]
@@ -3481,13 +3928,21 @@ class Likelihood_cfps(Likelihood):
                 modelX = modelX[self.xmask[i]]
                 chi2 += self.__get_chi2_non_marg(modelX, self.invcov[i], self.ydata[i])
 
-        prior = 0.
-        if self.config["with_bbn"]: prior += -0.5 * ((data.cosmo_arguments['omega_b'] - self.config["omega_b_BBNcenter"]) / self.config["omega_b_BBNsigma"])**2
-        lkl = - 0.5 * chi2 + prior
+        prior = 0.0
+        if self.config["with_bbn"]:
+            prior += (
+                -0.5
+                * (
+                    (data.cosmo_arguments["omega_b"] - self.config["omega_b_BBNcenter"])
+                    / self.config["omega_b_BBNsigma"]
+                )
+                ** 2
+            )
+        lkl = -0.5 * chi2 + prior
         return lkl
 
     def __get_chi2_non_marg(self, modelX, invcov, ydata):
-        chi2 = np.dot(modelX-ydata, np.dot(invcov, modelX-ydata))
+        chi2 = np.dot(modelX - ydata, np.dot(invcov, modelX - ydata))
         return chi2
 
     def __get_chi2(self, modelX, Pi, invcov, invcovdata, chi2data, priormat, data, isky=0):
@@ -3495,32 +3950,33 @@ class Likelihood_cfps(Likelihood):
         Covbi = np.dot(Pi, np.dot(invcov, Pi.T)) + priormat
         Cinvbi = np.linalg.inv(Covbi)
         vectorbi = np.dot(modelX, np.dot(invcov, Pi.T)) - np.dot(invcovdata, Pi.T)
-        chi2nomar = np.dot(modelX, np.dot(invcov, modelX)) - 2. * np.dot(invcovdata, modelX) + chi2data
-        chi2mar = - np.dot(vectorbi, np.dot(Cinvbi, vectorbi)) + np.log(np.abs(np.linalg.det(Covbi)))
-        chi2tot = chi2mar + chi2nomar - priormat.shape[0] * np.log(2. * np.pi)
+        chi2nomar = np.dot(modelX, np.dot(invcov, modelX)) - 2.0 * np.dot(invcovdata, modelX) + chi2data
+        chi2mar = -np.dot(vectorbi, np.dot(Cinvbi, vectorbi)) + np.log(np.abs(np.linalg.det(Covbi)))
+        chi2tot = chi2mar + chi2nomar - priormat.shape[0] * np.log(2.0 * np.pi)
 
-        if self.config["get_chi2_from_marg"]: 
-            bg = - np.dot(Cinvbi, vectorbi)
+        if self.config["get_chi2_from_marg"]:
+            bg = -np.dot(Cinvbi, vectorbi)
             return chi2tot, bg
-        else: return chi2tot, None
+        else:
+            return chi2tot, None
 
     def __get_Pi_for_marg(self, marg_cf, marg_ps, xmask):
         if self.config["split"] == 0:
             Pi = block_diag(marg_cf, marg_ps)
         elif self.config["split"] == 1:
-            Pi = np.zeros(shape=(marg_ps.shape[0], marg_cf.shape[1]+marg_ps.shape[1]))
-            Pi[:marg_cf.shape[0], :marg_cf.shape[1]] = marg_cf
-            Pi[:, marg_cf.shape[1]:] = marg_ps
+            Pi = np.zeros(shape=(marg_ps.shape[0], marg_cf.shape[1] + marg_ps.shape[1]))
+            Pi[: marg_cf.shape[0], : marg_cf.shape[1]] = marg_cf
+            Pi[:, marg_cf.shape[1] :] = marg_ps
         elif self.config["split"] == 2:
-            Pi = np.zeros(shape=(marg_ps.shape[0]+2, marg_cf.shape[1]+marg_ps.shape[1]))
-            Pi[:marg_cf.shape[0], :marg_cf.shape[1]] = marg_cf
-            Pi[0, marg_cf.shape[1]:] = marg_ps[0]
-            Pi[marg_cf.shape[0]:, marg_cf.shape[1]:] = marg_ps[1:]
+            Pi = np.zeros(shape=(marg_ps.shape[0] + 2, marg_cf.shape[1] + marg_ps.shape[1]))
+            Pi[: marg_cf.shape[0], : marg_cf.shape[1]] = marg_cf
+            Pi[0, marg_cf.shape[1] :] = marg_ps[0]
+            Pi[marg_cf.shape[0] :, marg_cf.shape[1] :] = marg_ps[1:]
 
         if self.config["with_bao"]:  # BAO
             newPi = np.zeros(shape=(Pi.shape[0], Pi.shape[1] + 2))
-            newPi[:Pi.shape[0], :Pi.shape[1]] = Pi
-            Pi = 1. * newPi
+            newPi[: Pi.shape[0], : Pi.shape[1]] = Pi
+            Pi = 1.0 * newPi
         Pi = Pi[:, xmask]
         return Pi
 
@@ -3528,18 +3984,27 @@ class Likelihood_cfps(Likelihood):
 
         if multipole is 2:
             if self.config["split"] == 0:
-                priors = np.array([2., 2., 8., 2., 2.])
+                priors = np.array([2.0, 2.0, 8.0, 2.0, 2.0])
                 b3, cct, cr1, ce2, sn = priors
-                print ('EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s, shotnoise: %s (default)' % (b3, cct, cr1, ce2, sn))
+                print(
+                    "EFT priors: b3: %s, cct: %s, cr1(+cr2): %s, ce2: %s, shotnoise: %s (default)"
+                    % (b3, cct, cr1, ce2, sn)
+                )
             elif self.config["split"] == 1:
-                priors = np.array([2., 2., 8., 2., 2., 8., 2., 2.])
+                priors = np.array([2.0, 2.0, 8.0, 2.0, 2.0, 8.0, 2.0, 2.0])
                 b3_cf, cct_cf, cr1_cf, b3, cct, cr1, ce2, sn = priors
-                print ('EFT priors: b3_cf: %s, cct_cf: %s, cr1_cf(+cr2_cf): %s, b3_ps: %s, cct_ps: %s, cr1_ps(+cr2_ps): %s, ce2_ps: %s, shotnoise_ps: %s (default)' % (b3_cf, cct_cf, cr1_cf, b3, cct, cr1, ce2, sn))
+                print(
+                    "EFT priors: b3_cf: %s, cct_cf: %s, cr1_cf(+cr2_cf): %s, b3_ps: %s, cct_ps: %s, cr1_ps(+cr2_ps): %s, ce2_ps: %s, shotnoise_ps: %s (default)"
+                    % (b3_cf, cct_cf, cr1_cf, b3, cct, cr1, ce2, sn)
+                )
             elif self.config["split"] == 2:
-                priors = np.array([2., 2., 8., 2., 8., 2., 2.])
+                priors = np.array([2.0, 2.0, 8.0, 2.0, 8.0, 2.0, 2.0])
                 b3, cct_cf, cr1_cf, cct, cr1, ce2, sn = priors
-                print ('EFT priors: b3: %s, cct_cf: %s, cr1_cf(+cr2_cf): %s, cct_ps: %s, cr1_ps(+cr2_ps): %s, ce2_ps: %s, shotnoise_ps: %s (default)' % (b3, cct_cf, cr1_cf, cct, cr1, ce2, sn))
-        priormat = np.diagflat(1. / priors**2)
+                print(
+                    "EFT priors: b3: %s, cct_cf: %s, cr1_cf(+cr2_cf): %s, cct_ps: %s, cr1_ps(+cr2_ps): %s, ce2_ps: %s, shotnoise_ps: %s (default)"
+                    % (b3, cct_cf, cr1_cf, cct, cr1, ce2, sn)
+                )
+        priormat = np.diagflat(1.0 / priors ** 2)
 
         return priormat
 
@@ -3550,7 +4015,7 @@ class Likelihood_cfps(Likelihood):
         cosmo = {}
 
         cosmo["k11"] = self.kin  # k in h/Mpc
-        cosmo["P11"] = np.array([M.pk(k * M.h(), zfid) * M.h()**3 for k in self.kin])  # P(k) in (Mpc/h)**3
+        cosmo["P11"] = np.array([M.pk(k * M.h(), zfid) * M.h() ** 3 for k in self.kin])  # P(k) in (Mpc/h)**3
 
         if self.config["skycut"] == 1:
             # if self.config["multipole"] is not 0:
@@ -3558,12 +4023,14 @@ class Likelihood_cfps(Likelihood):
             if self.config["with_exact_time"] or self.config["with_quintessence"]:
                 cosmo["z"] = self.config["z"][0]
                 cosmo["Omega0_m"] = M.Omega0_m()
-                try: cosmo["w0_fld"] = data.cosmo_arguments['w0_fld']
-                except: pass
+                try:
+                    cosmo["w0_fld"] = data.cosmo_arguments["w0_fld"]
+                except:
+                    pass
 
             if self.config["with_AP"]:
-                cosmo["DA"] = M.angular_distance(zfid) * M.Hubble(0.)
-                cosmo["H"] = M.Hubble(zfid) / M.Hubble(0.)
+                cosmo["DA"] = M.angular_distance(zfid) * M.Hubble(0.0)
+                cosmo["H"] = M.Hubble(zfid) / M.Hubble(0.0)
 
         elif self.config["skycut"] > 1:
             # if self.config["multipole"] is not 0:
@@ -3571,11 +4038,14 @@ class Likelihood_cfps(Likelihood):
             cosmo["D"] = np.array([M.scale_independent_growth_factor(z) for z in self.config["z"]])
 
             if self.config["with_AP"]:
-                cosmo["DA"] = np.array([M.angular_distance(z) * M.Hubble(0.) for z in self.config["z"]])
-                cosmo["H"] = np.array([M.Hubble(z) / M.Hubble(0.) for z in self.config["z"]])
+                cosmo["DA"] = np.array([M.angular_distance(z) * M.Hubble(0.0) for z in self.config["z"]])
+                cosmo["H"] = np.array([M.Hubble(z) / M.Hubble(0.0) for z in self.config["z"]])
 
         if self.config["with_redshift_bin"]:
-            def comoving_distance(z): return M.angular_distance(z) * (1+z) * M.h()
+
+            def comoving_distance(z):
+                return M.angular_distance(z) * (1 + z) * M.h()
+
             if self.config["skycut"] == 1:
                 cosmo["D"] = M.scale_independent_growth_factor(self.config["z"])
                 cosmo["Dz"] = np.array([M.scale_independent_growth_factor(z) for z in self.config["zz"]])
@@ -3583,31 +4053,50 @@ class Likelihood_cfps(Likelihood):
                 cosmo["rz"] = np.array([comoving_distance(z) for z in self.config["zz"]])
 
             elif self.config["skycut"] > 1:
-                cosmo["Dz"] = np.array([ [M.scale_independent_growth_factor(z) for z in zz] for zz in self.config["zz"] ])
-                cosmo["fz"] = np.array([ [M.scale_independent_growth_factor_f(z) for z in zz] for zz in self.config["zz"] ])
-                cosmo["rz"] = np.array([ [comoving_distance(z) for z in zz] for zz in self.config["zz"] ])
+                cosmo["Dz"] = np.array([[M.scale_independent_growth_factor(z) for z in zz] for zz in self.config["zz"]])
+                cosmo["fz"] = np.array(
+                    [[M.scale_independent_growth_factor_f(z) for z in zz] for zz in self.config["zz"]]
+                )
+                cosmo["rz"] = np.array([[comoving_distance(z) for z in zz] for zz in self.config["zz"]])
 
-        if self.config["with_quintessence"]: 
-            # starting deep inside matter domination and evolving to the total adiabatic linear power spectrum. 
+        if self.config["with_quintessence"]:
+            # starting deep inside matter domination and evolving to the total adiabatic linear power spectrum.
             # This does not work in the general case, e.g. with massive neutrinos (okish for minimal mass though)
             # This does not work for multi skycuts nor for redshift bins.
-            zm = 5. # z in matter domination
-            def scale_factor(z): return 1/(1.+z)
+            zm = 5.0  # z in matter domination
+
+            def scale_factor(z):
+                return 1 / (1.0 + z)
+
             Omega0_m = cosmo["Omega0_m"]
             w = cosmo["w0_fld"]
             GF = pb.GreenFunction(Omega0_m, w=w, quintessence=True)
             Dq = GF.D(scale_factor(zfid)) / GF.D(scale_factor(zm))
             Dm = M.scale_independent_growth_factor(zfid) / M.scale_independent_growth_factor(zm)
-            cosmo["P11"] *= Dq**2 / Dm**2 * ( 1 + (1+w)/(1.-3*w) * (1-Omega0_m)/Omega0_m * (1+zm)**(3*w) )**2 # 1611.07966 eq. (4.15)
-            cosmo["f"] = GF.fplus(1/(1.+cosmo["z"]))
+            cosmo["P11"] *= (
+                Dq ** 2 / Dm ** 2 * (1 + (1 + w) / (1.0 - 3 * w) * (1 - Omega0_m) / Omega0_m * (1 + zm) ** (3 * w)) ** 2
+            )  # 1611.07966 eq. (4.15)
+            cosmo["f"] = GF.fplus(1 / (1.0 + cosmo["z"]))
 
         return cosmo
 
-    def __load_data(self, multipole, data_directory, cf_spectrum_file, ps_spectrum_file, covmat_file, 
-                    smin=None, smax=None, kmin=None, kmax=None, 
-                    with_bao=False, baoH=None, baoD=None): 
+    def __load_data(
+        self,
+        multipole,
+        data_directory,
+        cf_spectrum_file,
+        ps_spectrum_file,
+        covmat_file,
+        smin=None,
+        smax=None,
+        kmin=None,
+        kmax=None,
+        with_bao=False,
+        baoH=None,
+        baoD=None,
+    ):
 
-        sdata, cfdata = self.__load_spectrum(data_directory, cf_spectrum_file) # cf
+        sdata, cfdata = self.__load_spectrum(data_directory, cf_spectrum_file)  # cf
         s = sdata.reshape(3, -1)[0]
         Ns = len(s)
         smask0 = np.argwhere((s <= smax) & (s >= smin))[:, 0]
@@ -3618,7 +4107,7 @@ class Likelihood_cfps(Likelihood):
         sdata = s[smask0]
         cfdata = cfdata[smask]
 
-        kdata, psdata = self.__load_spectrum(data_directory, ps_spectrum_file) # ps
+        kdata, psdata = self.__load_spectrum(data_directory, ps_spectrum_file)  # ps
         k = kdata.reshape(3, -1)[0]
         Nk = len(k)
         kmask0 = np.argwhere((k <= kmax) & (k >= kmin))[:, 0]
@@ -3632,12 +4121,12 @@ class Likelihood_cfps(Likelihood):
         xmask = np.concatenate((smask, kmask + 2 * Ns))
         ydata = np.concatenate((cfdata, psdata))
 
-        if with_bao and baoH > 0 and baoD > 0: # BAO
+        if with_bao and baoH > 0 and baoD > 0:  # BAO
             ydata = np.concatenate((ydata, [baoH, baoD]))
             xmask = np.concatenate((xmask, [-2, -1]))
-            print ("BAO recon: on")
+            print("BAO recon: on")
         else:
-            print ("BAO recon: none")
+            print("BAO recon: none")
 
         cov = np.loadtxt(os.path.join(data_directory, covmat_file))
         covred = cov[xmask.reshape((len(xmask), 1)), xmask]
@@ -3651,7 +4140,7 @@ class Likelihood_cfps(Likelihood):
 
     def __load_spectrum(self, data_directory, spectrum_file):
         fname = os.path.join(data_directory, spectrum_file)
-        try: 
+        try:
             kPS, PSdata, _ = np.loadtxt(fname, unpack=True)
         except:
             try:
@@ -3661,4 +4150,3 @@ class Likelihood_cfps(Likelihood):
                 kPS = np.concatenate([kPS, kPS, kPS])
                 PSdata = np.concatenate([l0, l2, l4])
         return kPS, PSdata
-
