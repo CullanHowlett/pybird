@@ -182,7 +182,7 @@ if __name__ == "__main__":
                 Plin, Ploop = corr.birds[bi].formatTaylorPs(kdata=xdata[ri])
                 # Clin, Cloop = corrcf.birds[bi].formatTaylorCf(sdata=xdata)
                 idxcol = np.full([Pin_arr.shape[0], 1], idx)
-                allPin.append(np.hstack([Pin, idxcol]))
+                allPin.append(np.hstack([Pin_arr, idxcol]))
                 idxcol = np.full([Plin.shape[0], 1], idx)
                 allPlin.append(np.hstack([Plin, idxcol]))
                 allPloop.append(np.hstack([Ploop, idxcol]))
