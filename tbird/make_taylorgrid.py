@@ -177,11 +177,11 @@ if __name__ == "__main__":
                 ri = 2 * j + cut
                 bi = j * cut if pardict["scale_independent"] else cut
 
-                Pin = np.c_[kin, Pin[ri]]
+                Pin_arr = np.c_[kin, Pin[ri]]
                 Params = np.array([Om, Da[ri], Hz[ri], DN[ri], fN[ri], sigma8[ri], sigma8_0, sigma12[ri], r_d])
                 Plin, Ploop = corr.birds[bi].formatTaylorPs(kdata=xdata[ri])
                 # Clin, Cloop = corrcf.birds[bi].formatTaylorCf(sdata=xdata)
-                idxcol = np.full([Pin.shape[0], 1], idx)
+                idxcol = np.full([Pin_arr.shape[0], 1], idx)
                 allPin.append(np.hstack([Pin, idxcol]))
                 idxcol = np.full([Plin.shape[0], 1], idx)
                 allPlin.append(np.hstack([Plin, idxcol]))
