@@ -199,7 +199,7 @@ if __name__ == "__main__":
                 allPlin[ri][i], allPloop[ri][i] = Plin, Ploop
 
     for j in range(len(pardict["z_pk"])):
-        if parameters["code"] == "CAMB":
+        if pardict["code"] == "CAMB":
             np.save(
                 os.path.join(pardict["outpk"], "redindex%d" % (j), "CAMB_run%s.npy" % (str(job_no))),
                 np.array(allPin[j]),
