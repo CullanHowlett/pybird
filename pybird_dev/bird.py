@@ -1434,36 +1434,23 @@ class Bird(object):
         if self.co.Nloop is 12:
             Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploopl), axis=0)
         elif self.co.Nloop is 22:
-            Ploop1 = np.einsum(
-                "n,lnk->lnk",
-                np.array(
-                    [
-                        self.f ** 2,
-                        self.f ** 3,
-                        self.f ** 4,
-                        self.f,
-                        self.f ** 2,
-                        self.f ** 3,
-                        self.f,
-                        self.f ** 2,
-                        self.f,
-                        self.f,
-                        self.f ** 2,
-                        1.0,
-                        self.f,
-                        self.f ** 2,
-                        1.0,
-                        self.f,
-                        1.0,
-                        1.0,
-                        self.f,
-                        1.0,
-                        1.0,
-                        1.0,
-                    ]
-                ),
-                Ploopl,
-            )
+            Ploop1 = np.empty(shape=(self.co.Nl, 12, np.shape(Ploopl)[-1]))
+            Ploop1[:, 0] = (
+                self.f ** 2 * self.Ploopl[:, 0] + self.f ** 3 * self.Ploopl[:, 1] + self.f ** 4 * self.Ploopl[:, 2]
+            )  # *1
+            Ploop1[:, 1] = (
+                self.f * self.Ploopl[:, 3] + self.f ** 2 * self.Ploopl[:, 4] + self.f ** 3 * self.Ploopl[:, 5]
+            )  # *b1
+            Ploop1[:, 2] = self.f * self.Ploopl[:, 6] + self.f ** 2 * self.Ploopl[:, 7]  # *b2
+            Ploop1[:, 3] = self.f * self.Ploopl[:, 8]  # *b3
+            Ploop1[:, 4] = self.f * self.Ploopl[:, 9] + self.f ** 2 * self.Ploopl[:, 10]  # *b4
+            Ploop1[:, 5] = self.Ploopl[:, 11] + self.f * self.Ploopl[:, 12] + self.f ** 2 * self.Ploopl[:, 13]  # *b1*b1
+            Ploop1[:, 6] = self.Ploopl[:, 14] + self.f * self.Ploopl[:, 15]  # *b1*b2
+            Ploop1[:, 7] = self.Ploopl[:, 16]  # *b1*b3
+            Ploop1[:, 8] = self.Ploopl[:, 17] + self.f * self.Ploopl[:, 18]  # *b1*b4
+            Ploop1[:, 9] = self.Ploopl[:, 19]  # *b2*b2
+            Ploop1[:, 10] = self.Ploopl[:, 20]  # *b2*b4
+            Ploop1[:, 11] = self.Ploopl[:, 21]  # *b4*b4
             Ploop1 = np.concatenate(np.einsum("lnk->lkn", Ploop1), axis=0)
         Ploop2 = np.einsum("n,lnk->lnk", np.array([2.0, 2.0, 2.0, 2.0 * self.f, 2.0 * self.f, 2.0 * self.f]), Pctl)
         Ploop2 = np.concatenate(np.einsum("lnk->lkn", Ploop2), axis=0)

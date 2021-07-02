@@ -129,17 +129,20 @@ if __name__ == "__main__":
             )"""
 
     # Now loop over all grid cells and compute the EFT model
-    allPlin = []
-    allPloop = []
-    allClin = []
-    allCloop = []
-    allParams = []
-    allPin = []
+    allPlin = [np.empty((len(arrayred), Nl * len(x), 4)) for x in xdata]
+    allPloop = [np.empty((len(arrayred), Nl * len(x), 19)) for x in xdata]
+    # allClin = []
+    # allCloop = []
+    allParams = np.empty((len(pardict["z_pk"]), len(arrayred), 9))
+    allPin = np.empty((len(pardict["z_pk"]), len(arrayred), len(kin)))
     for i, theta in enumerate(arrayred):
         parameters = copy.deepcopy(pardict)
         truetheta = valueref + theta * delta
         idx = i
         print("i on tot", i, len(arrayred))
+
+        if (i == 0) or ((i + 1) % 10 == 0):
+            print("theta check: ", arrayred[idx], theta, truetheta)
 
         for k, var in enumerate(pardict["freepar"]):
             parameters[var] = truetheta[k]
@@ -147,6 +150,21 @@ if __name__ == "__main__":
             kin, Pin, Om, Da, Hz, DN, fN, sigma8, sigma8_0, sigma12, r_d = run_camb(parameters)
         else:
             kin, Pin, Om, Da, Hz, DN, fN, sigma8, sigma8_0, sigma12, r_d = run_class(parameters)
+
+        allPin[:, i, :] = Pin
+        allParams[:, i, :] = np.array(
+            [
+                np.repeat(Om, len(pardict["z_pk"])),
+                Da,
+                Hz,
+                DN,
+                fN,
+                sigma8,
+                np.repeat(sigma8_0, len(pardict["z_pk"])),
+                sigma12,
+                np.repeat(r_d, len(pardict["z_pk"])),
+            ]
+        ).T
 
         if pardict["scale_independent"]:
 
@@ -170,9 +188,6 @@ if __name__ == "__main__":
                     }
                 )
 
-        if (i == 0) or ((i + 1) % 10 == 0):
-            print("theta check: ", arrayred[idx], theta, truetheta)
-
         for j in range(len(pardict["z_pk"][::2])):
             corr = correlator if pardict["scale_independent"] else correlator[j]
             # corrcf = correlatorcf if pardict["scale_independent"] else correlatorcf[j]
@@ -180,46 +195,37 @@ if __name__ == "__main__":
                 ri = 2 * j + cut
                 bi = j * cut if pardict["scale_independent"] else cut
 
-                Pin_arr = np.c_[kin, Pin[ri]]
-                Params = np.array([Om, Da[ri], Hz[ri], DN[ri], fN[ri], sigma8[ri], sigma8_0, sigma12[ri], r_d])
                 Plin, Ploop = corr.birds[bi].formatTaylorPs(kdata=xdata[ri])
-                # Clin, Cloop = corrcf.birds[bi].formatTaylorCf(sdata=xdata)
-                idxcol = np.full([Pin_arr.shape[0], 1], idx)
-                allPin.append(np.hstack([Pin_arr, idxcol]))
-                idxcol = np.full([Plin.shape[0], 1], idx)
-                allPlin.append(np.hstack([Plin, idxcol]))
-                allPloop.append(np.hstack([Ploop, idxcol]))
-                # idxcol = np.full([Clin.shape[0], 1], idx)
-                # allClin.append(np.hstack([Clin, idxcol]))
-                # allCloop.append(np.hstack([Cloop, idxcol]))
-                allParams.append(np.hstack([Params, [idx]]))
-                if parameters["code"] == "CAMB":
-                    np.save(
-                        os.path.join(pardict["outpk"], "redindex%d" % (ri), "CAMB_run%s.npy" % (str(job_no))),
-                        np.array(allPin),
-                    )
-                else:
-                    np.save(
-                        os.path.join(pardict["outpk"], "redindex%d" % (ri), "CLASS_run%s.npy" % (str(job_no))),
-                        np.array(allPin),
-                    )
-                np.save(
-                    os.path.join(pardict["outpk"], "redindex%d" % (ri), "Plin_run%s.npy" % (str(job_no))),
-                    np.array(allPlin),
-                )
-                np.save(
-                    os.path.join(pardict["outpk"], "redindex%d" % (ri), "Ploop_run%s.npy" % (str(job_no))),
-                    np.array(allPloop),
-                )
-                """np.save(
-                    os.path.join(pardict["outpk"], "redindex%d" % (ri), "Clin_run%s.npy" % (str(job_no))),
-                    np.array(allClin),
-                )
-                np.save(
-                    os.path.join(pardict["outpk"], "redindex%d" % (ri), "Cloop_run%s.npy" % (str(job_no))),
-                    np.array(allCloop),
-                )"""
-                np.save(
-                    os.path.join(pardict["outpk"], "redindex%d" % (ri), "Params_run%s.npy" % (str(job_no))),
-                    np.array(allParams),
-                )
+                allPlin[ri][i], allPloop[ri][i] = Plin, Ploop
+
+    for j in range(len(pardict["z_pk"])):
+        if parameters["code"] == "CAMB":
+            np.save(
+                os.path.join(pardict["outpk"], "redindex%d" % (j), "CAMB_run%s.npy" % (str(job_no))),
+                np.array(allPin[j]),
+            )
+        else:
+            np.save(
+                os.path.join(pardict["outpk"], "redindex%d" % (j), "CLASS_run%s.npy" % (str(job_no))),
+                np.array(allPin[j]),
+            )
+        np.save(
+            os.path.join(pardict["outpk"], "redindex%d" % (ri), "Plin_run%s.npy" % (str(job_no))),
+            np.array(allPlin[j]),
+        )
+        np.save(
+            os.path.join(pardict["outpk"], "redindex%d" % (ri), "Ploop_run%s.npy" % (str(job_no))),
+            np.array(allPloop[j]),
+        )
+        """np.save(
+            os.path.join(pardict["outpk"], "redindex%d" % (ri), "Clin_run%s.npy" % (str(job_no))),
+            np.array(allClin),
+        )
+        np.save(
+            os.path.join(pardict["outpk"], "redindex%d" % (ri), "Cloop_run%s.npy" % (str(job_no))),
+            np.array(allCloop),
+        )"""
+        np.save(
+            os.path.join(pardict["outpk"], "redindex%d" % (ri), "Params_run%s.npy" % (str(job_no))),
+            np.array(allParams[j]),
+        )
