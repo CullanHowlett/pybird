@@ -7,41 +7,7 @@ import findiff
 from configobj import ConfigObj
 
 sys.path.append("../")
-from tbird.Grid import run_camb, run_class, grid_properties, grid_properties_template
-
-"""
-def get_template_grids(parref, nmult=3, nout=3, pad=True, cf=False):
-    # order_i is the number of points away from the origin for parameter i
-    # The len(freepar) sub-arrays are the outputs of a meshgrid, which I feed to findiff
-    outgrid = parref["outgrid"]
-    name = parref["code"].lower() + "-" + parref["gridname"]
-
-    # Coordinates have shape (3, 2 * order_1 + 1, ..., 2 * order_n + 1)
-    shapecrd = np.concatenate([[4], np.full(4, 2 * int(parref["template_order"]) + 1)])
-    padshape = [(1, 1)] * (len(shapecrd) - 1)
-
-    # grids need to be reshaped and padded at both ends along the freepar directions
-    if cf:
-        plin = np.load(os.path.join(outgrid, "TableClin_%s_template.npy" % name))
-    else:
-        plin = np.load(os.path.join(outgrid, "TablePlin_%s_template.npy" % name))
-    print(np.shape(plin))
-    plin = plin.reshape((*shapecrd[1:], nmult, plin.shape[-2] // nmult, plin.shape[-1]))
-    if pad:
-        plin = np.pad(plin, padshape + [(0, 0)] * 3, "constant", constant_values=0)
-
-    if cf:
-        ploop = np.load(os.path.join(outgrid, "TableCloop_%s_template.npy" % name))
-    else:
-        ploop = np.load(os.path.join(outgrid, "TablePloop_%s_template.npy" % name))
-    print(np.shape(ploop))
-    ploop = ploop.reshape((*shapecrd[1:], nmult, ploop.shape[-2] // nmult, ploop.shape[-1]))
-    if pad:
-        ploop = np.pad(ploop, padshape + [(0, 0)] * 3, "constant", constant_values=0)
-
-    # The output is not concatenated for multipoles
-    return plin[..., :nout, :, :], ploop[..., :nout, :, :]
-"""
+from tbird.Grid import run_camb, run_class, grid_properties
 
 
 def get_grids(parref, outgrid, name, nmult=3, nout=3, pad=True, cf=False):

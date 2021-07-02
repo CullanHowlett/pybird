@@ -918,7 +918,7 @@ class FittingData:
             [np.logical_and(x_data >= pardict["xfit_min"][i], x_data <= pardict["xfit_max"][i]) for i in range(ell)]
         )
         # fitmask = np.concatenate([fitmask, [np.full(len(x_data), False)]])
-        x_data = np.array([data[fitmask[i], 0] for i in range(ell)])
+        x_data = np.array([data[fitmask[i], 0] for i in range(ell)], dtype=object)
         fit_data = np.concatenate([data[fitmask[i], i + 1] for i in range(ell)])
 
         return x_data, np.sum([len(x_data[i]) for i in range(ell)]), np.concatenate(fitmask), fit_data
@@ -1244,6 +1244,7 @@ def format_pardict(pardict):
     pardict["xfit_min"] = np.array(pardict["xfit_min"]).astype(float)
     pardict["xfit_max"] = np.array(pardict["xfit_max"]).astype(float)
     pardict["order"] = int(pardict["order"])
+    pardict["scale_independent"] = bool(pardict["scale_independent"])
     pardict["z_pk"] = np.array(pardict["z_pk"], dtype=float)
     if not any(np.shape(pardict["z_pk"])):
         pardict["z_pk"] = [float(pardict["z_pk"])]

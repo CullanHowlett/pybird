@@ -768,7 +768,7 @@ class Correlator(object):
                         )
                     )
 
-    def read_cosmo(self, cosmo_dict):
+    def __read_cosmo(self, cosmo_dict):
 
         # Checking if the inputs are consistent with the options
         for (name, cosmo) in zip(self.cosmo_catalog, self.cosmo_catalog.values()):
@@ -1166,7 +1166,7 @@ class Correlator(object):
             def checkEqual(lst):
                 return lst[1:] == lst[:-1]  ### TO CHANGE
 
-            if checkEqual(self.config["z"]):  # if same redshift
+            if np.all(checkEqual(self.config["z"])):  # if same redshift
                 self.config["with_time"] = True
                 # self.config["z"] = self.config["z"][0]
             else:

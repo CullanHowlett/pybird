@@ -51,37 +51,6 @@ def grid_properties(pardict):
     return valueref, delta, flattenedgrid, truecrd
 
 
-def grid_properties_template(pardict, fN, sigma8):
-    """Computes some useful properties of the grid given the parameters read from the input file
-
-    Parameters
-    ----------
-    pardict: dict
-        A dictionary of parameters read from the config file
-
-    Returns
-    -------
-    valueref: np.array
-        An array of the central values of the grid
-    delta: np.array
-        An array containing the grid cell widths
-    flattenedgrid: np.array
-        The number of grid cells from the center for each coordinate, flattened
-    truecrd: list of np.array
-        A list containing 1D numpy arrays for the values of the cosmological parameters along each grid axis
-    """
-
-    order = float(pardict["template_order"])
-    valueref = np.array([1.0, 1.0, fN, sigma8])
-    delta = np.array(pardict["template_dx"], dtype=np.float) * valueref
-    squarecrd = [np.arange(-order, order + 1) for l in range(4)]
-    truecrd = [valueref[l] + delta[l] * np.arange(-order, order + 1) for l in range(4)]
-    squaregrid = np.array(np.meshgrid(*squarecrd, indexing="ij"))
-    flattenedgrid = squaregrid.reshape([4, -1]).T
-
-    return valueref, delta, flattenedgrid, truecrd
-
-
 def grid_properties_template_hybrid(pardict, fsigma8, omegamh2):
     """Computes some useful properties of the grid given the parameters read from the input file
 
@@ -137,6 +106,8 @@ def run_camb(pardict, redindex=0):
 
     parlinear = copy.deepcopy(pardict)
 
+    uniquez, uniquez_ind = np.unique(parlinear["z_pk"], return_inverse=True)
+
     # Set the CAMB parameters
     pars = camb.CAMBparams()
     if "A_s" not in parlinear.keys():
@@ -155,7 +126,9 @@ def run_camb(pardict, redindex=0):
         pars.set_dark_energy(w=float(parlinear["w0_fld"]), dark_energy_model="fluid")
     pars.InitPower.set_params(As=float(parlinear["A_s"]), ns=float(parlinear["n_s"]))
     pars.set_matter_power(
-        redshifts=[float(parlinear["z_pk"][redindex]), 0.0], kmax=float(parlinear["P_k_max_h/Mpc"]), nonlinear=False
+        redshifts=np.concatenate([[0.0], uniquez]),
+        kmax=float(parlinear["P_k_max_h/Mpc"]),
+        nonlinear=False,
     )
     pars.set_cosmology(
         H0=float(parlinear["H0"]),
@@ -171,23 +144,40 @@ def run_camb(pardict, redindex=0):
     # Run CAMB
     results = camb.get_results(pars)
 
-    # Get the power spectrum
-    kin, _, Plin = results.get_matter_power_spectrum(
-        minkh=2.0e-5,
-        maxkh=float(parlinear["P_k_max_h/Mpc"]),
-        npoints=200,
+    # Get the power spectrum, duplicated where input redshifts are duplicated
+    kin, zin, Plin = results.get_matter_power_spectrum(
+        minkh=9.9e-5, maxkh=float(parlinear["P_k_max_h/Mpc"]), npoints=200, var1="delta_nonu", var2="delta_nonu"
     )
+    Plin = Plin[1:][uniquez_ind]  # Removes z=0.0 addition, and duplicates
+    print(zin)
 
     # Get some derived quantities
     Omega_m = results.get_Omega("cdm") + results.get_Omega("baryon") + results.get_Omega("nu")
-    Da = results.angular_diameter_distance(float(parlinear["z_pk"][redindex])) * float(parlinear["H0"]) / 299792.458
-    H = results.hubble_parameter(float(parlinear["z_pk"][redindex])) / float(parlinear["H0"])
-    fsigma8 = results.get_fsigma8()[0]
-    sigma8 = results.get_sigma8()[0]
-    sigma12 = results.get_sigmaR(12.0, hubble_units=False)[0]
+    Da = results.angular_diameter_distance(parlinear["z_pk"]) * float(parlinear["H0"]) / 299792.458
+    H = results.hubble_parameter(parlinear["z_pk"]) / float(parlinear["H0"])
+    # This weird indexing flips the order back so z=0.0 is first, removes z=0.0, and duplicates for duplicated redshifts.
+    fsigma8 = results.get_fsigma8()[::-1][1:][uniquez_ind]
+    sigma8 = results.get_sigmaR(8.0, var1="delta_nonu", var2="delta_nonu")[::-1]
+    sigma12 = results.get_sigmaR(12.0, var1="delta_nonu", var2="delta_nonu", hubble_units=False)[::-1][1:][uniquez_ind]
     r_d = results.get_derived_params()["rdrag"]
 
-    return kin, Plin[-1], Omega_m, Da, H, fsigma8 / sigma8, sigma8, sigma12, r_d
+    # Get growth factor from sigma8 ratios
+    D = sigma8[1:][uniquez_ind] / sigma8[0]
+    f = fsigma8 / sigma8[1:][uniquez_ind]
+
+    return (
+        kin,
+        Plin,
+        Omega_m,
+        Da,
+        H,
+        D,
+        f,
+        sigma8[1:][uniquez_ind],
+        sigma8[0],
+        sigma12,
+        r_d,
+    )
 
 
 def run_class(pardict, redindex=0):
@@ -254,38 +244,23 @@ def run_class(pardict, redindex=0):
     )
     M.compute()
 
-    kin = np.logspace(np.log10(2.0e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
-    Plin = np.array([M.pk_cb_lin(ki * M.h(), float(parlinear["z_pk"][redindex])) * M.h() ** 3 for ki in kin])
-    # Plin = np.array([M.pk_lin(ki * M.h(), 0.0) * M.h() ** 3 for ki in kin])
-    # Plin *= (M.scale_independent_growth_factor(float(parlinear["z_pk"])) / M.scale_independent_growth_factor(0.0)) ** 2
+    kin = np.logspace(np.log10(9.9e-5), np.log10(float(parlinear["P_k_max_h/Mpc"])), 200)
+
+    # Don't use pk_cb_array - gives weird discontinuties for k < 1.0e-3 and non-zero curvature.
+    Plin = np.array([[M.pk_cb_lin(ki * M.h(), zi) * M.h() ** 3 for ki in kin] for zi in parlinear["z_pk"]])
 
     # Get some derived quantities
     Omega_m = M.Om_m(0.0)
-    a_z = 1.0 / (1.0 + float(parlinear["z_pk"][redindex]))
-    growth_z = a_z * hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -(a_z ** 3) / Omega_m * (1.0 - Omega_m))
-    growth_0 = hyp2f1(1.0 / 3.0, 1, 11.0 / 6.0, -1.0 / Omega_m * (1.0 - Omega_m))
-
-    # print(growth_z / growth_0)
-
-    # np.savetxt(
-    #    "/Volumes/Work/UQ/DESI/MockChallenge/Pre_recon_Stage2/pkmodel_UNIT_cosmo_matter.dat",
-    #    np.c_[kin, Plin],
-    #    header="k    P_lin",
-    # )
-
-    # Plin *= (growth_z / growth_0) ** 2
-
-    Da = M.angular_distance(float(parlinear["z_pk"][redindex])) * M.Hubble(0.0)
-    H = M.Hubble(float(parlinear["z_pk"][redindex])) / M.Hubble(0.0)
-    f = M.scale_independent_growth_factor_f(float(parlinear["z_pk"][redindex]))
-    sigma8 = M.sigma(8.0 / M.h(), float(parlinear["z_pk"][redindex]))
+    Da = np.array([M.angular_distance(z) * M.Hubble(0.0) for z in parlinear["z_pk"]])
+    H = np.array([M.Hubble(z) / M.Hubble(0.0) for z in parlinear["z_pk"]])
+    D = np.array([M.scale_independent_growth_factor(z) for z in parlinear["z_pk"]])
+    f = np.array([M.scale_independent_growth_factor_f(z) for z in parlinear["z_pk"]])
+    sigma8 = np.array([M.sigma(8.0 / M.h(), z) for z in parlinear["z_pk"]])
     sigma8_0 = M.sigma(8.0 / M.h(), 0.0)
-    sigma12 = M.sigma(12.0, float(parlinear["z_pk"][redindex]))
+    sigma12 = np.array([M.sigma(12.0, z) for z in parlinear["z_pk"]])
     r_d = M.rs_drag()
 
-    # print(Omega_m, Da, H, f, sigma8, sigma12, r_d, r_d*float(parlinear["H0"])/100.0)
-
-    return kin, Plin, Omega_m, Da, H, f, sigma8, sigma8_0, sigma12, r_d
+    return kin, Plin, Omega_m, Da, H, D, f, sigma8, sigma8_0, sigma12, r_d
 
 
 if __name__ == "__main__":
@@ -294,39 +269,61 @@ if __name__ == "__main__":
 
     sys.path.append("../")
     import matplotlib.pyplot as plt
+    from pybird_dev import pybird
     from configobj import ConfigObj
-    from scipy.interpolate import splev, splrep
+    from fitting_codes.fitting_utils import format_pardict, FittingData
 
     # Read in the config file, job number and total number of jobs
     configfile = sys.argv[1]
-    pardict = ConfigObj(configfile)
+    pardict = format_pardict(ConfigObj(configfile))
 
-    # Get some cosmological values at the grid centre
-    kin_camb, Plin_camb, Om_camb, Da_camb, Hz_camb, fN_camb, sigma8_camb, sigma12_camb, r_d_camb = run_camb(pardict)
-    kin_class, Plin_class, Om_class, Da_class, Hz_class, fN_class, sigma8_class, sigma12_class, r_d_class = run_class(
-        pardict
-    )
+    # Compute some stuff for the grid based on the config file
+    valueref, delta, flattenedgrid, _ = grid_properties(pardict)
 
-    print(Om_camb, Om_class, 100.0 * (Om_camb / Om_class - 1.0))
-    print(Da_camb, Da_class, 100.0 * (Da_camb / Da_class - 1.0))
-    print(Hz_camb, Hz_class, 100.0 * (Hz_camb / Hz_class - 1.0))
-    print(fN_camb, fN_class, 100.0 * (fN_camb / fN_class - 1.0))
-    print(sigma8_camb, sigma8_class, 100.0 * (sigma8_camb / sigma8_class - 1.0))
-    print(sigma12_camb, sigma12_class, 100.0 * (sigma12_camb / sigma12_class - 1.0))
-    print(r_d_camb, r_d_class, 100.0 * (r_d_camb / r_d_class - 1.0))
-
+    # Get some cosmological values on the grid
     fig = plt.figure(0)
     ax = fig.add_axes([0.13, 0.13, 0.85, 0.85])
-    ax.plot(kin_camb, Plin_camb, color="r")
-    ax.plot(kin_class, Plin_class, color="b")
+
+    for i in range(-4, 5):
+        theta = [0, 0, 0, 0, i]
+        parameters = copy.deepcopy(pardict)
+        truetheta = valueref + theta * delta
+        for k, var in enumerate(pardict["freepar"]):
+            parameters[var] = truetheta[k]
+
+        for k, var in enumerate(pardict["freepar"]):
+            parameters[var] = truetheta[k]
+        (
+            kin_camb,
+            Pin_camb,
+            Om_camb,
+            Da_camb,
+            Hz_camb,
+            DN_camb,
+            fN_camb,
+            sigma8_camb,
+            sigma8_0_camb,
+            sigma12_camb,
+            r_d_camb,
+        ) = run_camb(parameters)
+        (
+            kin_class,
+            Pin_class,
+            Om_class,
+            Da_class,
+            Hz_class,
+            DN_class,
+            fN_class,
+            sigma8_class,
+            sigma8_0_class,
+            sigma12_class,
+            r_d_class,
+        ) = run_class(parameters)
+
+        ax.plot(kin_camb, Pin_class[0])
+
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlim(1.0e-5, 1.1 * float(pardict["P_k_max_h/Mpc"]))
-    plt.show()
-
-    fig = plt.figure(1)
-    ax = fig.add_axes([0.13, 0.13, 0.85, 0.85])
-    ax.plot(kin_camb, 100.0 * (Plin_camb / splev(kin_camb, splrep(kin_class, Plin_class)) - 1.0), color="r")
-    ax.plot(kin_class, 100.0 * (splev(kin_class, splrep(kin_camb, Plin_camb)) / Plin_class - 1.0), color="b")
-
+    ax.set_xlim(9.0e-5, 1.1 * float(pardict["P_k_max_h/Mpc"]))
+    ax.set_ylim(1.0e-4, 1.0e4)
     plt.show()
