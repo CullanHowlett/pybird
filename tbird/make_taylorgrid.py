@@ -170,6 +170,9 @@ if __name__ == "__main__":
                     }
                 )
 
+        if (i == 0) or ((i + 1) % 10 == 0):
+            print("theta check: ", arrayred[idx], theta, truetheta)
+
         for j in range(len(pardict["z_pk"][::2])):
             corr = correlator if pardict["scale_independent"] else correlator[j]
             # corrcf = correlatorcf if pardict["scale_independent"] else correlatorcf[j]
@@ -190,8 +193,6 @@ if __name__ == "__main__":
                 # allClin.append(np.hstack([Clin, idxcol]))
                 # allCloop.append(np.hstack([Cloop, idxcol]))
                 allParams.append(np.hstack([Params, [idx]]))
-                if (i == 0) or ((i + 1) % 10 == 0):
-                    print("theta check: ", arrayred[idx], theta, truetheta)
                 if parameters["code"] == "CAMB":
                     np.save(
                         os.path.join(pardict["outpk"], "redindex%d" % (ri), "CAMB_run%s.npy" % (str(job_no))),
